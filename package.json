@@ -8,7 +8,8 @@
     "build": "npm run frontend:build",
     "frontend:build": "npm run build --prefix frontend",
     "start": "node app.js",
-    "serve": "npm run build && npm start"
+    "serve": "npm run build && npm start",
+    "lint": "eslint 'src/**/*.{js,jsx}'"
   },
   "author": "",
   "license": "ISC",
@@ -16,5 +17,12 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/css": "^0.10.0",
+    "@eslint/js": "^9.32.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.3.0"
   }
 }

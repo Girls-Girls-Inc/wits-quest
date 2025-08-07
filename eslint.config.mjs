@@ -25,17 +25,6 @@ export default defineConfig([
     },
   },
 
-  // CSS
-  {
-    files: ['**/*.css'],
-    languageOptions: {
-      parser: cssPlugin.parsers.css,
-    },
-    rules: {
-      ...cssPlugin.configs.recommended.rules,
-    },
-  },
-
   // Ignored paths
   {
     ignores: ['node_modules/', 'build/', 'dist/'],

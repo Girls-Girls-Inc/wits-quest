@@ -3,6 +3,7 @@ import IconButton from "../components/IconButton";
 import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import GoogleImage from "../assets/google-icon.png"; // Replace with your actual path
+import supabase from "../supabase/supabaseClient"
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -19,9 +20,19 @@ const Signup = () => {
     setForm({ ...form, password: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Signup form submitted:", form);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+    })
+
+    if (error) {
+      console.error("Signup error:", error.message);
+    } else {
+      console.log("Signup successful:", data);
+    }
   };
 
   const handleGoogleSignIn = () => {

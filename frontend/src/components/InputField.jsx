@@ -4,6 +4,7 @@ import "../styles/inputField.css";
 const InputField = ({
   id,
   type,
+  name,
   placeholder,
   icon,
   onChange,
@@ -14,6 +15,7 @@ const InputField = ({
     <div className="input-wrapper">
       <input
         id={id}
+        name={name}
         type={type}
         placeholder={placeholder}
         className="input-field"

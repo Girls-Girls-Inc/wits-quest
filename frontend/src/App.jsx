@@ -5,6 +5,7 @@ import IconButton from "./components/IconButton";
 import Signup from "./pages/signup";
 import Login from "./pages/login";
 import SignIn from "./pages/signIn";
+import Profile from "./pages/profile"
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </>
   );

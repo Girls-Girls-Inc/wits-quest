@@ -3,8 +3,13 @@ import IconButton from "../components/IconButton";
 import PasswordInputField from "../components/PasswordInputField";
 import InputField from "../components/InputField";
 import GoogleImage from "../assets/google-icon.png";
+import { useNavigate } from "react-router-dom";
+import supabase from "../supabase/supabaseClient";
 
 const Login = () => {
+
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -18,9 +23,15 @@ const Login = () => {
     setForm({ ...form, password: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    })
     console.log("Login form submitted:", form);
+    navigate('/profile')
   };
 
   const handleGoogleSignIn = () => {

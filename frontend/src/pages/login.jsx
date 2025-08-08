@@ -26,12 +26,16 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    })
-    console.log("Login form submitted:", form);
-    navigate('/profile')
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      })
+      console.log("Login form submitted:", form);
+      navigate("/profile")
+    } catch (error) {
+      console.error("Signup error:", error.message);
+    }
   };
 
   const handleGoogleSignIn = () => {
@@ -48,10 +52,12 @@ const Login = () => {
         style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
       >
         <InputField
-          id="name"
+          id="email"
           icon="email"
-          placeholder="Email Adress"
-          value={form.name}
+          name="email"
+          placeholder="Email Address"
+          value={form.email}
+          onChange={handleChange}
         />
 
         <PasswordInputField

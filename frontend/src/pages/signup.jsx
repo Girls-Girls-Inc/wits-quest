@@ -4,8 +4,12 @@ import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import GoogleImage from "../assets/google-icon.png"; // Replace with your actual path
 import supabase from "../supabase/supabaseClient"
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
+
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -23,16 +27,23 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    })
+    try {
 
-    if (error) {
-      console.error("Signup error:", error.message);
-    } else {
+      const { data, error } = await supabase.auth.signUp({
+
+        email: form.email,
+        password: form.password,
+      }, {
+        redirectTo: 'https://localhost:3000/profile'
+      });
       console.log("Signup successful:", data);
+      navigate("/login")
+
+    } catch (error) {
+
+      console.error("Signup error:", error.message);
     }
+
   };
 
   const handleGoogleSignIn = () => {

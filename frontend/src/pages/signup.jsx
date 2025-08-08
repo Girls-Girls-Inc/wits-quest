@@ -5,6 +5,7 @@ import PasswordInputField from "../components/PasswordInputField";
 import GoogleImage from "../assets/google-icon.png"; // Replace with your actual path
 import supabase from "../supabase/supabaseClient"
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 const Signup = () => {
 
@@ -30,13 +31,15 @@ const Signup = () => {
     try {
 
       const { data, error } = await supabase.auth.signUp({
-
         email: form.email,
         password: form.password,
-      }, {
-        redirectTo: 'https://localhost:3000/profile'
+        options: {
+          data: { displayName: form.name },
+          redirectTo: import.meta.env.VITE_WEB_URL + '/profile', // Use correct env var
+        }
       });
-      console.log("Signup successful:", data);
+
+      toast.success("Check your email to complete sign-up.")
       navigate("/login")
 
     } catch (error) {

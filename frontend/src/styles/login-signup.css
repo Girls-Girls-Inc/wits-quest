@@ -1,0 +1,78 @@
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+img {
+  height: auto;
+  width: 100%;
+}
+
+.password-validation-box {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  user-select: none;
+}
+
+.password-validation-box p {
+  margin: 4px 0;
+}
+
+.password-valid {
+  color: green;
+}
+
+.password-invalid {
+  color: #9ca3af;
+}
+
+.container {
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.google-signin-wrapper {
+  margin: 1.5rem 0;
+}
+
+.google-signup-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: black;
+}
+
+.google-signup-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+.bottom-navigation {
+  display: flex;
+  gap: 1rem;
+}

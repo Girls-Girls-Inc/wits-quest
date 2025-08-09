@@ -5,9 +5,9 @@ import InputField from "../components/InputField";
 import GoogleImage from "../assets/google-icon.png";
 import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
+import toast from "react-hot-toast";
 
 const Login = () => {
-
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -30,17 +30,37 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
-      })
-      console.log("Login form submitted:", form);
-      navigate("/profile")
-    } catch (error) {
-      console.error("Signup error:", error.message);
+      });
+
+      if (error) {
+        toast.error(error.message || "Invalid email or password");
+        return;
+      }
+
+      toast.success("Login successful!");
+      navigate("/profile");
+    } catch (err) {
+      toast.error("An unexpected error occurred. Please try again.");
+      console.error("Login error:", err.message);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    console.log("Google Sign-In clicked");
-    // TODO: Integrate Google login logic here
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+      });
+
+      if (error) {
+        toast.error(error.message || "Google Sign-in failed");
+        return;
+      }
+
+      toast.success("Signed in with Google!");
+    } catch (err) {
+      toast.error("An unexpected Google Sign-in error occurred.");
+      console.error("Google Sign-in error:", err.message);
+    }
   };
 
   return (
@@ -58,6 +78,7 @@ const Login = () => {
           placeholder="Email Address"
           value={form.email}
           onChange={handleChange}
+          required
         />
 
         <PasswordInputField
@@ -68,16 +89,15 @@ const Login = () => {
           required
         />
 
-        <IconButton onClick={handleSubmit} icon="login" label="Login" />
+        <IconButton type="submit" icon="login" label="Login" />
       </form>
 
       <div style={{ margin: "1.5rem 0" }}>
-        {/* Google Login Button */}
         <button onClick={handleGoogleSignIn}>
           <img
             src={GoogleImage}
             alt="Google icon"
-            style={{ width: "20px", height: "20px" }}
+            style={{ width: "20px", height: "20px", marginRight: "8px" }}
           />
           Sign in with Google
         </button>

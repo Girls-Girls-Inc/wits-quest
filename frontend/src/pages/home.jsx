@@ -14,7 +14,6 @@ const Home = () => {
       <IconButton onClick={idiotNotification} icon="home" label="Home" />
       <IconButton route="/signup" icon="person_add" label="Signup" />
       <IconButton route="/login" icon="login" label="Login" />
-      <IconButton route="/signin" icon="login" label="SignIn" />
       <Toaster />
     </section>
   );

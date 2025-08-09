@@ -6,6 +6,10 @@ import GoogleImage from "../assets/google-icon.png";
 import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 import toast from "react-hot-toast";
+import "../styles/login-signup.css";
+import "../index.css";
+import SignupImage from "../assets/signupImage.svg";
+import Logo from "../assets/Logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -64,48 +68,56 @@ const Login = () => {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "2rem auto" }}>
-      <h2>Login</h2>
+    <div className="loginPage flex">
+      <div className="container">
+        <div className="image-container">
+          <img src={SignupImage} alt="" />
+        </div>
+        <div className="text-container">
+          {" "}
+          <h2 className="title">Wits Quest</h2>
+          <p>Conquer the Edge with your Wits wits</p>
+        </div>
 
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-      >
-        <InputField
-          id="email"
-          icon="email"
-          name="email"
-          placeholder="Email Address"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+        <div className="footer-container">
+          <span className="text">Not a Witizen? </span>
+          <IconButton route="/signup" icon="person_add" label="Signup" />
+        </div>
 
-        <PasswordInputField
-          id="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handlePasswordChange}
-          required
-        />
+        <div className="form-container">
+          <div className="header-container">
+            <img src={Logo} alt="" />
+          </div>
+        </div>
 
-        <IconButton type="submit" icon="login" label="Login" />
-      </form>
-
-      <div style={{ margin: "1.5rem 0" }}>
-        <button onClick={handleGoogleSignIn}>
-          <img
-            src={GoogleImage}
-            alt="Google icon"
-            style={{ width: "20px", height: "20px", marginRight: "8px" }}
+        <form onSubmit={handleSubmit} className="login-form">
+          <InputField
+            id="email"
+            icon="email"
+            name="email"
+            placeholder="Email Address"
+            value={form.email}
+            onChange={handleChange}
+            required
           />
-          Sign in with Google
-        </button>
-      </div>
-
-      <div style={{ display: "flex", gap: "1rem" }}>
-        <IconButton route="/" icon="home" label="Home" />
-        <IconButton route="/signup" icon="person_add" label="Signup" />
+          <PasswordInputField
+            id="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handlePasswordChange}
+            required
+          />
+          <IconButton type="submit" icon="login" label="Login" />
+        </form>
+        <div className="google-signin-wrapper">
+          <button className="google-signup-btn" onClick={handleGoogleSignIn}>
+            <img src={GoogleImage} alt="Google icon" />
+            Sign in with Google
+          </button>
+        </div>
+        <div className="bottom-navigation">
+          <IconButton route="/" icon="home" label="Home" />
+        </div>
       </div>
     </div>
   );

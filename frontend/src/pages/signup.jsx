@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import IconButton from "../components/IconButton";
 import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
-import GoogleImage from "../assets/google-icon.png"; // Replace with your actual path
+import GoogleImage from "../assets/google-icon.png";
 import supabase from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import "../styles/login-signup.css";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -15,6 +16,30 @@ const Signup = () => {
     email: "",
     password: "",
   });
+
+  const [passwordRules, setPasswordRules] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    specialChar: false,
+  });
+
+  const validatePassword = (password) => {
+    setPasswordRules({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      specialChar: /[^A-Za-z0-9]/.test(password),
+    });
+  };
+
+  useEffect(() => {
+    validatePassword(form.password);
+  }, [form.password]);
+
+  const isPasswordValid = Object.values(passwordRules).every(Boolean);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,6 +51,10 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isPasswordValid) {
+      toast.error("Password does not meet requirements");
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -33,13 +62,31 @@ const Signup = () => {
         password: form.password,
         options: {
           data: { displayName: form.name },
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile", // Use correct env var
+          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
         },
       });
 
+      // @Lily, Kayisha can't figure this out!!!
+      // if (error) {
+      //   if (
+      //     error.message.toLowerCase().includes("already registered") ||
+      //     error.message.toLowerCase().includes("user already registered") ||
+      //     error.message.toLowerCase().includes("duplicate")
+      //   ) {
+      //     toast.error(
+      //       "This email is already registered. Please login or reset your password."
+      //     );
+      //   } else {
+      //     toast.error(error.message);
+      //   }
+      //   return;
+      // }
+
+      //  no error, success toas
       toast.success("Check your email to complete sign-up.");
       navigate("/login");
     } catch (error) {
+      toast.error("Signup failed. Please try again.");
       console.error("Signup error:", error.message);
     }
   };
@@ -49,7 +96,8 @@ const Signup = () => {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "2rem auto" }}>
+    <div className="signup-container">
+      <Toaster />
       <h2>Signup</h2>
 
       <form
@@ -82,25 +130,51 @@ const Signup = () => {
           required
         />
 
-        <button type="submit">Create Account</button>
+        <div className="password-validation-box" aria-live="polite">
+          <p
+            className={
+              passwordRules.length ? "password-valid" : "password-invalid"
+            }
+          >
+            {passwordRules.length ? "✔" : "✖"} Minimum 8 characters
+          </p>
+          <p
+            className={
+              passwordRules.uppercase ? "password-valid" : "password-invalid"
+            }
+          >
+            {passwordRules.uppercase ? "✔" : "✖"} At least 1 uppercase letter
+          </p>
+          <p
+            className={
+              passwordRules.lowercase ? "password-valid" : "password-invalid"
+            }
+          >
+            {passwordRules.lowercase ? "✔" : "✖"} At least 1 lowercase letter
+          </p>
+          <p
+            className={
+              passwordRules.number ? "password-valid" : "password-invalid"
+            }
+          >
+            {passwordRules.number ? "✔" : "✖"} At least 1 number
+          </p>
+          <p
+            className={
+              passwordRules.specialChar ? "password-valid" : "password-invalid"
+            }
+          >
+            {passwordRules.specialChar ? "✔" : "✖"} At least 1 special character
+          </p>
+        </div>
+
+        <button type="submit" disabled={!isPasswordValid}>
+          Create Account
+        </button>
       </form>
 
-      <div style={{ margin: "1.5rem 0" }}>
-        <button
-          onClick={handleGoogleSignIn}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.6rem 1rem",
-            backgroundColor: "white",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "1rem",
-            color: "black",
-          }}
-        >
+      <div>
+        <button onClick={handleGoogleSignIn} className="google-signup-btn">
           <img
             src={GoogleImage}
             alt="Google icon"
@@ -110,7 +184,7 @@ const Signup = () => {
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: "1rem" }}>
+      <div>
         <IconButton route="/" icon="home" label="Home" />
         <IconButton route="/login" icon="login" label="Login" />
       </div>

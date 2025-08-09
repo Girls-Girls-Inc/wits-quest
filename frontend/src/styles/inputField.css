@@ -51,6 +51,7 @@
 .input-wrapper .eye-icon {
   color: #999;
   position: absolute;
+
   top: 50%;
   right: 0.9rem;
   cursor: pointer;

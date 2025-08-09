@@ -3,12 +3,11 @@ import IconButton from "../components/IconButton";
 import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import GoogleImage from "../assets/google-icon.png"; // Replace with your actual path
-import supabase from "../supabase/supabaseClient"
+import supabase from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
 const Signup = () => {
-
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -29,24 +28,20 @@ const Signup = () => {
     e.preventDefault();
 
     try {
-
       const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
           data: { displayName: form.name },
-          redirectTo: import.meta.env.VITE_WEB_URL + '/profile', // Use correct env var
-        }
+          redirectTo: import.meta.env.VITE_WEB_URL + "/profile", // Use correct env var
+        },
       });
 
-      toast.success("Check your email to complete sign-up.")
-      navigate("/login")
-
+      toast.success("Check your email to complete sign-up.");
+      navigate("/login");
     } catch (error) {
-
       console.error("Signup error:", error.message);
     }
-
   };
 
   const handleGoogleSignIn = () => {
@@ -64,7 +59,7 @@ const Signup = () => {
         <InputField
           id="name"
           icon="person"
-          placeholder="Full Name"
+          placeholder="Username"
           name="name"
           value={form.name}
           onChange={handleChange}

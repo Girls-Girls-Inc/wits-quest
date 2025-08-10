@@ -1,38 +1,43 @@
 .icon-button {
   text-decoration: none;
+  justify-content: center;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: transparent;
-  color: #555;
-  border: 1px solid #555;
-  padding: 0.5rem 1.2rem;
+  background-color: var(--secondary-color);
+  color: #fff;
+  border: 1px solid #999;
+  padding: 1rem 1.2rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
+  line-height: 1;
   transition: all 0.3s ease;
   margin: 3px;
+  align-content: center;
 }
 
 .icon-button:hover {
-  background-color: rgb(159, 236, 159);
   color: white;
   cursor: pointer;
 }
 
 .icon-button i {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  vertical-align: middle;
+}
+.icon-button span {
+  line-height: 1;
 }
 
 .upload-buttons .icon-button:hover {
-  background: var(--south-africa-blue);
   color: white;
 }
 
 @media (max-width: 768px) {
   .icon-button {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+    padding: 1rem 0.8rem;
   }
   .icon-button i {
     font-size: 1.2rem;

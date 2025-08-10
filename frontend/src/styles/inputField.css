@@ -4,6 +4,10 @@
   position: relative;
   margin-bottom: 1rem;
 }
+.flex {
+  display: flex;
+  align-items: center;
+}
 
 .input-wrapper .input-field {
   background: white;
@@ -51,9 +55,8 @@
 .input-wrapper .eye-icon {
   color: #999;
   position: absolute;
-
   top: 50%;
-  right: 0.9rem;
+  right: 1.5rem;
   cursor: pointer;
   transform: translateY(-50%);
   font-size: 1.5rem;

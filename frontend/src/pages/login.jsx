@@ -71,22 +71,22 @@ const Login = () => {
     <div className="loginPage flex">
       <div className="container">
         <div className="image-container">
-          <img src={SignupImage} alt="" />
-        </div>
-        <div className="text-container">
-          {" "}
-          <h2 className="title">Wits Quest</h2>
-          <p>Conquer the Edge with your Wits wits</p>
-        </div>
+          <img src={SignupImage} alt="" draggable="false" />
+          <div className="text-container">
+            {" "}
+            <h2 className="title">Wits Quest</h2>
+            <p>Conquer the Edge with your Wits wits</p>
+          </div>
 
-        <div className="footer-container">
-          <span className="text">Not a Witizen? </span>
-          <IconButton route="/signup" icon="person_add" label="Signup" />
+          <div className="footer-container">
+            <span className="text">Not a Witizen? </span>
+            <IconButton route="/signup" icon="person_add" label="Signup" />
+          </div>
         </div>
 
         <div className="form-container">
           <div className="header-container">
-            <img src={Logo} alt="" />
+            <img src={Logo} alt="Wits quest Logo" draggable="false" />
           </div>
         </div>
 

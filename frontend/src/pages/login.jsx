@@ -8,8 +8,6 @@ import supabase from "../supabase/supabaseClient";
 import toast from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import SignupImage from "../assets/signupImage.svg";
-import Logo from "../assets/Logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -68,56 +66,110 @@ const Login = () => {
   };
 
   return (
-    <div className="loginPage flex">
-      <div className="container">
-        <div className="image-container">
-          <img src={SignupImage} alt="" draggable="false" />
-          <div className="text-container">
-            {" "}
-            <h2 className="title">Wits Quest</h2>
-            <p>Conquer the Edge with your Wits wits</p>
-          </div>
-
-          <div className="footer-container">
-            <span className="text">Not a Witizen? </span>
-            <IconButton route="/signup" icon="person_add" label="Signup" />
-          </div>
-        </div>
-
-        <div className="form-container">
-          <div className="header-container">
-            <img src={Logo} alt="Wits quest Logo" draggable="false" />
-          </div>
-        </div>
-
+    <div className="container">
+      <div className="form-box login">
         <form onSubmit={handleSubmit} className="login-form">
-          <InputField
-            id="email"
-            icon="email"
-            name="email"
-            placeholder="Email Address"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-          <PasswordInputField
-            id="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handlePasswordChange}
-            required
-          />
-          <IconButton type="submit" icon="login" label="Login" />
+          <h1>Login</h1>
+          <div className="input-box">
+            {" "}
+            <InputField
+              id="email"
+              icon="email"
+              name="email"
+              placeholder="Email Address"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="input-box">
+            <PasswordInputField
+              id="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handlePasswordChange}
+              required
+            />
+          </div>
+
+          <div className="forgot-pass">
+            <a href="#">Forgot Password?</a>
+          </div>
+          <div className="btn">
+            {" "}
+            <IconButton type="submit" icon="login" label="login" />
+          </div>
+
+          <div className="google-signin-wrapper">
+            <div className="line">
+              {" "}
+              <p>or</p>
+            </div>
+
+            <button className="google-signup-btn" onClick={handleGoogleSignIn}>
+              <img src={GoogleImage} alt="Google icon" />
+              Sign in with Google
+            </button>
+          </div>
         </form>
-        <div className="google-signin-wrapper">
-          <button className="google-signup-btn" onClick={handleGoogleSignIn}>
-            <img src={GoogleImage} alt="Google icon" />
-            Sign in with Google
-          </button>
-        </div>
-        <div className="bottom-navigation">
-          <IconButton route="/" icon="home" label="Home" />
-        </div>
+
+        {/* <IconButton route="/signup" icon="person_add" label="Signup" /> */}
+      </div>
+      <div className="form-box signup">
+        <form onSubmit={handleSubmit}>
+          <h2>Signup</h2>
+
+          <div className="input-box">
+            <InputField
+              id="name"
+              icon="person"
+              placeholder="Username"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="input-box">
+            <InputField
+              id="email"
+              icon="email"
+              placeholder="Email Address"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="input-box">
+            <PasswordInputField
+              id="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handlePasswordChange}
+              required
+            />
+          </div>
+
+          <div className="btn">
+            {" "}
+            <IconButton type="submit" icon="signup" label="SIGN UP" />
+          </div>
+
+          <div className="google-signin-wrapper">
+            <div className="line">
+              {" "}
+              <p>or</p>
+            </div>
+
+            <button className="google-signup-btn" onClick={handleGoogleSignIn}>
+              <img src={GoogleImage} alt="Google icon" />
+              Sign Up with Google
+            </button>
+          </div>
+        </form>
+
+        {/* <IconButton route="/signup" icon="person_add" label="Signup" /> */}
       </div>
     </div>
   );

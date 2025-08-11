@@ -336,7 +336,10 @@ const Login = () => {
 
         <div className="toggle-panel toggle-right">
           <img src={SignupImage} alt="Quest image" />
-          <h1>Conquer Quests using your Wits wits!</h1>
+          <h1>
+            Conquer Quests <br />
+            using your Wits wits!
+          </h1>
           <p>Already a Witizen?</p>
           <div className="btn login-btn" onClick={() => setIsActive(false)}>
             <IconButton type="submit" icon="person" label="LOGIN" />

@@ -35,10 +35,10 @@
   color: white;
 } */
 
-@media (max-width: 768px) {
+@media (max-width: 650px) {
   .icon-button {
-    font-size: 1rem;
-    padding: 1rem 0.8rem;
+    font-size: 0.9rem;
+    padding: 0.8rem 0.8rem;
   }
   .icon-button i {
     font-size: 1.2rem;

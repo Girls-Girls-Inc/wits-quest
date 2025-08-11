@@ -135,7 +135,8 @@ const Login = () => {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+
+      const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
@@ -144,25 +145,22 @@ const Login = () => {
         },
       });
 
-      if (error) {
-        if (
-          error.message.toLowerCase().includes("already registered") ||
-          error.message.toLowerCase().includes("duplicate")
-        ) {
-          toast.error(
-            "This email is already registered. Please login or reset your password."
-          );
-        } else {
-          toast.error(error.message);
-        }
+      console.log(data);
+
+      if (data.user.aud === "authenticated") {
+        toast.error(
+          "This email is already registered. Please login or reset your password."
+
+        );
+        setIsActive(false);
         return;
       }
 
       toast.success("Check your email to complete sign-up.");
       setIsActive(false);
-    } catch (err) {
+    } catch (error) {
       toast.error("Signup failed. Please try again.");
-      console.error("Signup error:", err.message);
+      console.error("Signup error:", error.message);
     }
   };
 

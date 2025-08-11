@@ -79,3 +79,16 @@
 .input-wrapper .input-field:focus ~ .eye-icon {
   color: #555;
 }
+
+@media (max-width: 650px) {
+  .input-wrapper {
+    height: 50px;
+    width: 100%;
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  .input-wrapper .input-field {
+    font-size: 0.9rem;
+    padding: 0 1.25rem 0 3.12rem;
+  }
+}

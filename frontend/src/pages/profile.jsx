@@ -6,7 +6,10 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       if (error) {
         console.error("Error fetching user:", error.message);
         return;
@@ -14,7 +17,7 @@ const Profile = () => {
       if (user && user.user_metadata?.displayName) {
         setName(user.user_metadata.displayName);
       } else {
-        setName("Guest"); // fallback name
+        setName("Guest");
       }
     };
 

@@ -3,6 +3,7 @@ import "../styles/inputField.css";
 
 const PasswordInputField = ({
   id,
+  name,
   placeholder,
   onChange,
   value,
@@ -18,6 +19,7 @@ const PasswordInputField = ({
     <div className="input-wrapper">
       <input
         id={id}
+        name={name}
         type={showPassword ? "text" : "password"}
         placeholder={placeholder}
         className="input-field"

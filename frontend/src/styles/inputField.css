@@ -1,0 +1,94 @@
+.input-wrapper {
+  height: 54px;
+  width: 100%;
+  position: relative;
+  margin-bottom: 1rem;
+}
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper .input-field {
+  background: white;
+  color: black;
+  height: 100%;
+  width: 100%;
+  outline: none;
+  font-size: 1.06rem;
+  border-radius: 55px;
+  border: 1px solid #999;
+  padding: 0 1.25rem 0 3.12rem;
+  transition: 0.2s ease;
+}
+
+.input-wrapper i {
+  color: #999;
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.input-wrapper .input-field:focus {
+  border-color: #555;
+}
+
+.input-wrapper .input-field:focus ~ i {
+  color: #555;
+}
+
+.input-wrapper .input-field::placeholder {
+  color: #555;
+}
+
+.input-wrapper .lock-icon {
+  color: #999;
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.input-wrapper .eye-icon {
+  color: #999;
+  position: absolute;
+  top: 50%;
+  right: 1.5rem;
+  cursor: pointer;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  user-select: none;
+  transition: 0.2s ease;
+}
+
+.input-wrapper .eye-icon:hover {
+  color: green;
+}
+
+.input-wrapper .input-field:focus {
+  border-color: #555;
+}
+
+.input-wrapper .input-field:focus ~ .lock-icon {
+  color: #555;
+}
+
+.input-wrapper .input-field:focus ~ .eye-icon {
+  color: #555;
+}
+
+@media (max-width: 650px) {
+  .input-wrapper {
+    height: 50px;
+    width: 100%;
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  .input-wrapper .input-field {
+    font-size: 0.9rem;
+    padding: 0 1.25rem 0 3.12rem;
+  }
+}

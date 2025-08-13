@@ -9,7 +9,7 @@
     "frontend:build": "npm run build --prefix frontend",
     "start": "node app.js",
     "serve": "npm run build && npm start",
-    "lint": "eslint 'src/**/*.{js,jsx}'"
+    "lint": "eslint \"src/**/*.{js,jsx}\""
   },
   "author": "",
   "license": "ISC",

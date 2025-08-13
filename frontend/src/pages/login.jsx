@@ -11,6 +11,7 @@ import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
 import SignupImage from "../assets/signupImage.svg";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -141,17 +142,17 @@ const Login = () => {
         password: signupForm.password,
         options: {
           data: { displayName: signupForm.name },
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
         },
+        redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
       });
 
       console.log(data);
 
-      if (data.user.aud === "authenticated") {
+      if (data.user.user_metadata.email_verified === true) {
         toast.error(
           "This email is already registered. Please login or reset your password."
-
         );
+
         setIsActive(false);
         return;
       }
@@ -211,7 +212,7 @@ const Login = () => {
           </div>
 
           <div className="forgot-pass">
-            <a href="#">Forgot Password?</a>
+            <Link to="/reset-request">Forgot Password?</Link>
           </div>
           <div className="btn">
             <IconButton type="submit" icon="login" label="LOGIN" />

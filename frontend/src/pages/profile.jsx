@@ -62,20 +62,6 @@ const Profile = () => {
     checkAuth();
   }, [navigate]);
 
-  // Check if user is authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user || data.user.aud !== "authenticated") {
-        // Not authenticated, redirect
-        navigate("/login");
-        return;
-      }
-      setLoading(false); // allow page to render
-    };
-    checkAuth();
-  }, [navigate]);
-
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };

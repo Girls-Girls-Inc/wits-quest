@@ -146,8 +146,6 @@ const Login = () => {
         redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
       });
 
-      console.log(data);
-
       if (data.user.user_metadata.email_verified === true) {
         toast.error(
           "This email is already registered. Please login or reset your password."
@@ -169,6 +167,9 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+        },
       });
 
       if (error) {
@@ -177,6 +178,7 @@ const Login = () => {
       }
 
       toast.success("Signed in with Google!");
+      setIsActive(false);
     } catch (err) {
       toast.error("An unexpected Google Sign-in error occurred.");
       console.error("Google Sign-in error:", err.message);

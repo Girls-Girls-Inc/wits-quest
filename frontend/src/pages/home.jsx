@@ -12,7 +12,7 @@ const Home = () => {
       <p>Conquer the edge using your Wits wits!</p>
 
       <IconButton onClick={idiotNotification} icon="home" label="Home" />
-      <IconButton route="/login" icon="login" label="Login" />
+      <IconButton route="/" icon="login" label="Login" />
       <Toaster />
     </section>
   );

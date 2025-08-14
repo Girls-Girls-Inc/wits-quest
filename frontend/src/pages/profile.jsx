@@ -8,8 +8,10 @@ import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
 import SignupImage from "../assets/signupImage.svg";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -45,6 +47,20 @@ const Profile = () => {
 
     fetchUser();
   }, []);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user || data.user.aud !== "authenticated") {
+        // Not authenticated, redirect
+        navigate("/login");
+        return;
+      }
+      setLoading(false); // allow page to render
+    };
+    checkAuth();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

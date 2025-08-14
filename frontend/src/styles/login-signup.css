@@ -228,7 +228,8 @@ button:focus-visible {
   left: -250%;
   width: 300%;
   height: 100%;
-  background-color: var(--secondary-color);
+  background: linear-gradient(90deg, #103038 0%, #17774b 40%, #1bb648 100%);
+
   border-radius: 100px;
   z-index: 2;
   transition: 2s ease-in-out;

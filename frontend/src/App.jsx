@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/home";
-import Login from "./pages/login";
+import Login from "./pages/login-signup";
 import Profile from "./pages/profile";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -10,8 +10,7 @@ const App = () => {
     <>
       <Toaster />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
     </>

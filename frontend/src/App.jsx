@@ -4,6 +4,8 @@ import Home from "./pages/home";
 import Login from "./pages/login-signup";
 import Profile from "./pages/profile";
 import toast, { Toaster } from "react-hot-toast";
+import PasswordResetRequest from "./pages/passwordresetrequest";
+import PasswordReset from "./pages/passwordReset";
 
 const App = () => {
   return (
@@ -12,6 +14,9 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/reset-request" element={<PasswordResetRequest />} />
+        <Route path="/reset" element={<PasswordReset />} />
+
       </Routes>
     </>
   );

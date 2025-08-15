@@ -27,6 +27,39 @@ body {
   margin: 20px;
 }
 
+.container-pass {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-width: 90vw;
+  padding: 1rem;
+}
+
+.pass-forget {
+  background: #ffffff;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pass-forget h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.pass-forget img {
+  width: 120px;
+  height: auto;
+  margin: 0 auto 1.5rem auto;
+  display: block;
+}
+
 .form-box {
   position: absolute;
   right: 0;

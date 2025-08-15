@@ -10,7 +10,7 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/Signup2.png";
+import SignupImage from "../assets/Signup3.png";
 import { Link } from "react-router-dom";
 
 const Login = () => {

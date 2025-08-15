@@ -7,7 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/signupImage.svg";
+import SignupImage from "../assets/Signup2.png";
 import { useNavigate } from "react-router-dom";
 
 const Profile = () => {

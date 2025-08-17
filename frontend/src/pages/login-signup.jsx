@@ -36,6 +36,40 @@ const Login = () => {
     specialChar: false,
   });
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+  const emailToastId = useRef(null);
+
+  useEffect(() => {
+    if (signupForm.email.length > 0) {
+      if (!validateEmail(signupForm.email)) {
+        if (!emailToastId.current) {
+          emailToastId.current = toast.loading("✖ Invalid email format", {
+            duration: Infinity,
+          });
+        } else {
+          toast.loading("✖ Invalid email format", {
+            id: emailToastId.current,
+            duration: Infinity,
+          });
+        }
+      } else {
+        if (emailToastId.current) {
+          toast.success("✔ Valid email format", {
+            id: emailToastId.current,
+            duration: 2000,
+          });
+          emailToastId.current = null;
+        }
+      }
+    } else if (emailToastId.current) {
+      toast.dismiss(emailToastId.current);
+      emailToastId.current = null;
+    }
+  }, [signupForm.email]);
+
   const validatePassword = (password) => {
     setPasswordRules({
       length: password.length >= 8,
@@ -121,7 +155,7 @@ const Login = () => {
       }
 
       toast.success("Login successful!");
-      navigate("/profile");
+      navigate("/dashboard");
     } catch (err) {
       toast.error("An unexpected error occurred. Please try again.");
       console.error("Login error:", err.message);

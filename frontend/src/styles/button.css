@@ -60,21 +60,27 @@
   justify-content: flex-start;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
+  margin: 0px 1rem;
   text-transform: uppercase;
   border: none;
   font-family: "Poppins";
+  border: 3px solid transparent;
 }
 
 .nav-button.active {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border: 3px solid var(--wits-yellow);
   color: var(--wits-yellow) !important;
-}
-
-.navbar-bottom .nav-button.active {
-  background-color: red;
+  transition: all 0.3s ease;
 }
 
 .nav-button:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar-bottom .nav-button.active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid var(--wits-yellow) !important;
+  color: var(--wits-yellow) !important;
+  transition: all 0.3s ease;
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import IconButton from "../components/IconButton";
-import Navbar from "../components/NavBar";
 import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import supabase from "../supabase/supabaseClient";
@@ -125,7 +124,6 @@ const Profile = () => {
 
   return (
     <div className="">
-      <Navbar></Navbar>
       <div className="container active">
         <Toaster />
 

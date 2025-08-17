@@ -18,7 +18,7 @@ const Navbar = () => {
     <>
       {/* Desktop Right Drawer */}
       <nav className="navbar-drawer">
-        <img src={Logo} alt="" className="logo-img" />
+        <img src={Logo} alt="" className="logo-img" draggable="false" />
         <h2 className="title">Campus Quest</h2>
         {navItems.map((item) => (
           <NavButton

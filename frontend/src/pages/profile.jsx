@@ -6,12 +6,9 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/Signup3.png";
-import { useNavigate } from "react-router-dom";
+import SignupImage from "../assets/signup.png";
 
 const Profile = () => {
-  const navigate = useNavigate();
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -36,7 +33,10 @@ const Profile = () => {
 
       if (user) {
         setForm({
-          displayName: user.user_metadata?.displayName || "",
+          displayName: 
+            user.user_metadata?.displayName || 
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name || "",
           email: user.email || "",
           password: "",
           confirmPassword: "",
@@ -48,80 +48,73 @@ const Profile = () => {
     fetchUser();
   }, []);
 
-  // Check if user is authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user || data.user.aud !== "authenticated") {
-        // Not authenticated, redirect
-        navigate("/login");
-        return;
-      }
-      setLoading(false); // allow page to render
-    };
-    checkAuth();
-  }, [navigate]);
-
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+const handleSave = async (e) => {
+  e.preventDefault();
 
-    if (form.password && form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+  if (form.password && form.password !== form.confirmPassword) {
+    toast.error("Passwords do not match");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError) {
-      toast.error("Error fetching user data");
-      setLoading(false);
-      return;
-    }
-
-    const updateData = {};
-
-    if (form.email !== user.email) {
-      updateData.email = form.email;
-    }
-
-    if (form.displayName !== (user.user_metadata?.displayName || "")) {
-      updateData.data = { displayName: form.displayName };
-    }
-
-    if (form.password) {
-      updateData.password = form.password;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      toast("No changes to update");
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser(updateData);
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    toast.error("Error fetching user data");
     setLoading(false);
+    return;
+  }
 
-    if (error) {
-      toast.error("Failed to update profile: " + error.message);
-      return;
+  // Build the update payload
+  const updatePayload = {};
+  if (form.email && form.email !== user.email) {
+    updatePayload.email = form.email;
+  }
+  if (form.displayName !== (user.user_metadata?.displayName || "")) {
+    updatePayload.data = { displayName: form.displayName };
+  }
+  if (form.password) {
+    updatePayload.password = form.password;
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    toast("No changes to update");
+    setLoading(false);
+    return;
+  }
+
+  // Send update
+  const { data, error } = await supabase.auth.updateUser(updatePayload);
+  setLoading(false);
+
+  if (error) {
+    toast.error("Failed to update profile: " + error.message);
+    return;
+  }
+
+  // If email was updated, show pending email
+  if (updatePayload.email) {
+    const newEmail = data.user?.new_email;
+    if (newEmail) {
+      toast.success(`Check ${newEmail} for a confirmation link to complete the change.`);
+      // Update the form to show pending email
+      setForm((prev) => ({ ...prev, email: newEmail }));
     }
-
+  } else {
     toast.success("Profile updated successfully!");
+  }
 
-    if (form.password) {
-      toast.success("Password changed successfully!");
-      setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
-    }
-  };
+  if (form.password) {
+    toast.success("Password changed successfully!");
+    setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+  }
+};
+
+
 
   if (loading) return <p>Loading...</p>;
 
@@ -199,3 +192,5 @@ const Profile = () => {
 };
 
 export default Profile;
+
+

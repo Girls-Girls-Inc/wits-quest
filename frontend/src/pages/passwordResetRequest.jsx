@@ -29,7 +29,7 @@ const PasswordResetRequest = () => {
         toast.error(error.message);
       } else {
         toast.success("Check your email for password reset instructions.");
-        navigate("/"); // Redirect back to login or anywhere you prefer
+        navigate("/"); // back to login
       }
     } catch (err) {
       toast.error("Failed to send reset email. Please try again.");

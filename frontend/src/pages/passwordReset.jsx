@@ -79,7 +79,7 @@ const PasswordReset = () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user || data.user.aud !== "authenticated") {
         // Not authenticated, redirect
-        navigate("/login");
+        navigate("/");
         return;
       }
       setLoading(false); // allow page to render
@@ -113,12 +113,12 @@ const PasswordReset = () => {
     }
   };
 
-  if (loading) return <p>Loading...</p>; // Show loader until auth checked
+  if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="container">
+    <div className="container-pass">
       <Toaster />
-      <div className="form-box reset-password">
+      <div className="pass-forget">
         <form onSubmit={handleSubmit} className="reset-password-form">
           <h1>Set New Password</h1>
 

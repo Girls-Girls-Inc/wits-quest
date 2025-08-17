@@ -1,25 +1,32 @@
 import React from "react";
-import IconButton from "./IconButton";
+import { useLocation } from "react-router-dom";
+import NavButton from "./NavButton";
 import "../styles/navbar.css";
+import Logo from "../assets/logo.png";
 
 const Navbar = () => {
+  const location = useLocation();
+
   const navItems = [
-    { route: "/dashboard", icon: "home", label: "Home" },
-    { route: "/profile", icon: "person", label: "Profile" },
-    { route: "/quests", icon: "flag", label: "Quests" },
-    { route: "/profile", icon: "settings", label: "Profile" },
+    { route: "/dashboard", icon: "logo", label: "Home" },
+    { route: "/quests", icon: "logo", label: "Quests" },
+    { route: "/map", icon: "logo", label: "Map" },
+    { route: "/profile", icon: "logo", label: "Profile" },
   ];
 
   return (
     <>
       {/* Desktop Right Drawer */}
       <nav className="navbar-drawer">
+        <img src={Logo} alt="" className="logo-img" />
+        <h2 className="title">Campus Quest</h2>
         {navItems.map((item) => (
-          <IconButton
+          <NavButton
             key={item.route}
             route={item.route}
-            icon={item.icon}
+            iconName={item.icon}
             label={item.label}
+            className={location.pathname === item.route ? "active" : ""}
           />
         ))}
       </nav>
@@ -27,11 +34,12 @@ const Navbar = () => {
       {/* Mobile Bottom Bar */}
       <nav className="navbar-bottom">
         {navItems.map((item) => (
-          <IconButton
+          <NavButton
             key={item.route}
             route={item.route}
-            icon={item.icon}
+            iconName={item.icon}
             label={item.label}
+            className={location.pathname === item.route ? "active" : ""}
           />
         ))}
       </nav>

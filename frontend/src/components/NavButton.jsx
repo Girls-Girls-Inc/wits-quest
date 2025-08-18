@@ -7,7 +7,7 @@ import "../styles/button.css";
 // import ProfileIcon from "../assets/icons/profile.png";
 // import QuestsIcon from "../assets/icons/quests.png";
 // import SettingsIcon from "../assets/icons/settings.png";
-import LogoIcon from "../assets/logo.png";
+import LogoIcon from "../assets/Logo.png";
 
 const ICONS = {
   //   dashboard: DashboardIcon,

@@ -10,7 +10,8 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/signupImage.svg";
+import SignupImage from "../assets/Signup3.png";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -34,6 +35,40 @@ const Login = () => {
     number: false,
     specialChar: false,
   });
+
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+  const emailToastId = useRef(null);
+
+  useEffect(() => {
+    if (signupForm.email.length > 0) {
+      if (!validateEmail(signupForm.email)) {
+        if (!emailToastId.current) {
+          emailToastId.current = toast.loading("✖ Invalid email format", {
+            duration: Infinity,
+          });
+        } else {
+          toast.loading("✖ Invalid email format", {
+            id: emailToastId.current,
+            duration: Infinity,
+          });
+        }
+      } else {
+        if (emailToastId.current) {
+          toast.success("✔ Valid email format", {
+            id: emailToastId.current,
+            duration: 2000,
+          });
+          emailToastId.current = null;
+        }
+      }
+    } else if (emailToastId.current) {
+      toast.dismiss(emailToastId.current);
+      emailToastId.current = null;
+    }
+  }, [signupForm.email]);
 
   const validatePassword = (password) => {
     setPasswordRules({
@@ -120,7 +155,7 @@ const Login = () => {
       }
 
       toast.success("Login successful!");
-      navigate("/profile");
+      navigate("/dashboard");
     } catch (err) {
       toast.error("An unexpected error occurred. Please try again.");
       console.error("Login error:", err.message);
@@ -135,23 +170,20 @@ const Login = () => {
     }
 
     try {
-
       const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
           data: { displayName: signupForm.name },
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
         },
+        redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
       });
 
-      console.log(data);
-
-      if (data.user.aud === "authenticated") {
+      if (data.user.user_metadata.email_verified === true) {
         toast.error(
           "This email is already registered. Please login or reset your password."
-
         );
+
         setIsActive(false);
         return;
       }
@@ -168,6 +200,9 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+        },
       });
 
       if (error) {
@@ -176,6 +211,7 @@ const Login = () => {
       }
 
       toast.success("Signed in with Google!");
+      setIsActive(false);
     } catch (err) {
       toast.error("An unexpected Google Sign-in error occurred.");
       console.error("Google Sign-in error:", err.message);
@@ -211,7 +247,7 @@ const Login = () => {
           </div>
 
           <div className="forgot-pass">
-            <a href="#">Forgot Password?</a>
+            <Link to="/reset-request">Forgot Password?</Link>
           </div>
           <div className="btn">
             <IconButton type="submit" icon="login" label="LOGIN" />
@@ -328,7 +364,12 @@ const Login = () => {
           <h1>Welcome back!</h1>
           <p>Not yet a Witizen ?</p>
           <div className="btn signup-btn" onClick={() => setIsActive(true)}>
-            <IconButton type="submit" icon="person" label="SIGN UP" />
+            <IconButton
+              className="form-button"
+              type="submit"
+              icon="person"
+              label="SIGN UP"
+            />
           </div>
         </div>
 
@@ -340,7 +381,12 @@ const Login = () => {
           </h1>
           <p>Already a Witizen?</p>
           <div className="btn login-btn" onClick={() => setIsActive(false)}>
-            <IconButton type="submit" icon="person" label="LOGIN" />
+            <IconButton
+              className="form-button"
+              type="submit"
+              icon="person"
+              label="LOGIN"
+            />
           </div>
         </div>
       </div>

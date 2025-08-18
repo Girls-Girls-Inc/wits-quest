@@ -6,14 +6,16 @@ input::-ms-clear {
 }
 
 :root {
-  --primary-color: #c8daa8;
-  --secondary-color: #81cc00;
+  --background: #121e22;
+  --wits-blue: #002d73;
+  --wits-gold: #8b7453;
+  --wits-yellow: #ffb819;
   font-family: "Montserrat", sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #ffffff;
+  background-color: #131f24;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -40,8 +42,8 @@ h1 {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #ffffff;
+    background-color: #213547;
   }
   a:hover {
     color: #747bff;

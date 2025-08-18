@@ -6,8 +6,7 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/signupImage.svg";
+import SignupImage from "../assets/signup.png";
 
 const Profile = () => {
   const [form, setForm] = useState({
@@ -34,7 +33,11 @@ const Profile = () => {
 
       if (user) {
         setForm({
-          displayName: user.user_metadata?.displayName || "",
+          displayName:
+            user.user_metadata?.displayName ||
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            "",
           email: user.email || "",
           password: "",
           confirmPassword: "",
@@ -64,34 +67,32 @@ const Profile = () => {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-
     if (userError) {
       toast.error("Error fetching user data");
       setLoading(false);
       return;
     }
 
-    const updateData = {};
-
-    if (form.email !== user.email) {
-      updateData.email = form.email;
+    // Build the update payload
+    const updatePayload = {};
+    if (form.email && form.email !== user.email) {
+      updatePayload.email = form.email;
     }
-
     if (form.displayName !== (user.user_metadata?.displayName || "")) {
-      updateData.data = { displayName: form.displayName };
+      updatePayload.data = { displayName: form.displayName };
     }
-
     if (form.password) {
-      updateData.password = form.password;
+      updatePayload.password = form.password;
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(updatePayload).length === 0) {
       toast("No changes to update");
       setLoading(false);
       return;
     }
 
-    const { error } = await supabase.auth.updateUser(updateData);
+    // Send update
+    const { data, error } = await supabase.auth.updateUser(updatePayload);
     setLoading(false);
 
     if (error) {
@@ -99,7 +100,19 @@ const Profile = () => {
       return;
     }
 
-    toast.success("Profile updated successfully!");
+    // If email was updated, show pending email
+    if (updatePayload.email) {
+      const newEmail = data.user?.new_email;
+      if (newEmail) {
+        toast.success(
+          `Check ${newEmail} for a confirmation link to complete the change.`
+        );
+        // Update the form to show pending email
+        setForm((prev) => ({ ...prev, email: newEmail }));
+      }
+    } else {
+      toast.success("Profile updated successfully!");
+    }
 
     if (form.password) {
       toast.success("Password changed successfully!");
@@ -110,72 +123,74 @@ const Profile = () => {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="container active">
-      <Toaster />
+    <div className="">
+      <div className="container active">
+        <Toaster />
 
-      {/* PROFILE FORM */}
-      <div className="form-box login">
-        <form onSubmit={handleSave} className="login-form">
-          <h1>MY PROFILE</h1>
+        {/* PROFILE FORM */}
+        <div className="form-box login">
+          <form onSubmit={handleSave} className="login-form">
+            <h1>MY PROFILE</h1>
 
-          <div className="input-box">
-            <InputField
-              id="displayName"
-              icon="person"
-              name="displayName"
-              placeholder="Display Name"
-              value={form.displayName}
-              onChange={handleChange}
-              required
-            />
+            <div className="input-box">
+              <InputField
+                id="displayName"
+                icon="person"
+                name="displayName"
+                placeholder="Display Name"
+                value={form.displayName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="input-box">
+              <InputField
+                id="email"
+                icon="email"
+                name="email"
+                placeholder="Email Address"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="input-box">
+              <PasswordInputField
+                id="password"
+                placeholder="New Password"
+                value={form.password}
+                name="password"
+                onChange={handleChange}
+                required={false}
+              />
+            </div>
+
+            <div className="input-box">
+              <PasswordInputField
+                id="confirmPassword"
+                placeholder="Confirm New Password"
+                value={form.confirmPassword}
+                name="confirmPassword"
+                onChange={handleChange}
+                required={false}
+              />
+            </div>
+
+            <div className="btn">
+              <IconButton type="submit" icon="save" label="SAVE CHANGES" />
+            </div>
+          </form>
+        </div>
+
+        {/* SIDE PANEL */}
+        <div className="toggle">
+          <div className="toggle-panel toggle-right">
+            <img src={SignupImage} alt="Quest image" />
+            <h1>Keep Your Info Updated!</h1>
+            <p>Edit your profile details anytime</p>
           </div>
-
-          <div className="input-box">
-            <InputField
-              id="email"
-              icon="email"
-              name="email"
-              placeholder="Email Address"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="input-box">
-            <PasswordInputField
-              id="password"
-              placeholder="New Password"
-              value={form.password}
-              name="password"
-              onChange={handleChange}
-              required={false}
-            />
-          </div>
-
-          <div className="input-box">
-            <PasswordInputField
-              id="confirmPassword"
-              placeholder="Confirm New Password"
-              value={form.confirmPassword}
-              name="confirmPassword"
-              onChange={handleChange}
-              required={false}
-            />
-          </div>
-
-          <div className="btn">
-            <IconButton type="submit" icon="save" label="SAVE CHANGES" />
-          </div>
-        </form>
-      </div>
-
-      {/* SIDE PANEL */}
-      <div className="toggle">
-        <div className="toggle-panel toggle-right">
-          <img src={SignupImage} alt="Quest image" />
-          <h1>Keep Your Info Updated!</h1>
-          <p>Edit your profile details anytime</p>
         </div>
       </div>
     </div>
@@ -183,5 +198,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-

@@ -6,7 +6,7 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import SignupImage from "../assets/signup.png";
+import SignupImage from "../assets/Signup.png";
 
 const Profile = () => {
   const [form, setForm] = useState({

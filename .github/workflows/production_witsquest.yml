@@ -3,13 +3,13 @@ name: Build and deploy Node.js app to Azure Web App - witsquest
 on:
   push:
     branches:
-      - production   # triggers deploy on production branch
+      - production
   pull_request:
     branches:
-      - production   # also run on PRs to production
+      - production
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,36 +17,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Use Node.js 20 LTS
+      # Set Node.js version
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Clean and install frontend & backend dependencies
-      - name: Clean and install dependencies
+      # Clean and install dependencies
+      - name: Clean and install frontend & backend dependencies
         run: |
-          # Clean frontend
+          # Frontend
           rm -rf frontend/node_modules frontend/package-lock.json
           npm install --prefix frontend --legacy-peer-deps
-          
-          # Clean backend
+
+          # Backend
           rm -rf backend/node_modules backend/package-lock.json
           npm install --prefix backend --legacy-peer-deps
 
-          # Install cors in root if needed
+          # Root
           npm install cors
 
       # Build frontend
       - name: Build frontend
         run: npm run build --prefix frontend
 
-      # (Optional) Run tests
+      # Run tests (optional)
       - name: Run tests
         run: npm test --if-present
 
-      # Deploy to Azure Web App
-      - name: 'Deploy to Azure Web App'
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build   # Only runs if build succeeds
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: <YOUR_APP_SERVICE_NAME>

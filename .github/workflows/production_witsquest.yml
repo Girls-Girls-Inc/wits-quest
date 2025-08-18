@@ -13,17 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set Node.js version
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Clean and install dependencies
       - name: Clean and install frontend & backend dependencies
         run: |
           # Frontend
@@ -37,25 +34,34 @@ jobs:
           # Root
           npm install cors
 
-      # Build frontend
       - name: Build frontend
         run: npm run build --prefix frontend
 
-      # Run tests (optional)
       - name: Run tests
         run: npm test --if-present
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build   # Only runs if build succeeds
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Login to Azure using service principal stored in GitHub Secrets
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DBB5B46D4B2D48DFB04273AC0AF60192 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E456F6CF62704855B3798479FD5A0718 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B389B2A02EBD440092802B52D7561C24 }}
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: <YOUR_APP_SERVICE_NAME>
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: 'witsquest'
+          slot-name: 'Production'
           package: .

@@ -8,7 +8,7 @@ const getUserEmail = async (req, res) => {
         const { data, error } = await supabase
             .from('userData')
             .select(`email`)
-            .eq('email', 'user.email');
+            .eq('email', user.email);
 
         if (error) {
             throw error;

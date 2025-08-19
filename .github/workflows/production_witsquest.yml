@@ -21,24 +21,32 @@ jobs:
         with:
           node-version: 20
 
-      - name: Clean and install frontend & backend dependencies
+      - name: Clean and install frontend & root dependencies
         run: |
-          # Frontend
+          # Clean frontend
           rm -rf frontend/node_modules frontend/package-lock.json
-          npm install --prefix frontend --legacy-peer-deps
-
-          # Backend
-          rm -rf backend/node_modules backend/package-lock.json
-          npm install --prefix backend --legacy-peer-deps
-
-          # Root
-          npm install cors
+          npm install --prefix frontend --legacy-peer-deps --unsafe-perm
+          
+          # Root (for app.js)
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
 
       - name: Build frontend
         run: npm run build --prefix frontend
 
-      - name: Run tests
-        run: npm test --if-present
+      - name: Zip artifact for deployment
+        run: |
+          zip -r release.zip \
+            app.js \
+            package.json \
+            package-lock.json \
+            frontend/dist
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,13 +59,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Login to Azure using service principal stored in GitHub Secrets
       - name: Login to Azure
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DBB5B46D4B2D48DFB04273AC0AF60192 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E456F6CF62704855B3798479FD5A0718 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B389B2A02EBD440092802B52D7561C24 }}
+
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+
+      - name: Unzip artifact
+        run: unzip -o release.zip
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3

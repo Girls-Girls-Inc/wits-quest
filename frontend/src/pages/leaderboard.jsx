@@ -70,7 +70,7 @@ return (
         >
           <h1 style={{ margin: 0 }}>LEADERBOARD</h1>
           <h2 style={{ margin: 0 }}>
-            {BOARDS[boardKey].label} • Board ID {BOARDS[boardKey].id}
+            {BOARDS[boardKey].label}
           </h2>
         </div>
 

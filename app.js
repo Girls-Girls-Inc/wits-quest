@@ -15,7 +15,8 @@ const frontendPath = path.join(__dirname, "frontend", "dist");
 app.use(express.static(frontendPath));
 
 // Your API routes here (if any)
-// app.use('/api', require('./routes/api'));
+const userRoutes = require("./backend/routes/user-routes");
+app.use("", userRoutes.routes);
 
 // Catch-all to serve index.html for SPA routes
 app.get(/.*/, (req, res) => {

@@ -156,7 +156,7 @@ const Login = () => {
 
       toast.success("Login successful!");
       navigate("/dashboard");
-    } catch (err) {
+    } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
       console.error("Login error:", err.message);
     }
@@ -212,7 +212,7 @@ const Login = () => {
 
       toast.success("Signed in with Google!");
       setIsActive(false);
-    } catch (err) {
+    } catch (error) {
       toast.error("An unexpected Google Sign-in error occurred.");
       console.error("Google Sign-in error:", err.message);
     }

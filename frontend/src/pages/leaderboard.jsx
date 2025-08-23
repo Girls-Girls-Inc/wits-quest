@@ -51,7 +51,7 @@ const Leaderboard = () => {
 
   return (
     <div className="">
-      <div className="container active">
+      <div className="">
         <Toaster />
         <div
           style={{

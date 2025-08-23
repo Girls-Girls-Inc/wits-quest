@@ -4,13 +4,19 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ../app.js"
+    "start": "node app.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.55.0",
+=======
+    "@supabase/supabase-js": "^2.56.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+>>>>>>> b38cd478316a55cf5294126b9b601619c2429252
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "temp": "file:.."

@@ -18,6 +18,10 @@ app.use(express.static(frontendPath));
 const userRoutes = require("./backend/routes/user-routes");
 app.use("", userRoutes.routes);
 
+const leaderboardRoutes = require('./backend/routes/leaderboardRoutes');
+app.use("", leaderboardRoutes);
+
+
 // Catch-all to serve index.html for SPA routes
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));

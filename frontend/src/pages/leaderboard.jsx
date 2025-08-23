@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 
-const API_BASE = "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_WEB_URL;
 
 const BOARDS = {
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
@@ -18,7 +18,7 @@ const Leaderboard = () => {
   const [loading, setLoading] = useState(true);
 
   const makeUrl = (key) =>
-    `${API_BASE}/api/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
+    `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
   const loadBoard = async (key = boardKey) => {
     setLoading(true);

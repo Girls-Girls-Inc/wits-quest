@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+.navbar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  background-color: transparent;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  gap: 10px;
+}
+
+.navbar-drawer .logo-img {
+  align-self: center;
+  height: 130px;
+  width: 130px;
+  margin: 10px;
+  margin-top: 20px;
+}
+.navbar-drawer .title {
+  align-self: center;
+  font-size: 22px;
+  margin: 10px;
+  text-transform: uppercase;
+}
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  transition: margin 0.3s ease;
+}
+
+.navbar-bottom {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .navbar-drawer {
+    display: none;
+  }
+
+  .navbar-bottom {
+    align-self: center;
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    background-color: var(--background);
+    border-radius: 20px;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 0;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+  }
+
+  .navbar-bottom .icon-button span {
+    display: none; /* hide labels, icons only */
+  }
+}
+
+/* Optional: tweak IconButton inside nav */
+.navbar-drawer .icon-button,
+.navbar-bottom .icon-button {
+  color: white;
+  background: none;
+}

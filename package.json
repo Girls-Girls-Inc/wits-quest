@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.54.0",
     "cors": "^2.8.5",
     "express": "^5.1.0"

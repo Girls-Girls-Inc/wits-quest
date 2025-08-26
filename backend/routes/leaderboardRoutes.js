@@ -3,7 +3,7 @@ const router = express.Router();
 const leaderboardController = require('../controllers/leaderboardController');
 
 // GET leaderboard
-router.get('/', leaderboardController.getLeaderboard);
+router.get('/leaderboard', leaderboardController.getLeaderboard);
 
 // // POST a new leaderboard entry
 // router.post('/', leaderboardController.createEntry);

@@ -1,4 +1,4 @@
-const supabase = require('../config/supabaseClient');
+const supabase = require('../supabase/supabaseClient');
 
 const LeaderboardModel = {
   async getLeaderboard(periodType, start, end, userId, id) {

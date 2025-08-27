@@ -2,8 +2,5 @@ node_modules
 
 package-lock.json
 coverage/
-<<<<<<< HEAD
-=======
 ./frontend/.env
 ./backend/.env
->>>>>>> e82d175a4fbdb5afb498c7284f11e4cbd23dcc0c

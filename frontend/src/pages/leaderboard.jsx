@@ -3,10 +3,15 @@ import IconButton from "../components/IconButton";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
+import "../styles/leaderboard.css"; // <-- new CSS file
 
+const API_BASE = import.meta.env.VITE_WEB_URL;
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
 const BOARDS = {
+  year: { label: "Yearly", id: "12345", icon: "calendar_today" },
+  month: { label: "Monthly", id: "1234", icon: "calendar_month" },
+  week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
   month: { label: "Monthly", id: "1234", icon: "calendar_month" },
   week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
@@ -26,12 +31,16 @@ const Leaderboard = () => {
       const res = await fetch(makeUrl(key), {
         headers: { Accept: "application/json" },
       });
+      const res = await fetch(makeUrl(key), {
+        headers: { Accept: "application/json" },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("API did not return an array");
-      setRows(data); // no normalization
+
+      setRows([...DUMMY_ROWS, ...data]);
     } catch (e) {
-      setRows([]);
+      setRows(DUMMY_ROWS);
       toast.error(e.message || "Failed to load leaderboard");
     } finally {
       setLoading(false);
@@ -39,7 +48,7 @@ const Leaderboard = () => {
   };
 
   useEffect(() => {
-    loadBoard("year"); // load Yearly on mount
+    loadBoard("year");
   }, []);
 
   const switchBoard = async (key) => {

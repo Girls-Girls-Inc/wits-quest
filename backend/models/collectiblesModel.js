@@ -28,6 +28,33 @@ const CollectiblesModel = {
     return data;
   },
 
+async listInventoryForUser(userId, { start, end, limit = 100, offset = 0 } = {}, sb) {
+  const client = sb ?? pub;
+
+  let q = client
+    .from('userInventory')
+    .select(`
+      earnedAt,
+      collectible:collectibleId (
+        id, name, description, "imageUrl", "createdAt"
+      )
+    `)
+    .eq('userId', userId)
+    .order('earnedAt', { ascending: false })
+    .range(offset, offset + Math.max(1, Math.min(limit, 500)) - 1);
+
+  if (start) q = q.gte('earnedAt', start);
+  if (end)   q = q.lte('earnedAt', end);
+
+  const { data, error } = await q;
+  if (error) throw error;
+
+  return (data || []).map(({ collectible, earnedAt }) => ({
+    ...collectible,
+    earnedAt,
+  }));
+},
+
   // Writes: pass per-request anon client from controller so RLS enforces moderator check
  async create(payload, sb) {
   const client = sb ?? pub;   // must prefer sb

@@ -43,6 +43,25 @@ const AdminDashboard = () => {
     fetchUser();
   }, []);
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/users`); // your backend endpoint
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Users API did not return an array");
+      setUsers(data);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      setUsers([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+
+
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -158,6 +177,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleModerator = async (userId, newStatus) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isModerator: newStatus }),
+      });
+
+      let result = {};
+      const text = await res.text();
+      if (text) result = JSON.parse(text);
+
+      // update local state regardless
+      setUsers(users.map(u => u.userId === userId ? { ...u, isModerator: newStatus } : u));
+    } catch (err) {
+      alert(`Failed to update user: ${err.message}`);
+    }
+  };
+
   return (
     <div className={`container${isActive ? " active" : ""}`}>
       <Toaster />
@@ -239,12 +277,71 @@ const AdminDashboard = () => {
               </form>
             )}
             {selectedTask === "Admin Privilege" && (
-              <form className="user-form" onSubmit={handleUserUpdate}>
+              <div className="task-panel signup">
+                <h1>Admin Privileges</h1>
+                <p>Promote or remove users as moderators.</p>
+
+                <div style={{ maxHeight: "400px", overflowY: "auto", overflowX: "auto" }}>
+                  <table style={{ width: "100%", minWidth: "600px", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Email</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Is Moderator</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Created At</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.userId}>
+                          <td style={{ padding: "8px" }}>{u.email}</td>
+                          <td style={{ padding: "8px" }}>{u.isModerator ? "Yes" : "No"}</td>
+                          <td style={{ padding: "8px" }}>{new Date(u.created_at).toLocaleString()}</td>
+                          <td style={{ padding: "8px" }}>
+                            <button
+                              onClick={async () => {
+                                // Optimistic UI update
+                                setUsers(users.map(userItem =>
+                                  userItem.userId === u.userId ? { ...userItem, isModerator: !u.isModerator } : userItem
+                                ));
+                                try {
+                                  await fetch(`${API_BASE}/users/${u.userId}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ isModerator: !u.isModerator }),
+                                  });
+                                } catch (err) {
+                                  // revert state if network fails
+                                  setUsers(users.map(userItem =>
+                                    userItem.userId === u.userId ? { ...userItem, isModerator: u.isModerator } : userItem
+                                  ));
+                                  alert(`Failed to update user: ${err.message}`);
+                                }
+                              }}
+                              style={{
+                                backgroundColor: u.isModerator ? "#ff4d4f" : "#4caf50",
+                                color: "#fff",
+                                border: "none",
+                                padding: "4px 8px",
+                                cursor: "pointer",
+                                borderRadius: "4px"
+                              }}
+                            >
+                              {u.isModerator ? "Remove Moderator" : "Make Moderator"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
                 <div className="btn">
                   <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
                 </div>
-              </form>
+              </div>
             )}
+
             {selectedTask === "Badge Creation" && (
               <form className="user-form" onSubmit={handleUserUpdate}>
                 <div className="btn">

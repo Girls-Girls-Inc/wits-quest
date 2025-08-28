@@ -43,20 +43,6 @@ const AdminDashboard = () => {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/users`);
-        if (!res.ok) throw new Error("Failed to fetch users");
-        const data = await res.json();
-        setUsers(data);
-      } catch (err) {
-        console.error("Error fetching users:", err);
-      }
-    };
-    fetchUsers();
-  }, []);
-
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -172,27 +158,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleModeratorToggle = (index) => {
-    const updatedUsers = [...users];
-    updatedUsers[index].isModerator = !updatedUsers[index].isModerator;
-    setUsers(updatedUsers);
-  };
-
-  const handleUserUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/users/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(users),
-      });
-      if (!res.ok) throw new Error("Failed to update users");
-      alert("Users updated successfully!");
-    } catch (err) {
-      alert(`Failed to update users: ${err.message}`);
-    }
-  };
-
   return (
     <div className={`container${isActive ? " active" : ""}`}>
       <Toaster />
@@ -275,25 +240,7 @@ const AdminDashboard = () => {
             )}
             {selectedTask === "Admin Privilege" && (
               <form className="user-form" onSubmit={handleUserUpdate}>
-                {users.length === 0 ? (
-                  <p>No users found.</p>
-                ) : (
-                  users.map((u, index) => (
-                    <div key={u.userId} className="input-box">
-                      <span>{u.email}</span>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={u.isModerator}
-                          onChange={() => handleModeratorToggle(index)}
-                        />
-                        Moderator
-                      </label>
-                    </div>
-                  ))
-                )}
                 <div className="btn">
-                  <IconButton type="submit" icon="save" label="Update Users" />
                   <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
                 </div>
               </form>

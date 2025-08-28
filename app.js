@@ -16,7 +16,7 @@ app.use(express.static(frontendPath));
 
 // Your API routes here (if any)
 const userRoutes = require("./backend/routes/user-routes");
-app.use("", userRoutes);
+app.use("", userRoutes.routes);
 
 const leaderboardRoutes = require('./backend/routes/leaderboardRoutes');
 app.use("", leaderboardRoutes);

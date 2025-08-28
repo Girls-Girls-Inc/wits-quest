@@ -10,6 +10,7 @@ import Dashboard from "./pages/dashboard";
 import Quests from "./pages/quests";
 import Map from "./pages/map";
 import Leaderboard from "./pages/leaderboard";
+import Admin from "./pages/adminDashboard";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
           <Route path="/quests" element={<Quests />} />
           <Route path="/map" element={<Map />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/adminDashboard" element={<Admin />} />
         </Route>
       </Routes>
     </>

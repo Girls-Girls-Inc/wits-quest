@@ -10,7 +10,8 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.png";
-import SignupImage from "../assets/signupImage.svg";
+import SignupImage from "../assets/Signup3.png";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -35,6 +36,40 @@ const Login = () => {
     specialChar: false,
   });
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+  const emailToastId = useRef(null);
+
+  useEffect(() => {
+    if (signupForm.email.length > 0) {
+      if (!validateEmail(signupForm.email)) {
+        if (!emailToastId.current) {
+          emailToastId.current = toast.loading("✖ Invalid email format", {
+            duration: Infinity,
+          });
+        } else {
+          toast.loading("✖ Invalid email format", {
+            id: emailToastId.current,
+            duration: Infinity,
+          });
+        }
+      } else {
+        if (emailToastId.current) {
+          toast.success("✔ Valid email format", {
+            id: emailToastId.current,
+            duration: 2000,
+          });
+          emailToastId.current = null;
+        }
+      }
+    } else if (emailToastId.current) {
+      toast.dismiss(emailToastId.current);
+      emailToastId.current = null;
+    }
+  }, [signupForm.email]);
+
   const validatePassword = (password) => {
     setPasswordRules({
       length: password.length >= 8,
@@ -44,6 +79,19 @@ const Login = () => {
       specialChar: /[^A-Za-z0-9]/.test(password),
     });
   };
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        toast.success("Signed in with Google!");
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     validatePassword(signupForm.password);
@@ -120,10 +168,10 @@ const Login = () => {
       }
 
       toast.success("Login successful!");
-      navigate("/profile");
-    } catch (err) {
+      navigate("/dashboard");
+    } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
-      console.error("Login error:", err.message);
+      console.error("Login error:", error.message);
     }
   };
 
@@ -135,23 +183,20 @@ const Login = () => {
     }
 
     try {
-
       const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
           data: { displayName: signupForm.name },
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
         },
+        redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
       });
 
-      console.log(data);
-
-      if (data.user.aud === "authenticated") {
+      if (data.user.user_metadata.email_verified === true) {
         toast.error(
           "This email is already registered. Please login or reset your password."
-
         );
+
         setIsActive(false);
         return;
       }
@@ -168,17 +213,18 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
+        },
       });
 
       if (error) {
         toast.error(error.message || "Google Sign-in failed");
         return;
       }
-
-      toast.success("Signed in with Google!");
-    } catch (err) {
+    } catch (error) {
       toast.error("An unexpected Google Sign-in error occurred.");
-      console.error("Google Sign-in error:", err.message);
+      console.error("Google Sign-in error:", error.message);
     }
   };
 
@@ -211,7 +257,7 @@ const Login = () => {
           </div>
 
           <div className="forgot-pass">
-            <a href="#">Forgot Password?</a>
+            <Link to="/reset-request">Forgot Password?</Link>
           </div>
           <div className="btn">
             <IconButton type="submit" icon="login" label="LOGIN" />
@@ -266,47 +312,6 @@ const Login = () => {
             />
           </div>
 
-          {/* <div className="password-validation-box" aria-live="polite">
-            <p
-              className={
-                passwordRules.length ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.length ? "✔" : "✖"} Minimum 8 characters
-            </p>
-            <p
-              className={
-                passwordRules.uppercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.uppercase ? "✔" : "✖"} At least 1 uppercase letter
-            </p>
-            <p
-              className={
-                passwordRules.lowercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.lowercase ? "✔" : "✖"} At least 1 lowercase letter
-            </p>
-            <p
-              className={
-                passwordRules.number ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.number ? "✔" : "✖"} At least 1 number
-            </p>
-            <p
-              className={
-                passwordRules.specialChar
-                  ? "password-valid"
-                  : "password-invalid"
-              }
-            >
-              {passwordRules.specialChar ? "✔" : "✖"} At least 1 special
-              character
-            </p>
-          </div> */}
-
           <div className="btn">
             <IconButton type="submit" icon="app_registration" label="SIGN UP" />
           </div>
@@ -328,7 +333,12 @@ const Login = () => {
           <h1>Welcome back!</h1>
           <p>Not yet a Witizen ?</p>
           <div className="btn signup-btn" onClick={() => setIsActive(true)}>
-            <IconButton type="submit" icon="person" label="SIGN UP" />
+            <IconButton
+              className="form-button"
+              type="submit"
+              icon="person"
+              label="SIGN UP"
+            />
           </div>
         </div>
 
@@ -340,7 +350,12 @@ const Login = () => {
           </h1>
           <p>Already a Witizen?</p>
           <div className="btn login-btn" onClick={() => setIsActive(false)}>
-            <IconButton type="submit" icon="person" label="LOGIN" />
+            <IconButton
+              className="form-button"
+              type="submit"
+              icon="person"
+              label="LOGIN"
+            />
           </div>
         </div>
       </div>

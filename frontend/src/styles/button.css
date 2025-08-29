@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: var(--secondary-color);
+  background-color: #002d73;
   color: #fff;
   border: 1px solid white;
   padding: 1rem 1.2rem;
@@ -15,6 +15,12 @@
   transition: all 0.3s ease;
   margin: 3px;
   align-content: center;
+}
+
+.form-button {
+  background: transparent !important;
+  color: white;
+  border: 2px solid white;
 }
 
 .icon-button:hover {
@@ -31,10 +37,6 @@
   line-height: 1;
 }
 
-/* .upload-buttons .icon-button:hover {
-  color: white;
-} */
-
 @media (max-width: 650px) {
   .icon-button {
     font-size: 0.9rem;
@@ -46,8 +48,84 @@
   }
 }
 
-/* .disabled-back-button {
-  opacity: 0.5;
-  cursor: default;
-  filter: grayscale(100%);
-} */
+.nav-button-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.nav-button {
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin: 0px 1rem;
+  text-transform: uppercase;
+  border: none;
+  font-family: "Poppins";
+  border: 3px solid transparent;
+}
+
+.nav-button.active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 3px solid var(--wits-yellow);
+  color: var(--wits-yellow) !important;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar-bottom .nav-button.active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid var(--wits-yellow) !important;
+  color: var(--wits-yellow) !important;
+  transition: all 0.3s ease;
+}
+
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  height: 100%;
+}
+
+.admin-menu h1 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.admin-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 60%;
+  margin-left: 108px;
+}
+
+.admin-buttons button {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1rem;
+  color: white;
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-buttons button:hover {
+  background: linear-gradient(90deg, #2a5298, #1e3c72);
+  transform: scale(1.05);
+}
+
+.admin-buttons button:focus {
+  outline: 2px solid #ffd700;
+}

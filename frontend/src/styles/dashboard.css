@@ -25,7 +25,6 @@ h1 {
   width: 100%;
 }
 
-/* Desktop specific layout */
 @media (min-width: 1024px) {
   .dashboard-grid {
     grid-template-columns: 2fr 1fr 1fr;
@@ -44,7 +43,6 @@ h1 {
   }
 }
 
-/* Tablet layout */
 @media (min-width: 768px) and (max-width: 1023px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -61,7 +59,6 @@ h1 {
   }
 }
 
-/* Mobile layout */
 @media (max-width: 767px) {
   .dashboard-container {
     padding: 0 0.5rem;
@@ -134,7 +131,6 @@ h1 {
   margin: 0.625rem 0;
 }
 
-/* Badges Card */
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -176,7 +172,6 @@ h1 {
   color: #fff;
 }
 
-/* Badges Carousel */
 .badges-carousel {
   margin-top: 1.5rem;
 }

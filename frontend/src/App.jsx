@@ -8,7 +8,7 @@ import PasswordResetRequest from "./pages/passwordResetRequest";
 import PasswordReset from "./pages/passwordReset";
 import Dashboard from "./pages/dashboard";
 import Quests from "./pages/quests";
-import Map from "./pages/map";
+import QuestMap from "./pages/map";
 import Leaderboard from "./pages/leaderboard";
 import Admin from "./pages/adminDashboard";
 
@@ -25,7 +25,7 @@ const App = () => {
           <Route path="/reset" element={<PasswordReset />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/quests" element={<Quests />} />
-          <Route path="/map" element={<Map />} />
+          <Route path="/map" element={<QuestMap />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/adminDashboard" element={<Admin />} />
         </Route>

@@ -11,6 +11,23 @@ const LocationController = {
     }
   },
 
+  getLocationById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = await LocationModel.getLocationById(id);
+      if (!data) return res.status(404).json({ error: `Location ${id} not found` });
+
+      // normalise (coerce to numbers if strings)
+      const toNum = (v) => (typeof v === 'number' ? v : (v != null ? parseFloat(v) : NaN));
+      const lat = toNum(data.lat ?? data.latitude);
+      const lng = toNum(data.lng ?? data.longitude);
+
+      res.json({ ...data, lat, lng });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
   createLocation: async (req, res) => {
     try {
       const data = await LocationModel.createLocation(req.body);

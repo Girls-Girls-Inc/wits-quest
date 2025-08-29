@@ -4,7 +4,7 @@ const LocationModel = {
   async getLocations(id, name) {
     let query = supabase
       .from('locations')
-      .select('id, name')
+      .select('id, name, latitude, longitude')
       .order('id', { ascending: true });
 
     if (id) query = query.eq('id', id);
@@ -41,6 +41,16 @@ const LocationModel = {
       .delete()
       .eq('id', id);
     return { error };
+  },
+  async getLocationById(id) {
+    const { data, error } = await supabase
+      .from('locations')
+      .select('id, name, latitude, longitude')  // <-- include coords
+      .eq('id', id)
+      .limit(1)
+      .single();
+    if (error) throw error;
+    return data;
   },
 };
 

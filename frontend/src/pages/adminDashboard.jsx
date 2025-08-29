@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import "../styles/layout.css";
@@ -6,15 +7,20 @@ import "../styles/button.css";
 import SignupImage from "../assets/signup.png";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
-import supabase from "../supabase/supabaseClient";
+import useModerator from "../hooks/useModerator";
 
-const API_BASE = import.meta.env.VITE_WEB_URL; // use your backend base URL
+const API_BASE = import.meta.env.VITE_WEB_URL; // backend base URL
 
 const AdminDashboard = () => {
+  const { loading, isModerator, user } = useModerator();
+
   const [isActive, setIsActive] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
+
   const [collectibles, setCollectibles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [users, setUsers] = useState([]);
+
   const [questData, setQuestData] = useState({
     name: "",
     description: "",
@@ -24,8 +30,6 @@ const AdminDashboard = () => {
     pointsAchievable: "",
     isActive: true,
   });
-  const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]);
 
   const [locationData, setLocationData] = useState({
     name: "",
@@ -34,42 +38,15 @@ const AdminDashboard = () => {
     radius: "",
   });
 
+  // Only fetch admin data AFTER we know the viewer is a moderator
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      else setUser(user);
-    };
-    fetchUser();
-  }, []);
+    if (loading || !isModerator) return;
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/users`); // your backend endpoint
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      if (!Array.isArray(data))
-        throw new Error("Users API did not return an array");
-      setUsers(data);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setUsers([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
     const fetchOptions = async () => {
       try {
         const [collectibleRes, locationRes] = await Promise.all([
-          fetch(`${API_BASE}/collectibles`),
-          fetch(`${API_BASE}/locations`),
+          fetch(`${API_BASE}/collectibles`, { credentials: "include" }),
+          fetch(`${API_BASE}/locations`, { credentials: "include" }),
         ]);
 
         if (!collectibleRes.ok) throw new Error("Failed to fetch collectibles");
@@ -93,8 +70,24 @@ const AdminDashboard = () => {
         setLocations([]);
       }
     };
+
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/users`, { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to fetch users");
+        const data = await res.json();
+        if (!Array.isArray(data))
+          throw new Error("Users API did not return an array");
+        setUsers(data);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      }
+    };
+
     fetchOptions();
-  }, []);
+    fetchUsers();
+  }, [loading, isModerator]);
 
   const handleTaskClick = (task) => {
     setSelectedTask(task);
@@ -134,6 +127,7 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/quests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(questInsert),
       });
 
@@ -167,6 +161,7 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(locationInsert),
       });
 
@@ -186,6 +181,7 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isModerator: newStatus }),
       });
 
@@ -193,9 +189,8 @@ const AdminDashboard = () => {
       const text = await res.text();
       if (text) result = JSON.parse(text);
 
-      // update local state regardless
-      setUsers(
-        users.map((u) =>
+      setUsers((prev) =>
+        prev.map((u) =>
           u.userId === userId ? { ...u, isModerator: newStatus } : u
         )
       );
@@ -204,6 +199,31 @@ const AdminDashboard = () => {
     }
   };
 
+  // ======= GUARD RENDERING =======
+  if (loading) {
+    return (
+      <div className="container">
+        <Toaster />
+        <div className="form-box login">
+          <h1>Loading…</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isModerator) {
+    return (
+      <div className="container">
+        <Toaster />
+        <div className="form-box login">
+          <h1>403 – Moderator Access Required</h1>
+          <p>You don’t have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ======= MAIN (authorized) =======
   return (
     <div className={`container${isActive ? " active" : ""}`}>
       <Toaster />
@@ -228,6 +248,7 @@ const AdminDashboard = () => {
         ) : (
           <div className="task-panel signup">
             <h1>{selectedTask}</h1>
+
             {selectedTask === "Quest Creation" && (
               <form className="login-form" onSubmit={handleQuestSubmit}>
                 <div className="input-box">
@@ -259,6 +280,7 @@ const AdminDashboard = () => {
                     onChange={handleQuestChange}
                   />
                 </div>
+
                 <div className="input-box">
                   <label>Collectible</label>
                   <select
@@ -275,6 +297,7 @@ const AdminDashboard = () => {
                     ))}
                   </select>
                 </div>
+
                 <div className="input-box">
                   <label>Location</label>
                   <select
@@ -291,6 +314,7 @@ const AdminDashboard = () => {
                     ))}
                   </select>
                 </div>
+
                 <div className="input-box">
                   <InputField
                     type="number"
@@ -300,6 +324,7 @@ const AdminDashboard = () => {
                     onChange={handleQuestChange}
                   />
                 </div>
+
                 <div className="input-box">
                   <label>
                     <input
@@ -316,6 +341,7 @@ const AdminDashboard = () => {
                     Active
                   </label>
                 </div>
+
                 <div className="btn">
                   <IconButton type="submit" icon="save" label="Create Quest" />
                   <IconButton
@@ -327,6 +353,7 @@ const AdminDashboard = () => {
                 </div>
               </form>
             )}
+
             {selectedTask === "Location Creation" && (
               <form className="login-form" onSubmit={handleLocationSubmit}>
                 <div className="input-box">
@@ -387,18 +414,13 @@ const AdminDashboard = () => {
                 </div>
               </form>
             )}
+
             {selectedTask === "Admin Privilege" && (
               <div className="task-panel signup">
                 <h1>Admin Privileges</h1>
                 <p>Promote or remove users as moderators.</p>
 
-                <div
-                  style={{
-                    maxHeight: "400px",
-                    overflowY: "auto",
-                    overflowX: "auto",
-                  }}
-                >
+                <div style={{ maxHeight: "400px", overflow: "auto" }}>
                   <table
                     style={{
                       width: "100%",
@@ -435,14 +457,14 @@ const AdminDashboard = () => {
                           <td style={{ padding: "8px" }}>
                             <button
                               onClick={async () => {
-                                // Optimistic UI update
-                                setUsers(
-                                  users.map((userItem) =>
+                                // optimistic UI
+                                setUsers((prev) =>
+                                  prev.map((userItem) =>
                                     userItem.userId === u.userId
                                       ? {
-                                          ...userItem,
-                                          isModerator: !u.isModerator,
-                                        }
+                                        ...userItem,
+                                        isModerator: !u.isModerator,
+                                      }
                                       : userItem
                                   )
                                 );
@@ -452,19 +474,20 @@ const AdminDashboard = () => {
                                     headers: {
                                       "Content-Type": "application/json",
                                     },
+                                    credentials: "include",
                                     body: JSON.stringify({
                                       isModerator: !u.isModerator,
                                     }),
                                   });
                                 } catch (err) {
-                                  // revert state if network fails
-                                  setUsers(
-                                    users.map((userItem) =>
+                                  // revert on failure
+                                  setUsers((prev) =>
+                                    prev.map((userItem) =>
                                       userItem.userId === u.userId
                                         ? {
-                                            ...userItem,
-                                            isModerator: u.isModerator,
-                                          }
+                                          ...userItem,
+                                          isModerator: u.isModerator,
+                                        }
                                         : userItem
                                     )
                                   );
@@ -507,7 +530,7 @@ const AdminDashboard = () => {
             )}
 
             {selectedTask === "Badge Creation" && (
-              <form className="user-form" onSubmit={handleUserUpdate}>
+              <form className="user-form" onSubmit={(e) => e.preventDefault()}>
                 <div className="btn">
                   <IconButton
                     onClick={handleBack}
@@ -524,9 +547,8 @@ const AdminDashboard = () => {
 
       <div className="toggle">
         <div
-          className={`toggle-panel ${
-            selectedTask ? "toggle-left" : "toggle-right"
-          }`}
+          className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"
+            }`}
         >
           <img src={SignupImage} alt="Quest" />
           {!selectedTask ? (

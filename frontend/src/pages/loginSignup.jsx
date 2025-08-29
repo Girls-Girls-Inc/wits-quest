@@ -81,6 +81,19 @@ const Login = () => {
   };
 
   useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        toast.success("Signed in with Google!");
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
     validatePassword(signupForm.password);
   }, [signupForm.password]);
 
@@ -176,7 +189,7 @@ const Login = () => {
         options: {
           data: { displayName: signupForm.name },
         },
-        redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+        redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
       });
 
       if (data.user.user_metadata.email_verified === true) {
@@ -201,7 +214,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+          redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
         },
       });
 
@@ -209,9 +222,6 @@ const Login = () => {
         toast.error(error.message || "Google Sign-in failed");
         return;
       }
-
-      toast.success("Signed in with Google!");
-      setIsActive(false);
     } catch (error) {
       toast.error("An unexpected Google Sign-in error occurred.");
       console.error("Google Sign-in error:", error.message);
@@ -301,47 +311,6 @@ const Login = () => {
               required
             />
           </div>
-
-          {/* <div className="password-validation-box" aria-live="polite">
-            <p
-              className={
-                passwordRules.length ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.length ? "✔" : "✖"} Minimum 8 characters
-            </p>
-            <p
-              className={
-                passwordRules.uppercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.uppercase ? "✔" : "✖"} At least 1 uppercase letter
-            </p>
-            <p
-              className={
-                passwordRules.lowercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.lowercase ? "✔" : "✖"} At least 1 lowercase letter
-            </p>
-            <p
-              className={
-                passwordRules.number ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.number ? "✔" : "✖"} At least 1 number
-            </p>
-            <p
-              className={
-                passwordRules.specialChar
-                  ? "password-valid"
-                  : "password-invalid"
-              }
-            >
-              {passwordRules.specialChar ? "✔" : "✖"} At least 1 special
-              character
-            </p>
-          </div> */}
 
           <div className="btn">
             <IconButton type="submit" icon="app_registration" label="SIGN UP" />

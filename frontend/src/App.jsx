@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "./pages/Layout";
-import Login from "./pages/login-signup";
+import Layout from "./pages/layout";
+import Login from "./pages/loginSignup";
 import Profile from "./pages/profile";
 import toast, { Toaster } from "react-hot-toast";
 import PasswordResetRequest from "./pages/passwordResetRequest";
@@ -19,10 +19,10 @@ const App = () => {
 
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/reset" element={<PasswordReset />} />
+        <Route path="/reset-request" element={<PasswordResetRequest />} />
         <Route element={<Layout />}>
           <Route path="/profile" element={<Profile />} />
-          <Route path="/reset-request" element={<PasswordResetRequest />} />
-          <Route path="/reset" element={<PasswordReset />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/quests" element={<Quests />} />
           <Route path="/map" element={<QuestMap />} />

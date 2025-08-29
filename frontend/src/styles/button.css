@@ -88,9 +88,9 @@
 .admin-menu {
   display: flex;
   flex-direction: column;
-  align-items: center; /* centers all children horizontally */
+  align-items: center;
   justify-content: center;
-  gap: 30px; /* space between heading and buttons */
+  gap: 30px;
   height: 100%;
 }
 
@@ -103,14 +103,14 @@
 .admin-buttons {
   display: flex;
   flex-direction: column;
-  align-items: center; /* center buttons horizontally */
+  align-items: center;
   gap: 15px;
-  width: 60%; /* adjust to control button width */
+  width: 60%;
   margin-left: 108px;
 }
 
 .admin-buttons button {
-  width: 100%; /* make buttons fill the container */
+  width: 100%;
   padding: 12px 20px;
   font-size: 1rem;
   color: white;

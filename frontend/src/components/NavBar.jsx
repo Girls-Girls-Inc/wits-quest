@@ -11,7 +11,9 @@ const Navbar = () => {
     { route: "/dashboard", icon: "logo", label: "Home" },
     { route: "/quests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "logo", label: "Map" },
-    { route: "/profile", icon: "logo", label: "Profile" },
+    { route: "/leaderboard", icon: "logo", label: "Leaderboard" },
+    { route: "/profile", icon: "logo", label: "Profile" }
+   // { route: "/leaderboard", icon: "logo", label: "Leaderboard" },
   ];
 
   return (

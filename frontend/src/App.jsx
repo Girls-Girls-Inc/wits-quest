@@ -9,6 +9,7 @@ import PasswordReset from "./pages/passwordReset";
 import Dashboard from "./pages/dashboard";
 import Quests from "./pages/quests";
 import Map from "./pages/map";
+import Leaderboard from "./pages/leaderboard";
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/quests" element={<Quests />} />
           <Route path="/map" element={<Map />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
         </Route>
       </Routes>
     </>

@@ -3,7 +3,7 @@ import IconButton from "../components/IconButton";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import "../styles/leaderboard.css"; // <-- new CSS file
+import "../styles/leaderboard.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
@@ -22,8 +22,8 @@ const Leaderboard = () => {
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
   const DUMMY_ROWS = [
-    { id: "dummy-1", name: "Alice Tester", points: 1200 },
-    { id: "dummy-2", name: "Bob Debugger", points: 950 },
+    { id: "dummy-1", username: "Alice Tester", points: 1200 },
+    { id: "dummy-2", username: "Bob Debugger", points: 950 },
   ];
 
   const loadBoard = async (key = boardKey) => {
@@ -63,35 +63,48 @@ const Leaderboard = () => {
       </div>
 
       <div className="leaderboard-controls">
-        <div className={`btn ${boardKey === "year" ? "active" : ""}`}>
-          <IconButton
-            type="button"
-            icon={BOARDS.year.icon}
-            label="YEARLY"
-            onClick={() => switchBoard("year")}
-          />
+        <div className="dropdown">
+          <button
+            className="dropdown-toggle"
+            onClick={() =>
+              document.querySelector(".dropdown").classList.toggle("open")
+            }
+          >
+            <span className="material-symbols-outlined">
+              {BOARDS[boardKey].icon}
+            </span>
+            {BOARDS[boardKey].label}
+            <span className="material-symbols-outlined caret">expand_more</span>
+          </button>
+
+          <ul className="dropdown-menu">
+            {Object.keys(BOARDS).map((key) => (
+              <li key={key}>
+                <button
+                  className={`dropdown-item ${
+                    boardKey === key ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    switchBoard(key);
+                    document
+                      .querySelector(".dropdown")
+                      .classList.remove("open");
+                  }}
+                >
+                  <span className="material-symbols-outlined">
+                    {BOARDS[key].icon}
+                  </span>
+                  {BOARDS[key].label}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className={`btn ${boardKey === "month" ? "active" : ""}`}>
-          <IconButton
-            type="button"
-            icon={BOARDS.month.icon}
-            label="MONTHLY"
-            onClick={() => switchBoard("month")}
-          />
-        </div>
-        <div className={`btn ${boardKey === "week" ? "active" : ""}`}>
-          <IconButton
-            type="button"
-            icon={BOARDS.week.icon}
-            label="WEEKLY"
-            onClick={() => switchBoard("week")}
-          />
-        </div>
+
         <div className="btn">
           <IconButton
             type="button"
             icon="refresh"
-            label={loading ? "LOADING…" : "REFRESH"}
             onClick={() => loadBoard(boardKey)}
             disabled={loading}
           />
@@ -140,7 +153,7 @@ const Leaderboard = () => {
                     )}
                   </Td>
                   <Td>
-                    <strong>{r.name}</strong>
+                    <strong>{r.username}</strong>
                   </Td>
                   <Td>{r.points}</Td>
                   <Td>

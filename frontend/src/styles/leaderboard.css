@@ -4,6 +4,8 @@
   padding: 20px;
   font-family: "Poppins", sans-serif;
   color: #333;
+  display: flex;
+  flex-direction: column;
 }
 
 .leaderboard-header h1 {
@@ -105,4 +107,119 @@ td code {
   background: #c9c6c6;
   padding: 2px 6px;
   border-radius: 6px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  background: var(--wits-blue);
+  border: 1px solid white;
+  border-radius: 15px;
+  padding: 8px 14px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dropdown-toggle:hover {
+  transform: translateY(-2px);
+}
+
+.dropdown-toggle:active {
+  transform: translateY(1px);
+}
+
+.dropdown-toggle .caret {
+  font-size: 20px;
+  margin-left: auto;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 15px;
+  list-style: none;
+  padding: 5px;
+  margin: 0;
+  width: 160px;
+
+  z-index: 1000;
+}
+
+.dropdown.open .dropdown-menu {
+  display: block;
+  animation: pop 0.2s ease-out;
+}
+
+.dropdown-item {
+  color: #333;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  font-weight: bold;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.dropdown-item:hover {
+  background: #ffecb3;
+}
+
+.dropdown-item.active {
+  background: var(--wits-blue);
+  color: white;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.leaderboard-table-wrapper {
+  width: 100%;
+}
+
+.leaderboard-table {
+  min-width: 900px;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 16px 24px;
+}
+
+@media (max-width: 768px) {
+  .leaderboard-table {
+    min-width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 8px 10px;
+  }
 }

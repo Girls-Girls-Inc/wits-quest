@@ -16,18 +16,17 @@ const BOARDS = {
 const Leaderboard = () => {
   const [boardKey, setBoardKey] = useState("year");
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const makeUrl = (key) =>
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
   const DUMMY_ROWS = [
-    { id: "dummy-1", username: "Alice Test", points: 1200 },
+    { id: "dummy-1", username: "Alice Tester", points: 1200 },
     { id: "dummy-2", username: "Bob Debugger", points: 950 },
   ];
 
   const loadBoard = async (key = boardKey) => {
-    setLoading(true);
+    const loadingToast = toast.loading("Loading leaderboard…");
     try {
       const res = await fetch(makeUrl(key), {
         headers: { Accept: "application/json" },
@@ -37,11 +36,12 @@ const Leaderboard = () => {
       if (!Array.isArray(data)) throw new Error("API did not return an array");
 
       setRows([...DUMMY_ROWS, ...data]);
+      toast.success("Leaderboard loaded!", { id: loadingToast });
     } catch (e) {
       setRows(DUMMY_ROWS);
-      toast.error(e.message || "Failed to load leaderboard");
-    } finally {
-      setLoading(false);
+      toast.error(e.message || "Failed to load leaderboard", {
+        id: loadingToast,
+      });
     }
   };
 
@@ -106,7 +106,6 @@ const Leaderboard = () => {
             type="button"
             icon="refresh"
             onClick={() => loadBoard(boardKey)}
-            disabled={loading}
           />
         </div>
       </div>
@@ -122,15 +121,7 @@ const Leaderboard = () => {
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <Td colSpan={4} className="loading">
-                  Loading…
-                </Td>
-              </tr>
-            )}
-
-            {!loading && rows.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <Td colSpan={4} className="empty">
                   No entries yet.
@@ -138,29 +129,28 @@ const Leaderboard = () => {
               </tr>
             )}
 
-            {!loading &&
-              rows.map((r, i) => (
-                <tr key={r.id ?? `${i}`}>
-                  <Td>
-                    <strong>{i + 1}</strong>{" "}
-                    {i < 3 && (
-                      <span
-                        className="material-symbols-outlined trophy"
-                        title="Top rank"
-                      >
-                        emoji_events
-                      </span>
-                    )}
-                  </Td>
-                  <Td>
-                    <strong>{r.username}</strong>
-                  </Td>
-                  <Td>{r.points}</Td>
-                  <Td>
-                    <code>{r.id}</code>
-                  </Td>
-                </tr>
-              ))}
+            {rows.map((r, i) => (
+              <tr key={r.id ?? `${i}`}>
+                <Td>
+                  <strong>{i + 1}</strong>{" "}
+                  {i < 3 && (
+                    <span
+                      className="material-symbols-outlined trophy"
+                      title="Top rank"
+                    >
+                      emoji_events
+                    </span>
+                  )}
+                </Td>
+                <Td>
+                  <strong>{r.username}</strong>
+                </Td>
+                <Td>{r.points}</Td>
+                <Td>
+                  <code>{r.id}</code>
+                </Td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

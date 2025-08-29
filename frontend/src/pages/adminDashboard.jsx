@@ -211,18 +211,26 @@ const AdminDashboard = () => {
         {!selectedTask ? (
           <div className="admin-menu">
             <div className="admin-buttons">
-              <button onClick={() => handleTaskClick("Quest Creation")}>
-                Quest Creation
-              </button>
-              <button onClick={() => handleTaskClick("Location Creation")}>
-                Location Creation
-              </button>
-              <button onClick={() => handleTaskClick("Badge Creation")}>
-                Create Badge
-              </button>
-              <button onClick={() => handleTaskClick("Admin Privilege")}>
-                Admin Privilege
-              </button>
+              <IconButton
+                icon="task"
+                label="Quest Creation"
+                onClick={() => handleTaskClick("Quest Creation")}
+              />
+              <IconButton
+                icon="place"
+                label="Location Creation"
+                onClick={() => handleTaskClick("Location Creation")}
+              />
+              <IconButton
+                icon="badge"
+                label="Create Badge"
+                onClick={() => handleTaskClick("Badge Creation")}
+              />
+              <IconButton
+                icon="admin_panel_settings"
+                label="Admin Privilege"
+                onClick={() => handleTaskClick("Admin Privilege")}
+              />
             </div>
           </div>
         ) : (

@@ -1,0 +1,134 @@
+h1 {
+  font-size: 2rem;
+  margin-bottom: 4px;
+  color: var(--wits-gold);
+  font-weight: 700;
+}
+
+.quests-container {
+  padding: 20px;
+}
+
+.quests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quest-buttons button {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: var(--background);
+  cursor: pointer;
+}
+
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.quest-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 15px;
+  background: var(--background);
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.quest-card:hover {
+  transform: scale(1.01);
+}
+
+.quest-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.quest-profile img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 5px;
+}
+
+.quest-info {
+  flex: 1;
+  padding: 0 10px;
+}
+
+.quest-info h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.quest-action button {
+  padding: 8px 14px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background: var(--background);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .quest-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .quest-profile {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 0;
+    gap: 10px;
+  }
+
+  .quest-profile img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .quest-info {
+    padding: 0;
+  }
+
+  .quest-action {
+    align-self: flex-end;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .quest-action button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .quests-container {
+    padding: 10px;
+  }
+
+  .quest-info h2 {
+    font-size: 16px;
+  }
+
+  .quest-buttons button {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+}

@@ -83,7 +83,7 @@ const CollectiblesController = {
       const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
       const parsedOffset = Math.max(parseInt(offset, 10) || 0, 0);
       const result = await CollectiblesModel.list({ search, limit: parsedLimit, offset: parsedOffset });
-      res.json(result);
+      res.json(result.data);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -176,6 +176,17 @@ create: async (req, res) => {
       if (String(err.message || '').toLowerCase().includes('row-level security')) {
         return res.status(403).json({ error: err.message });
       }
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  // GET /collectibles?id=&name=
+  getCollectibles: async (req, res) => {
+    try {
+      const { id, name } = req.query;
+      const data = await CollectiblesModel.getCollectibles(id, name);
+      res.json(Array.isArray(data) ? data : []); // always return array
+    } catch (err) {
       res.status(500).json({ error: err.message });
     }
   },

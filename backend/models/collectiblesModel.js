@@ -80,6 +80,24 @@ async listInventoryForUser(userId, { start, end, limit = 100, offset = 0 } = {},
     const { error } = await supabase.from(TABLE).delete().eq('id', id);
     if (error) throw error;
   },
+
+  async getCollectibles(id, name, sb) {
+    const supabase = pick(sb); // use provided client or admin
+
+    let query = supabase
+      .from('collectibles')
+      .select('id, name') // only fetch id and name
+      .order('id', { ascending: true });
+
+    if (id) query = query.eq('id', id);
+    if (name) query = query.ilike('name', `%${name}%`);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return data || [];
+  },
+
 };
 
 module.exports = CollectiblesModel;

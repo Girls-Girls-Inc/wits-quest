@@ -3,10 +3,11 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/collectiblesController');
 
-router.get('/collectibles',        ctrl.list);      // GET many  (?search=&limit=&offset=)
-router.get('/collectibles/:id',    ctrl.getOne);    // GET one
-router.post('/collectibles',       ctrl.create);    // CREATE
-router.patch('/collectibles/:id',  ctrl.update);    // UPDATE
-router.delete('/collectibles/:id', ctrl.remove);    // DELETE
+router.get('/users/:userId/collectibles', ctrl.listUserCollectibles);
+router.get('/collectibles',               ctrl.list);   // reads req.query.board (year|month|week)
+router.get('/collectibles/:id',           ctrl.getOne);
+router.post('/collectibles',              ctrl.create);
+router.patch('/collectibles/:id',         ctrl.update);
+router.delete('/collectibles/:id',        ctrl.remove);
 
 module.exports = router;

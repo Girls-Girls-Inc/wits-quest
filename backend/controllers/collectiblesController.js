@@ -21,8 +21,62 @@ function sbFromReq(req) {
   });
 }
 
+function timeframeFromBoard(boardId = 'year') {
+  const now = new Date();
+  const end = now.toISOString();
+  let start;
+  if (boardId === 'week') {
+    const d = new Date(now); d.setDate(d.getDate() - 7); start = d.toISOString();
+  } else if (boardId === 'month') {
+    const d = new Date(now); d.setMonth(d.getMonth() - 1); start = d.toISOString();
+  } else { // year (default)
+    const d = new Date(now); d.setFullYear(d.getFullYear() - 1); start = d.toISOString();
+  }
+  return { start, end };
+}
+
+async function isModerator(sb, userId) {
+  const { data, error } = await sb
+    .from('userData')
+    .select('isModerator')
+    .eq('userId', userId)
+    .maybeSingle();
+  if (error) return false;
+  return !!data?.isModerator;
+}
+
 const CollectiblesController = {
-  // READS can use service-role model (public listing), or pass sbFromReq(req) if you want RLS on reads too
+  listUserCollectibles: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ error: 'Missing bearer token' });
+
+      const who = await sb.auth.getUser();
+      const callerId = who.data?.user?.id;
+      if (!callerId) return res.status(401).json({ error: 'Unauthenticated' });
+
+      const targetUserId = String(req.params.userId);
+      // Let moderators view anyone; otherwise only self
+      const mod = await isModerator(sb, callerId);
+      if (!mod && callerId !== targetUserId) {
+        return res.status(403).json({ error: 'Not permitted' });
+      }
+
+      const limit = Math.min(Math.max(parseInt(req.query.limit ?? '100', 10), 1), 500);
+      const offset = Math.max(parseInt(req.query.offset ?? '0', 10), 0);
+
+      const rows = await CollectiblesModel.listInventoryForUser(
+        targetUserId,
+        { limit, offset },
+        sb
+      );
+
+      res.json(rows); // [{ id, name, description, imageUrl, createdAt, earnedAt }, ...]
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
   list: async (req, res) => {
     try {
       const { search = '', limit = '50', offset = '0' } = req.query;

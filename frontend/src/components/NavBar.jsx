@@ -8,12 +8,12 @@ const Navbar = () => {
   const location = useLocation();
 
   const navItems = [
+    { route: "/adminDashboard", icon: "logo", label: "Admin" },
     { route: "/dashboard", icon: "logo", label: "Home" },
     { route: "/quests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "logo", label: "Map" },
     { route: "/leaderboard", icon: "logo", label: "Leaderboard" },
-    { route: "/profile", icon: "logo", label: "Profile" }
-   // { route: "/leaderboard", icon: "logo", label: "Leaderboard" },
+    { route: "/profile", icon: "logo", label: "Profile" },
   ];
 
   return (

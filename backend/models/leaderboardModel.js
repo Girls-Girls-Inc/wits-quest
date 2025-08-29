@@ -3,6 +3,7 @@ const supabase = require("../supabase/supabaseClient");
 const LeaderboardModel = {
   async getLeaderboard(periodType, start, end, userId, id) {
     let query = supabase
+
       .from("leaderboard_with_users") // ✅ use the view
       .select("*")
       .order("rank", { ascending: true });
@@ -18,6 +19,40 @@ const LeaderboardModel = {
 
     return data || [];
   },
+
+
+  //   async addEntry(entry) {
+  //     const { data, error } = await supabase
+  //       .from('leaderboard')
+  //       .insert(entry)
+  //       .select();
+
+  //     if (error) throw error;
+
+  //     return data;
+  //   },
+
+  //   async updateScore(id, score, rank) {
+  //     const { data, error } = await supabase
+  //       .from('leaderboard')
+  //       .update({ score, rank })
+  //       .eq('id', id)
+  //       .select();
+
+  //     if (error) throw error;
+
+  //     return data;
+  //   },
+
+  //   async deleteEntry(id) {
+  //     const { error } = await supabase
+  //       .from('leaderboard')
+  //       .delete()
+  //       .eq('id', id);
+
+  //     return { error };
+  //   }
+
 };
 
 module.exports = LeaderboardModel;

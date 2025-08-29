@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import "../styles/layout.css";
@@ -6,41 +7,20 @@ import "../styles/button.css";
 import SignupImage from "../assets/signup.png";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
-import supabase from "../supabase/supabaseClient";
+import useModerator from "../hooks/useModerator";
 
-const API_BASE = import.meta.env.VITE_WEB_URL;
-
-// Dummy fallback data
-const DUMMY_USERS = [
-  {
-    userId: "1",
-    email: "user1@example.com",
-    isModerator: false,
-    created_at: new Date().toISOString(),
-  },
-  {
-    userId: "2",
-    email: "user2@example.com",
-    isModerator: true,
-    created_at: new Date().toISOString(),
-  },
-];
-
-const DUMMY_COLLECTIBLES = [
-  { id: "1", name: "Golden Coin" },
-  { id: "2", name: "Silver Badge" },
-];
-
-const DUMMY_LOCATIONS = [
-  { id: "1", name: "Central Park" },
-  { id: "2", name: "Downtown" },
-];
+const API_BASE = import.meta.env.VITE_WEB_URL; // backend base URL
 
 const AdminDashboard = () => {
+  const { loading, isModerator, user } = useModerator();
+
   const [isActive, setIsActive] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
+
   const [collectibles, setCollectibles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [users, setUsers] = useState([]);
+
   const [questData, setQuestData] = useState({
     name: "",
     description: "",
@@ -50,8 +30,6 @@ const AdminDashboard = () => {
     pointsAchievable: "",
     isActive: true,
   });
-  const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]);
 
   const [locationData, setLocationData] = useState({
     name: "",
@@ -60,42 +38,15 @@ const AdminDashboard = () => {
     radius: "",
   });
 
+  // Only fetch admin data AFTER we know the viewer is a moderator
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      else setUser(user);
-    };
-    fetchUser();
-  }, []);
+    if (loading || !isModerator) return;
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/users`);
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0)
-        throw new Error("No users returned");
-      setUsers(data);
-    } catch (err) {
-      console.warn("Using dummy users due to error:", err.message);
-      setUsers(DUMMY_USERS);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
     const fetchOptions = async () => {
       try {
         const [collectibleRes, locationRes] = await Promise.all([
-          fetch(`${API_BASE}/collectibles`),
-          fetch(`${API_BASE}/locations`),
+          fetch(`${API_BASE}/collectibles`, { credentials: "include" }),
+          fetch(`${API_BASE}/locations`, { credentials: "include" }),
         ]);
 
         if (!collectibleRes.ok) throw new Error("Failed to fetch collectibles");
@@ -114,16 +65,31 @@ const AdminDashboard = () => {
         setCollectibles(collectiblesData);
         setLocations(locationsData);
       } catch (err) {
-        console.warn(
-          "Using dummy collectibles/locations due to error:",
-          err.message
-        );
-        setCollectibles(DUMMY_COLLECTIBLES);
-        setLocations(DUMMY_LOCATIONS);
+        console.error("Error fetching options:", err);
+        setCollectibles([]);
+        setLocations([]);
       }
     };
+
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch users");
+        const data = await res.json();
+        if (!Array.isArray(data))
+          throw new Error("Users API did not return an array");
+        setUsers(data);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setUsers([]);
+      }
+    };
+
     fetchOptions();
-  }, []);
+    fetchUsers();
+  }, [loading, isModerator]);
 
   const handleTaskClick = (task) => setSelectedTask(task);
   const handleBack = () => {
@@ -151,13 +117,117 @@ const AdminDashboard = () => {
     setQuestData({ ...questData, [name]: value });
   };
 
+  const handleQuestSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("You must be logged in to create a quest");
+
+    const questInsert = {
+      ...questData,
+      createdBy: user.id,
+      pointsAchievable: parseInt(questData.pointsAchievable, 10) || 0,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/quests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(questInsert),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to create quest");
+
+      alert(`Quest "${result.name}" created successfully!`);
+      handleBack();
+    } catch (err) {
+      alert(`Failed to create quest: ${err.message}`);
+    }
+  };
+
   const handleLocationChange = (e) => {
     const { name, value } = e.target;
     setLocationData({ ...locationData, [name]: value });
   };
 
-  // ... Keep your handleQuestSubmit, handleLocationSubmit, handleToggleModerator unchanged ...
+  const handleLocationSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("You must be logged in to create a location");
 
+    const locationInsert = {
+      ...locationData,
+      latitude: parseFloat(locationData.latitude),
+      longitude: parseFloat(locationData.longitude),
+      radius: parseFloat(locationData.radius),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/locations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(locationInsert),
+      });
+
+      const result = await res.json();
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
+
+      alert(`Location "${result.name}" created successfully!`);
+      handleBack();
+    } catch (err) {
+      alert(`Failed to create location: ${err.message}`);
+    }
+  };
+
+  const handleToggleModerator = async (userId, newStatus) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isModerator: newStatus }),
+      });
+
+      let result = {};
+      const text = await res.text();
+      if (text) result = JSON.parse(text);
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.userId === userId ? { ...u, isModerator: newStatus } : u
+        )
+      );
+    } catch (err) {
+      alert(`Failed to update user: ${err.message}`);
+    }
+  };
+
+  // ======= GUARD RENDERING =======
+  if (loading) {
+    return (
+      <div className="container">
+        <Toaster />
+        <div className="form-box login">
+          <h1>Loading…</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isModerator) {
+    return (
+      <div className="container">
+        <Toaster />
+        <div className="form-box login">
+          <h1>403 – Moderator Access Required</h1>
+          <p>You don’t have permission to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ======= MAIN (authorized) =======
   return (
     <div className={`container${isActive ? " active" : ""}`}>
       <Toaster />
@@ -190,6 +260,299 @@ const AdminDashboard = () => {
         ) : (
           <div className="task-panel signup">
             <h1>{selectedTask}</h1>
+
+            {selectedTask === "Quest Creation" && (
+              <form className="login-form" onSubmit={handleQuestSubmit}>
+                <div className="input-box">
+                  <InputField
+                    type="text"
+                    name="name"
+                    placeholder="Quest Name"
+                    value={questData.name}
+                    onChange={handleQuestChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <InputField
+                    type="text"
+                    name="description"
+                    placeholder="Quest Description"
+                    value={questData.description}
+                    onChange={handleQuestChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <InputField
+                    type="text"
+                    name="imageUrl"
+                    placeholder="Image URL"
+                    value={questData.imageUrl}
+                    onChange={handleQuestChange}
+                  />
+                </div>
+
+                <div className="input-box">
+                  <label>Collectible</label>
+                  <select
+                    name="collectibleId"
+                    value={questData.collectibleId}
+                    onChange={handleQuestChange}
+                    required
+                  >
+                    <option value="">Select a collectible</option>
+                    {collectibles.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-box">
+                  <label>Location</label>
+                  <select
+                    name="locationId"
+                    value={questData.locationId}
+                    onChange={handleQuestChange}
+                    required
+                  >
+                    <option value="">Select a location</option>
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-box">
+                  <InputField
+                    type="number"
+                    name="pointsAchievable"
+                    placeholder="Points Achievable"
+                    value={questData.pointsAchievable}
+                    onChange={handleQuestChange}
+                  />
+                </div>
+
+                <div className="input-box">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={questData.isActive}
+                      onChange={(e) =>
+                        setQuestData({
+                          ...questData,
+                          isActive: e.target.checked,
+                        })
+                      }
+                    />
+                    Active
+                  </label>
+                </div>
+
+                <div className="btn">
+                  <IconButton type="submit" icon="save" label="Create Quest" />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
+                </div>
+              </form>
+            )}
+
+            {selectedTask === "Location Creation" && (
+              <form className="login-form" onSubmit={handleLocationSubmit}>
+                <div className="input-box">
+                  <InputField
+                    type="text"
+                    name="name"
+                    placeholder="Location Name"
+                    value={locationData.name}
+                    onChange={handleLocationChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    placeholder="Latitude"
+                    value={locationData.latitude}
+                    onChange={handleLocationChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    placeholder="Longitude"
+                    value={locationData.longitude}
+                    onChange={handleLocationChange}
+                    required
+                  />
+                </div>
+                <div className="input-box">
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="radius"
+                    placeholder="Radius"
+                    value={locationData.radius}
+                    onChange={handleLocationChange}
+                    required
+                  />
+                </div>
+                <div className="btn">
+                  <IconButton
+                    type="submit"
+                    icon="save"
+                    label="Create Location"
+                  />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
+                </div>
+              </form>
+            )}
+
+            {selectedTask === "Admin Privilege" && (
+              <div className="task-panel signup">
+                <h1>Admin Privileges</h1>
+                <p>Promote or remove users as moderators.</p>
+
+                <div style={{ maxHeight: "400px", overflow: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      minWidth: "600px",
+                      borderCollapse: "collapse",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Email
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Is Moderator
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Created At
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.userId}>
+                          <td style={{ padding: "8px" }}>{u.email}</td>
+                          <td style={{ padding: "8px" }}>
+                            {u.isModerator ? "Yes" : "No"}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {new Date(u.created_at).toLocaleString()}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            <button
+                              onClick={async () => {
+                                // optimistic UI
+                                setUsers((prev) =>
+                                  prev.map((userItem) =>
+                                    userItem.userId === u.userId
+                                      ? {
+                                          ...userItem,
+                                          isModerator: !u.isModerator,
+                                        }
+                                      : userItem
+                                  )
+                                );
+                                try {
+                                  await fetch(`${API_BASE}/users/${u.userId}`, {
+                                    method: "PATCH",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    credentials: "include",
+                                    body: JSON.stringify({
+                                      isModerator: !u.isModerator,
+                                    }),
+                                  });
+                                } catch (err) {
+                                  // revert on failure
+                                  setUsers((prev) =>
+                                    prev.map((userItem) =>
+                                      userItem.userId === u.userId
+                                        ? {
+                                            ...userItem,
+                                            isModerator: u.isModerator,
+                                          }
+                                        : userItem
+                                    )
+                                  );
+                                  alert(
+                                    `Failed to update user: ${err.message}`
+                                  );
+                                }
+                              }}
+                              style={{
+                                backgroundColor: u.isModerator
+                                  ? "#ff4d4f"
+                                  : "#4caf50",
+                                color: "#fff",
+                                border: "none",
+                                padding: "4px 8px",
+                                cursor: "pointer",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              {u.isModerator
+                                ? "Remove Moderator"
+                                : "Make Moderator"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="btn">
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
+                </div>
+              </div>
+            )}
+
+            {selectedTask === "Badge Creation" && (
+              <form className="user-form" onSubmit={(e) => e.preventDefault()}>
+                <div className="btn">
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
+                </div>
+              </form>
+            )}
           </div>
         )}
       </div>

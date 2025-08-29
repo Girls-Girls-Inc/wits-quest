@@ -15,7 +15,7 @@ function sbFromReq(req) {
     : null;
   if (!token) return null;
 
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false },
   });
@@ -101,41 +101,41 @@ const CollectiblesController = {
   },
 
   // CREATE must respect RLS -> use anon client with user's JWT
-// CREATE must respect RLS -> use anon client with user's JWT
-create: async (req, res) => {
-  try {
-    const sb = sbFromReq(req);
-    if (!sb) return res.status(401).json({ error: 'Missing bearer token' });
+  // CREATE must respect RLS -> use anon client with user's JWT
+  create: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ error: 'Missing bearer token' });
 
-    // (optional) prove the JWT is being forwarded
-    const who = await sb.auth.getUser();
-    console.log('caller uid:', who.data?.user?.id);
+      // (optional) prove the JWT is being forwarded
+      const who = await sb.auth.getUser();
+      console.log('caller uid:', who.data?.user?.id);
 
-    // pull fields from the request body
-    const { id, name, description, imageUrl, createdAt } = req.body || {};
-    if (!name || !String(name).trim()) {
-      return res.status(400).json({ error: 'name is required' });
+      // pull fields from the request body
+      const { id, name, description, imageUrl, createdAt } = req.body || {};
+      if (!name || !String(name).trim()) {
+        return res.status(400).json({ error: 'name is required' });
+      }
+
+      // IMPORTANT: keys must match your camelCase columns ("imageUrl", "createdAt")
+      const row = {
+        // include id only if you assign it yourself (your table uses BIGINT)
+        ...(id != null ? { id: Number(id) } : {}),
+        name: String(name).trim(),
+        description: description ?? null,
+        imageUrl: imageUrl ?? null,
+        createdAt: createdAt ?? new Date().toISOString(),
+      };
+
+      const data = await CollectiblesModel.create(row, sb); // model must use the passed sb
+      res.status(201).json(data);
+    } catch (err) {
+      if (String(err.message || '').toLowerCase().includes('row-level security')) {
+        return res.status(403).json({ error: err.message });
+      }
+      res.status(500).json({ error: err.message });
     }
-
-    // IMPORTANT: keys must match your camelCase columns ("imageUrl", "createdAt")
-    const row = {
-      // include id only if you assign it yourself (your table uses BIGINT)
-      ...(id != null ? { id: Number(id) } : {}),
-      name: String(name).trim(),
-      description: description ?? null,
-      imageUrl: imageUrl ?? null,
-      createdAt: createdAt ?? new Date().toISOString(),
-    };
-
-    const data = await CollectiblesModel.create(row, sb); // model must use the passed sb
-    res.status(201).json(data);
-  } catch (err) {
-    if (String(err.message || '').toLowerCase().includes('row-level security')) {
-      return res.status(403).json({ error: err.message });
-    }
-    res.status(500).json({ error: err.message });
-  }
-},
+  },
 
   // UPDATE via RLS (moderators only, per your policy)
   update: async (req, res) => {

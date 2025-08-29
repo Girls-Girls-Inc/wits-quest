@@ -1,28 +1,41 @@
 import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
-import IconButton from "../components/IconButton";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/login-signup.css";
-import "../index.css";
-import "../styles/leaderboard.css";
+import "../styles/dashboard.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
-const BOARDS = {
-  year: { id: "year", label: "Yearly", icon: "calendar_month" },
-  month: { id: "month", label: "Monthly", icon: "calendar_view_month" },
-  week: { id: "week", label: "Weekly", icon: "calendar_view_week" },
-};
-
 const Dashboard = () => {
-  const [boardKey, setBoardKey] = useState("year");
-  const [rows, setRows] = useState([]);
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [ownerId, setOwnerId] = useState(""); // optional: moderator can browse others
-  const [accessToken, setAccessToken] = useState(null); // ← token we’ll send to your API
-  const [me, setMe] = useState(null); // session.user (optional, for display)
+  const [accessToken, setAccessToken] = useState(null);
+  const [me, setMe] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Get / keep the Supabase session token
+  const dashboardData = {
+    badgesCollected: 45,
+    locationsVisited: 20,
+    points: 50,
+    questsCompleted: 35,
+    latestBadge: "Explorer",
+    latestLocation: "Central Park",
+  };
+
+  const ongoingQuests = [
+    { id: 1, name: "Quest 1", location: "Downtown", timeLeft: "2h 30m" },
+    { id: 2, name: "Quest 2", location: "Uptown", timeLeft: "1h 15m" },
+    { id: 3, name: "Quest 3", location: "Midtown", timeLeft: "45m" },
+  ];
+
+  const leaderboard = [
+    { rank: 1, name: "Person 1" },
+    { rank: 2, name: "Person 2" },
+    { rank: 3, name: "Me" },
+    { rank: 4, name: "Person 3" },
+    { rank: 5, name: "Person 4" },
+    { rank: 6, name: "Person 5" },
+  ];
+
   useEffect(() => {
     let mounted = true;
     const init = async () => {
@@ -33,173 +46,280 @@ const Dashboard = () => {
       setAccessToken(session?.access_token || null);
       setMe(session?.user || null);
     };
+
     init();
+
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       setAccessToken(session?.access_token || null);
       setMe(session?.user || null);
     });
+
     return () => sub?.subscription?.unsubscribe?.();
   }, []);
 
   const makeUrl = () => {
-    const userId = ownerId || me?.id; // default to current user
+    const userId = me?.id;
     if (!userId) return null;
-    // add limit/offset if you like: ?limit=100&offset=0
     return `${API_BASE}/users/${encodeURIComponent(userId)}/collectibles`;
-  };
-  const fmtDate = (iso) => {
-    if (!iso) return "";
-    try {
-      return new Date(iso).toLocaleDateString();
-    } catch {
-      return "";
-    }
   };
 
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'>
-         <rect width='100%' height='100%' fill='#eee'/>
-         <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
-               font-family='sans-serif' font-size='20' fill='#888'>no image</text>
-       </svg>`
+      `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>
+      <rect width='100%' height='100%' fill='#eee'/>
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='#888'>Badge</text>
+    </svg>`
     );
 
-  const loadBoard = async () => {
+  const loadBadges = async () => {
     const url = makeUrl();
     if (!accessToken || !url) {
-      setRows([]);
+      setBadges([]);
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
       const res = await fetch(url, {
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${accessToken}`, // IMPORTANT for RLS
+          Authorization: `Bearer ${accessToken}`,
         },
       });
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("API did not return an array");
-      setRows(data); // [{ id, name, description, imageUrl, createdAt, earnedAt }, ...]
+      setBadges(data);
     } catch (e) {
-      setRows([]);
-      toast.error(e.message || "Failed to load collectibles");
+      setBadges([]);
+      toast.error(e.message || "Failed to load badges");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load once when token arrives; reload when board or ownerId changes
   useEffect(() => {
-    if (accessToken) loadBoard("year");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (accessToken) loadBadges();
   }, [accessToken]);
 
-  useEffect(() => {
-    if (accessToken) loadBoard(boardKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardKey, ownerId]);
+  const nextSlide = () => {
+    if (badges.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % Math.ceil(badges.length / 4));
+    }
+  };
 
-  const switchBoard = async (key) => {
-    setBoardKey(key);
+  const prevSlide = () => {
+    if (badges.length > 0) {
+      setCurrentSlide(
+        (prev) =>
+          (prev - 1 + Math.ceil(badges.length / 4)) %
+          Math.ceil(badges.length / 4)
+      );
+    }
+  };
+
+  const getBadgesToShow = () => {
+    const itemsPerSlide = 4;
+    const start = currentSlide * itemsPerSlide;
+    return badges.slice(start, start + itemsPerSlide);
   };
 
   return (
-    <div className="leaderboard-container">
+    <div className="dashboard-container">
       <Toaster />
 
-      <div className="leaderboard-header">
-        <h1>My Collectibles</h1>
-        {me && (
-          <div style={{ color: "#666", fontSize: 13 }}>
-            Signed in as {me.email}
-          </div>
-        )}
-      </div>
+      <main className="main-content" role="main" aria-label="Dashboard">
+        <header className="dashboard-header">
+          <h1>DASHBOARD</h1>
+        </header>
 
-      <div
-        className="collectibles-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: 16,
-          padding: 12,
-        }}
-      >
-        {loading && (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 24 }}>
-            Loading…
-          </div>
-        )}
-
-        {!loading && rows.length === 0 && (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 24 }}>
-            No collectibles yet.
-          </div>
-        )}
-
-        {!loading &&
-          rows.map((r) => (
-            <div
-              key={r.id}
-              className="card"
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 12,
-                overflow: "hidden",
-                background: "#fff",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  paddingTop: "62%",
-                  background: "#fafafa",
-                }}
-              >
-                <img
-                  src={r.imageUrl || placeholder}
-                  alt={r.name || "collectible"}
-                  onError={(e) => {
-                    e.currentTarget.src = placeholder;
-                  }}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                }}
-              >
-                <div style={{ fontWeight: 700 }}>{r.name}</div>
-                {r.description && (
-                  <div style={{ color: "#555", fontSize: 14, lineHeight: 1.3 }}>
-                    {r.description}
-                  </div>
-                )}
-                <div style={{ marginTop: "auto", fontSize: 12, color: "#777" }}>
-                  {fmtDate(r.createdAt)} · <code>#{r.id}</code>
-                  {r.earnedAt && <> · earned {fmtDate(r.earnedAt)}</>}
-                </div>
+        {/* Dashboard Cards Grid */}
+        <section
+          className="dashboard-grid"
+          aria-label="User statistics and badges"
+        >
+          {/* Badges Collected Card */}
+          <article
+            className="dashboard-card badges-card"
+            aria-labelledby="badges-collected-title"
+          >
+            <div className="card-header">
+              <h3 id="badges-collected-title">Badges collected</h3>
+              <div className="badge-count" aria-live="polite">
+                {dashboardData.badgesCollected}
               </div>
             </div>
-          ))}
-      </div>
+            <div className="latest-badge">
+              <div
+                className="badge-circle"
+                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
+              >
+                <span>Latest badge</span>
+                <div className="badge-name">{dashboardData.latestBadge}</div>
+              </div>
+            </div>
+
+            {/* Badges Carousel */}
+            <div
+              className="badges-carousel"
+              role="region"
+              aria-label="Collected badges carousel"
+            >
+              <div className="carousel-header">
+                <button
+                  className="view-badges-btn"
+                  aria-label="View all badges"
+                >
+                  View Badges
+                </button>
+                <div className="carousel-controls">
+                  <button
+                    onClick={prevSlide}
+                    className="carousel-btn"
+                    aria-label="Previous badges"
+                  >
+                    ←
+                  </button>
+                  <button
+                    onClick={nextSlide}
+                    className="carousel-btn"
+                    aria-label="Next badges"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+
+              <div className="carousel-container">
+                {loading ? (
+                  <div
+                    className="carousel-loading"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Loading badges...
+                  </div>
+                ) : badges.length === 0 ? (
+                  <div className="no-badges">No badges yet</div>
+                ) : (
+                  <div className="carousel-track">
+                    {getBadgesToShow().map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="badge-item"
+                        role="group"
+                        aria-label={`Badge: ${badge.name}`}
+                      >
+                        <img
+                          src={badge.imageUrl || placeholder}
+                          alt={badge.name || "badge"}
+                          onError={(e) => {
+                            e.currentTarget.src = placeholder;
+                          }}
+                        />
+                        <span className="badge-item-name">{badge.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </article>
+
+          {/* Locations Visited Card */}
+          <article
+            className="dashboard-card"
+            aria-labelledby="locations-visited-title"
+          >
+            <h3 id="locations-visited-title">Locations Visited</h3>
+            <div className="stat-number" aria-live="polite">
+              {dashboardData.locationsVisited}
+            </div>
+            <div className="latest-info">
+              <div className="latest-box">
+                <span>Latest Location</span>
+                <div>{dashboardData.latestLocation}</div>
+              </div>
+            </div>
+          </article>
+
+          {/* Ongoing Quests Card */}
+          <article
+            className="dashboard-card quests-card"
+            aria-labelledby="ongoing-quests-title"
+          >
+            <h3 id="ongoing-quests-title">Ongoing Quests</h3>
+            <div
+              className="quests-table"
+              role="table"
+              aria-label="Ongoing quests"
+            >
+              {ongoingQuests.map((quest) => (
+                <div key={quest.id} className="quest-row" role="row">
+                  <span className="quest-name" role="cell">
+                    {quest.name}
+                  </span>
+                  <span className="quest-location" role="cell">
+                    {quest.location}
+                  </span>
+                  <span className="quest-time" role="cell">
+                    {quest.timeLeft}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          {/* Leaderboard Card */}
+          <article
+            className="dashboard-card leaderboard-card"
+            aria-labelledby="leaderboard-title"
+          >
+            <h3 id="leaderboard-title">Leaderboard</h3>
+
+            <div className="leaderboard-list" role="list">
+              {leaderboard.map((person) => (
+                <div
+                  key={person.rank}
+                  className={`leaderboard-row ${
+                    person.name === "Me" ? "me" : ""
+                  }`}
+                  role="listitem"
+                  aria-label={`Rank ${person.rank}, ${person.name}`}
+                >
+                  <span className="rank">{person.rank}</span>
+                  <span className="name">{person.name}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          {/* Points Card */}
+          <article
+            className="dashboard-card small-card"
+            aria-labelledby="points-title"
+          >
+            <h3 id="points-title">Points</h3>
+            <div className="stat-number" aria-live="polite">
+              {dashboardData.points}
+            </div>
+          </article>
+
+          {/* Quests Completed Card */}
+          <article
+            className="dashboard-card small-card"
+            aria-labelledby="quests-completed-title"
+          >
+            <h3 id="quests-completed-title">Quests Completed</h3>
+            <div className="stat-number" aria-live="polite">
+              {dashboardData.questsCompleted}
+            </div>
+          </article>
+        </section>
+      </main>
     </div>
   );
 };

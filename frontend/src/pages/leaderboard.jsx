@@ -58,7 +58,7 @@ const Leaderboard = () => {
     <div className="leaderboard-container">
       <Toaster />
       <div className="leaderboard-header">
-        <h1>Leaderboard</h1>
+        <h1>LEADERBOARD</h1>
         <h2>{BOARDS[boardKey].label}</h2>
       </div>
 

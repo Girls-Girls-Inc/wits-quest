@@ -7,7 +7,6 @@ import "../styles/quests.css";
 const Quests = () => {
   const [quests, setQuests] = useState([]);
 
-  // --- Dummy quests for offline testing ---
   const dummyQuests = [
     {
       id: 101,

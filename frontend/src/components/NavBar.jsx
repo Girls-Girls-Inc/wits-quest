@@ -9,7 +9,7 @@ const Navbar = () => {
 
   const navItems = [
     { route: "/adminDashboard", icon: "admin", label: "Admin" },
-    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/dashboard", icon: "dashboard", label: "Dashboard" },
     { route: "/quests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "map", label: "Map" },
     { route: "/leaderboard", icon: "leaderboard", label: "Leaderboard" },

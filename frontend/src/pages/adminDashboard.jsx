@@ -3,7 +3,7 @@ import { Toaster } from "react-hot-toast";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
 import "../styles/button.css";
-import SignupImage from "../assets/signup.png";
+import SignupImage from "../assets/Signup.png";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
@@ -440,9 +440,9 @@ const AdminDashboard = () => {
                                   users.map((userItem) =>
                                     userItem.userId === u.userId
                                       ? {
-                                          ...userItem,
-                                          isModerator: !u.isModerator,
-                                        }
+                                        ...userItem,
+                                        isModerator: !u.isModerator,
+                                      }
                                       : userItem
                                   )
                                 );
@@ -462,9 +462,9 @@ const AdminDashboard = () => {
                                     users.map((userItem) =>
                                       userItem.userId === u.userId
                                         ? {
-                                            ...userItem,
-                                            isModerator: u.isModerator,
-                                          }
+                                          ...userItem,
+                                          isModerator: u.isModerator,
+                                        }
                                         : userItem
                                     )
                                   );
@@ -524,9 +524,8 @@ const AdminDashboard = () => {
 
       <div className="toggle">
         <div
-          className={`toggle-panel ${
-            selectedTask ? "toggle-left" : "toggle-right"
-          }`}
+          className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"
+            }`}
         >
           <img src={SignupImage} alt="Quest" />
           {!selectedTask ? (

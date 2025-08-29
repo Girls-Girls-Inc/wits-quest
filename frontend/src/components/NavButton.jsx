@@ -2,19 +2,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/button.css";
-
-// import DashboardIcon from "../assets/icons/dashboard.png";
-// import ProfileIcon from "../assets/icons/profile.png";
-// import QuestsIcon from "../assets/icons/quests.png";
-// import SettingsIcon from "../assets/icons/settings.png";
 import LogoIcon from "../assets/logo.png";
+import leaderBoardLogo from "../assets/leaderboard.png";
+import homeLogo from "../assets/home.png";
+import mapLogo from "../assets/map.png";
+import profileLogo from "../assets/profile.png";
+import adminLogo from "../assets/admin.png";
+import Leaderboard from "../pages/leaderboard";
 
 const ICONS = {
-  //   dashboard: DashboardIcon,
-  //   profile: ProfileIcon,
-  //   quests: QuestsIcon,
-  //   settings: SettingsIcon,
+  dashboard: homeLogo,
+  profile: profileLogo,
+  map: mapLogo,
   logo: LogoIcon,
+  leaderboard: leaderBoardLogo,
+  admin: adminLogo,
 };
 
 const NavButton = ({

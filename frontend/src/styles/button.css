@@ -110,7 +110,7 @@
 }
 
 .admin-buttons button {
-  width: 100%; /* make buttons fill the container */
+  width: 100%;
   padding: 12px 20px;
   font-size: 1rem;
   color: white;

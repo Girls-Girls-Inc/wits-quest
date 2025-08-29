@@ -31,12 +31,15 @@ const AdminDashboard = () => {
     name: "",
     latitude: "",
     longitude: "",
-    radius: ""
+    radius: "",
   });
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       if (error) console.error(error);
       else setUser(user);
     };
@@ -48,7 +51,8 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/users`); // your backend endpoint
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Users API did not return an array");
+      if (!Array.isArray(data))
+        throw new Error("Users API did not return an array");
       setUsers(data);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -59,9 +63,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-
-
-
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -79,8 +80,10 @@ const AdminDashboard = () => {
           locationRes.json(),
         ]);
 
-        if (!Array.isArray(collectiblesData)) throw new Error("Collectibles API did not return an array");
-        if (!Array.isArray(locationsData)) throw new Error("Locations API did not return an array");
+        if (!Array.isArray(collectiblesData))
+          throw new Error("Collectibles API did not return an array");
+        if (!Array.isArray(locationsData))
+          throw new Error("Locations API did not return an array");
 
         setCollectibles(collectiblesData);
         setLocations(locationsData);
@@ -157,18 +160,19 @@ const AdminDashboard = () => {
       ...locationData,
       latitude: parseFloat(locationData.latitude),
       longitude: parseFloat(locationData.longitude),
-      radius: parseFloat(locationData.radius)
+      radius: parseFloat(locationData.radius),
     };
 
     try {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(locationInsert)
+        body: JSON.stringify(locationInsert),
       });
 
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to create location");
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
 
       alert(`Location "${result.name}" created successfully!`);
       handleBack();
@@ -190,7 +194,11 @@ const AdminDashboard = () => {
       if (text) result = JSON.parse(text);
 
       // update local state regardless
-      setUsers(users.map(u => u.userId === userId ? { ...u, isModerator: newStatus } : u));
+      setUsers(
+        users.map((u) =>
+          u.userId === userId ? { ...u, isModerator: newStatus } : u
+        )
+      );
     } catch (err) {
       alert(`Failed to update user: ${err.message}`);
     }
@@ -203,10 +211,18 @@ const AdminDashboard = () => {
         {!selectedTask ? (
           <div className="admin-menu">
             <div className="admin-buttons">
-              <button onClick={() => handleTaskClick("Quest Creation")}>Quest Creation</button>
-              <button onClick={() => handleTaskClick("Location Creation")}>Location Creation</button>
-              <button onClick={() => handleTaskClick("Badge Creation")}>Create Badge</button>
-              <button onClick={() => handleTaskClick("Admin Privilege")}>Admin Privilege</button>
+              <button onClick={() => handleTaskClick("Quest Creation")}>
+                Quest Creation
+              </button>
+              <button onClick={() => handleTaskClick("Location Creation")}>
+                Location Creation
+              </button>
+              <button onClick={() => handleTaskClick("Badge Creation")}>
+                Create Badge
+              </button>
+              <button onClick={() => handleTaskClick("Admin Privilege")}>
+                Admin Privilege
+              </button>
             </div>
           </div>
         ) : (
@@ -215,64 +231,159 @@ const AdminDashboard = () => {
             {selectedTask === "Quest Creation" && (
               <form className="login-form" onSubmit={handleQuestSubmit}>
                 <div className="input-box">
-                  <InputField type="text" name="name" placeholder="Quest Name" value={questData.name} onChange={handleQuestChange} required />
+                  <InputField
+                    type="text"
+                    name="name"
+                    placeholder="Quest Name"
+                    value={questData.name}
+                    onChange={handleQuestChange}
+                    required
+                  />
                 </div>
                 <div className="input-box">
-                  <InputField type="text" name="description" placeholder="Quest Description" value={questData.description} onChange={handleQuestChange} required />
+                  <InputField
+                    type="text"
+                    name="description"
+                    placeholder="Quest Description"
+                    value={questData.description}
+                    onChange={handleQuestChange}
+                    required
+                  />
                 </div>
                 <div className="input-box">
-                  <InputField type="text" name="imageUrl" placeholder="Image URL" value={questData.imageUrl} onChange={handleQuestChange} />
+                  <InputField
+                    type="text"
+                    name="imageUrl"
+                    placeholder="Image URL"
+                    value={questData.imageUrl}
+                    onChange={handleQuestChange}
+                  />
                 </div>
                 <div className="input-box">
                   <label>Collectible</label>
-                  <select name="collectibleId" value={questData.collectibleId} onChange={handleQuestChange} required>
+                  <select
+                    name="collectibleId"
+                    value={questData.collectibleId}
+                    onChange={handleQuestChange}
+                    required
+                  >
                     <option value="">Select a collectible</option>
                     {collectibles.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="input-box">
                   <label>Location</label>
-                  <select name="locationId" value={questData.locationId} onChange={handleQuestChange} required>
+                  <select
+                    name="locationId"
+                    value={questData.locationId}
+                    onChange={handleQuestChange}
+                    required
+                  >
                     <option value="">Select a location</option>
                     {locations.map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="input-box">
-                  <InputField type="number" name="pointsAchievable" placeholder="Points Achievable" value={questData.pointsAchievable} onChange={handleQuestChange} />
+                  <InputField
+                    type="number"
+                    name="pointsAchievable"
+                    placeholder="Points Achievable"
+                    value={questData.pointsAchievable}
+                    onChange={handleQuestChange}
+                  />
                 </div>
                 <div className="input-box">
                   <label>
-                    <input type="checkbox" name="isActive" checked={questData.isActive} onChange={(e) => setQuestData({ ...questData, isActive: e.target.checked })} />
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={questData.isActive}
+                      onChange={(e) =>
+                        setQuestData({
+                          ...questData,
+                          isActive: e.target.checked,
+                        })
+                      }
+                    />
                     Active
                   </label>
                 </div>
                 <div className="btn">
                   <IconButton type="submit" icon="save" label="Create Quest" />
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
                 </div>
               </form>
             )}
             {selectedTask === "Location Creation" && (
               <form className="login-form" onSubmit={handleLocationSubmit}>
                 <div className="input-box">
-                  <InputField type="text" name="name" placeholder="Location Name" value={locationData.name} onChange={handleLocationChange} required />
+                  <InputField
+                    type="text"
+                    name="name"
+                    placeholder="Location Name"
+                    value={locationData.name}
+                    onChange={handleLocationChange}
+                    required
+                  />
                 </div>
                 <div className="input-box">
-                  <InputField type="number" step="any" name="latitude" placeholder="Latitude" value={locationData.latitude} onChange={handleLocationChange} required />
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    placeholder="Latitude"
+                    value={locationData.latitude}
+                    onChange={handleLocationChange}
+                    required
+                  />
                 </div>
                 <div className="input-box">
-                  <InputField type="number" step="any" name="longitude" placeholder="Longitude" value={locationData.longitude} onChange={handleLocationChange} required />
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    placeholder="Longitude"
+                    value={locationData.longitude}
+                    onChange={handleLocationChange}
+                    required
+                  />
                 </div>
                 <div className="input-box">
-                  <InputField type="number" step="any" name="radius" placeholder="Radius" value={locationData.radius} onChange={handleLocationChange} required />
+                  <InputField
+                    type="number"
+                    step="any"
+                    name="radius"
+                    placeholder="Radius"
+                    value={locationData.radius}
+                    onChange={handleLocationChange}
+                    required
+                  />
                 </div>
                 <div className="btn">
-                  <IconButton type="submit" icon="save" label="Create Location" />
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
+                  <IconButton
+                    type="submit"
+                    icon="save"
+                    label="Create Location"
+                  />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
                 </div>
               </form>
             )}
@@ -281,53 +392,101 @@ const AdminDashboard = () => {
                 <h1>Admin Privileges</h1>
                 <p>Promote or remove users as moderators.</p>
 
-                <div style={{ maxHeight: "400px", overflowY: "auto", overflowX: "auto" }}>
-                  <table style={{ width: "100%", minWidth: "600px", borderCollapse: "collapse" }}>
+                <div
+                  style={{
+                    maxHeight: "400px",
+                    overflowY: "auto",
+                    overflowX: "auto",
+                  }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      minWidth: "600px",
+                      borderCollapse: "collapse",
+                    }}
+                  >
                     <thead>
                       <tr>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Email</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Is Moderator</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Created At</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Action</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Email
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Is Moderator
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Created At
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((u) => (
                         <tr key={u.userId}>
                           <td style={{ padding: "8px" }}>{u.email}</td>
-                          <td style={{ padding: "8px" }}>{u.isModerator ? "Yes" : "No"}</td>
-                          <td style={{ padding: "8px" }}>{new Date(u.created_at).toLocaleString()}</td>
+                          <td style={{ padding: "8px" }}>
+                            {u.isModerator ? "Yes" : "No"}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {new Date(u.created_at).toLocaleString()}
+                          </td>
                           <td style={{ padding: "8px" }}>
                             <button
                               onClick={async () => {
                                 // Optimistic UI update
-                                setUsers(users.map(userItem =>
-                                  userItem.userId === u.userId ? { ...userItem, isModerator: !u.isModerator } : userItem
-                                ));
+                                setUsers(
+                                  users.map((userItem) =>
+                                    userItem.userId === u.userId
+                                      ? {
+                                          ...userItem,
+                                          isModerator: !u.isModerator,
+                                        }
+                                      : userItem
+                                  )
+                                );
                                 try {
                                   await fetch(`${API_BASE}/users/${u.userId}`, {
                                     method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ isModerator: !u.isModerator }),
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      isModerator: !u.isModerator,
+                                    }),
                                   });
                                 } catch (err) {
                                   // revert state if network fails
-                                  setUsers(users.map(userItem =>
-                                    userItem.userId === u.userId ? { ...userItem, isModerator: u.isModerator } : userItem
-                                  ));
-                                  alert(`Failed to update user: ${err.message}`);
+                                  setUsers(
+                                    users.map((userItem) =>
+                                      userItem.userId === u.userId
+                                        ? {
+                                            ...userItem,
+                                            isModerator: u.isModerator,
+                                          }
+                                        : userItem
+                                    )
+                                  );
+                                  alert(
+                                    `Failed to update user: ${err.message}`
+                                  );
                                 }
                               }}
                               style={{
-                                backgroundColor: u.isModerator ? "#ff4d4f" : "#4caf50",
+                                backgroundColor: u.isModerator
+                                  ? "#ff4d4f"
+                                  : "#4caf50",
                                 color: "#fff",
                                 border: "none",
                                 padding: "4px 8px",
                                 cursor: "pointer",
-                                borderRadius: "4px"
+                                borderRadius: "4px",
                               }}
                             >
-                              {u.isModerator ? "Remove Moderator" : "Make Moderator"}
+                              {u.isModerator
+                                ? "Remove Moderator"
+                                : "Make Moderator"}
                             </button>
                           </td>
                         </tr>
@@ -337,7 +496,12 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="btn">
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
                 </div>
               </div>
             )}
@@ -345,17 +509,25 @@ const AdminDashboard = () => {
             {selectedTask === "Badge Creation" && (
               <form className="user-form" onSubmit={handleUserUpdate}>
                 <div className="btn">
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
+                  <IconButton
+                    onClick={handleBack}
+                    type="return"
+                    icon="arrow_back"
+                    label="Back"
+                  />
                 </div>
               </form>
             )}
-
           </div>
         )}
       </div>
 
       <div className="toggle">
-        <div className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"}`}>
+        <div
+          className={`toggle-panel ${
+            selectedTask ? "toggle-left" : "toggle-right"
+          }`}
+        >
           <img src={SignupImage} alt="Quest" />
           {!selectedTask ? (
             <>

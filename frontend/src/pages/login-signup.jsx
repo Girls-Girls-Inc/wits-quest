@@ -81,6 +81,19 @@ const Login = () => {
   };
 
   useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        toast.success("Signed in with Google!");
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
     validatePassword(signupForm.password);
   }, [signupForm.password]);
 
@@ -201,7 +214,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+          redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
         },
       });
 
@@ -209,9 +222,6 @@ const Login = () => {
         toast.error(error.message || "Google Sign-in failed");
         return;
       }
-
-      toast.success("Signed in with Google!");
-      setIsActive(false);
     } catch (error) {
       toast.error("An unexpected Google Sign-in error occurred.");
       console.error("Google Sign-in error:", err.message);

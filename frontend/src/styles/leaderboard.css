@@ -36,18 +36,12 @@
   transition: all 0.2s ease;
 }
 
-.leaderboard-controls .btn.active {
-  /* background-color: white; */
-}
-
-/* Table wrapper */
 .leaderboard-table-wrapper {
   overflow-x: auto;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(71, 68, 68, 0.08);
 }
 
-/* Table */
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;

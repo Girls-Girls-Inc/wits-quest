@@ -176,7 +176,7 @@ const Login = () => {
         options: {
           data: { displayName: signupForm.name },
         },
-        redirectTo: import.meta.env.VITE_WEB_URL + "/profile",
+        redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
       });
 
       if (data.user.user_metadata.email_verified === true) {
@@ -301,47 +301,6 @@ const Login = () => {
               required
             />
           </div>
-
-          {/* <div className="password-validation-box" aria-live="polite">
-            <p
-              className={
-                passwordRules.length ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.length ? "✔" : "✖"} Minimum 8 characters
-            </p>
-            <p
-              className={
-                passwordRules.uppercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.uppercase ? "✔" : "✖"} At least 1 uppercase letter
-            </p>
-            <p
-              className={
-                passwordRules.lowercase ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.lowercase ? "✔" : "✖"} At least 1 lowercase letter
-            </p>
-            <p
-              className={
-                passwordRules.number ? "password-valid" : "password-invalid"
-              }
-            >
-              {passwordRules.number ? "✔" : "✖"} At least 1 number
-            </p>
-            <p
-              className={
-                passwordRules.specialChar
-                  ? "password-valid"
-                  : "password-invalid"
-              }
-            >
-              {passwordRules.specialChar ? "✔" : "✖"} At least 1 special
-              character
-            </p>
-          </div> */}
 
           <div className="btn">
             <IconButton type="submit" icon="app_registration" label="SIGN UP" />

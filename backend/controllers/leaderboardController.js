@@ -2,12 +2,18 @@ const LeaderboardModel = require("../models/leaderboardModel");
 
 const LeaderboardController = {
   // GET /api/leaderboard?periodType=weekly&start=2025-08-01&end=2025-08-07
-getLeaderboard: async (req, res) => {
+  getLeaderboard: async (req, res) => {
     try {
-        const { periodType, start, end, userId, id, } = req.query;
-        const data = await LeaderboardModel.getLeaderboard(periodType, start, end, userId, id);
-        res.json(data); // always return array
-        } catch (err) {
+      const { periodType, start, end, userId, id } = req.query;
+      const data = await LeaderboardModel.getLeaderboard(
+        periodType,
+        start,
+        end,
+        userId,
+        id
+      );
+      res.json(data);
+    } catch (err) {
       res.status(500).json({ error: err.message });
     }
   },
@@ -40,16 +46,16 @@ getLeaderboard: async (req, res) => {
   // },
 
   // DELETE /api/leaderboard/:id
-//   deleteEntry: async (req, res) => {
-//     try {
-//       const { id } = req.params;
-//       const { error } = await LeaderboardModel.deleteEntry(id);
-//       if (error) return res.status(400).json({ error: error.message });
-//       res.status(204).send();
-//     } catch (err) {
-//       res.status(500).json({ error: err.message });
-//     }
-//   }
+  //   deleteEntry: async (req, res) => {
+  //     try {
+  //       const { id } = req.params;
+  //       const { error } = await LeaderboardModel.deleteEntry(id);
+  //       if (error) return res.status(400).json({ error: error.message });
+  //       res.status(204).send();
+  //     } catch (err) {
+  //       res.status(500).json({ error: err.message });
+  //     }
+  //   }
 };
 
 module.exports = LeaderboardController;

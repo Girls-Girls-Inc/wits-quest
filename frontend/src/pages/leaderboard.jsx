@@ -22,7 +22,7 @@ const Leaderboard = () => {
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
   const DUMMY_ROWS = [
-    { id: "dummy-1", username: "Alice Tester", points: 1200 },
+    { id: "dummy-1", username: "Alice Test", points: 1200 },
     { id: "dummy-2", username: "Bob Debugger", points: 950 },
   ];
 

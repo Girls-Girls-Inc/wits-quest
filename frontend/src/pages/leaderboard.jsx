@@ -20,11 +20,6 @@ const Leaderboard = () => {
   const makeUrl = (key) =>
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
-  const DUMMY_ROWS = [
-    { id: "dummy-1", username: "Alice Tester", points: 1200 },
-    { id: "dummy-2", username: "Bob Debugger", points: 950 },
-  ];
-
   const loadBoard = async (key = boardKey) => {
     const loadingToast = toast.loading("Loading leaderboard…");
     try {
@@ -35,10 +30,10 @@ const Leaderboard = () => {
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("API did not return an array");
 
-      setRows([...DUMMY_ROWS, ...data]);
+      setRows(data);
       toast.success("Leaderboard loaded!", { id: loadingToast });
     } catch (e) {
-      setRows(DUMMY_ROWS);
+      setRows([]);
       toast.error(e.message || "Failed to load leaderboard", {
         id: loadingToast,
       });
@@ -117,13 +112,12 @@ const Leaderboard = () => {
               <Th>#</Th>
               <Th>Name</Th>
               <Th>Points</Th>
-              <Th>ID</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <Td colSpan={4} className="empty">
+                <Td colSpan={3} className="empty">
                   No entries yet.
                 </Td>
               </tr>
@@ -146,9 +140,6 @@ const Leaderboard = () => {
                   <strong>{r.username}</strong>
                 </Td>
                 <Td>{r.points}</Td>
-                <Td>
-                  <code>{r.id}</code>
-                </Td>
               </tr>
             ))}
           </tbody>

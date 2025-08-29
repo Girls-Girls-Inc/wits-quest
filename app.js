@@ -15,8 +15,8 @@ const frontendPath = path.join(__dirname, "frontend", "dist");
 app.use(express.static(frontendPath));
 
 // Your API routes here (if any)
-const userRoutes = require("./backend/routes/user-routes");
-app.use("", userRoutes.routes);
+//const userRoutes = require("./backend/routes/user-routes");
+//app.use("", userRoutes.routes);
 
 const leaderboardRoutes = require('./backend/routes/leaderboardRoutes');
 app.use("", leaderboardRoutes);
@@ -24,6 +24,14 @@ app.use("", leaderboardRoutes);
 const collectiblesRoutes = require('./backend/routes/collectiblesRoutes');
 app.use("", collectiblesRoutes);
 
+const questRoutes = require('./backend/routes/questRoutes');
+app.use("", questRoutes);
+
+const locationRoutes = require('./backend/routes/locationRoutes');
+app.use("/locations", locationRoutes);
+
+const userRoutes = require('./backend/routes/userRoutes');
+app.use("", userRoutes);
 
 
 // Catch-all to serve index.html for SPA routes

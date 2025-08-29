@@ -4,7 +4,7 @@ const router = express.Router();
 const ctrl = require('../controllers/collectiblesController');
 
 router.get('/users/:userId/collectibles', ctrl.listUserCollectibles);
-router.get('/collectibles',               ctrl.list);   // reads req.query.board (year|month|week)
+router.get('/collectibles',               ctrl.list);   
 router.get('/collectibles/:id',           ctrl.getOne);
 router.post('/collectibles',              ctrl.create);
 router.patch('/collectibles/:id',         ctrl.update);

@@ -7,19 +7,18 @@ import "../styles/button.css";
 import SignupImage from "../assets/signup.png";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
-import useModerator from "../hooks/useModerator";
+import supabase from "../supabase/supabaseClient";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // backend base URL
 
 const AdminDashboard = () => {
-  const { loading, isModerator, user } = useModerator();
-
   const [isActive, setIsActive] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
 
   const [collectibles, setCollectibles] = useState([]);
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [user, setUser] = useState(null);
 
   const [questData, setQuestData] = useState({
     name: "",
@@ -38,10 +37,17 @@ const AdminDashboard = () => {
     radius: "",
   });
 
-  // Only fetch admin data AFTER we know the viewer is a moderator
+  // Signed-in Supabase user (for createdBy)
   useEffect(() => {
-    if (loading || !isModerator) return;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error) setUser(data?.user ?? null);
+      else console.error(error);
+    })();
+  }, []);
 
+  // Fetch options + users on mount
+  useEffect(() => {
     const fetchOptions = async () => {
       try {
         const [collectibleRes, locationRes] = await Promise.all([
@@ -57,13 +63,8 @@ const AdminDashboard = () => {
           locationRes.json(),
         ]);
 
-        if (!Array.isArray(collectiblesData) || collectiblesData.length === 0)
-          throw new Error("No collectibles returned");
-        if (!Array.isArray(locationsData) || locationsData.length === 0)
-          throw new Error("No locations returned");
-
-        setCollectibles(collectiblesData);
-        setLocations(locationsData);
+        setCollectibles(Array.isArray(collectiblesData) ? collectiblesData : []);
+        setLocations(Array.isArray(locationsData) ? locationsData : []);
       } catch (err) {
         console.error("Error fetching options:", err);
         setCollectibles([]);
@@ -73,14 +74,10 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_BASE}/users`, {
-          credentials: "include",
-        });
+        const res = await fetch(`${API_BASE}/users`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
-        if (!Array.isArray(data))
-          throw new Error("Users API did not return an array");
-        setUsers(data);
+        setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching users:", err);
         setUsers([]);
@@ -89,9 +86,10 @@ const AdminDashboard = () => {
 
     fetchOptions();
     fetchUsers();
-  }, [loading, isModerator]);
+  }, []);
 
   const handleTaskClick = (task) => setSelectedTask(task);
+
   const handleBack = () => {
     setSelectedTask(null);
     setIsActive(true);
@@ -114,7 +112,7 @@ const AdminDashboard = () => {
 
   const handleQuestChange = (e) => {
     const { name, value } = e.target;
-    setQuestData({ ...questData, [name]: value });
+    setQuestData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleQuestSubmit = async (e) => {
@@ -147,7 +145,7 @@ const AdminDashboard = () => {
 
   const handleLocationChange = (e) => {
     const { name, value } = e.target;
-    setLocationData({ ...locationData, [name]: value });
+    setLocationData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleLocationSubmit = async (e) => {
@@ -170,8 +168,7 @@ const AdminDashboard = () => {
       });
 
       const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.message || "Failed to create location");
+      if (!res.ok) throw new Error(result.message || "Failed to create location");
 
       alert(`Location "${result.name}" created successfully!`);
       handleBack();
@@ -182,6 +179,11 @@ const AdminDashboard = () => {
 
   const handleToggleModerator = async (userId, newStatus) => {
     try {
+      // Optimistic UI
+      setUsers((prev) =>
+        prev.map((u) => (u.userId === userId ? { ...u, isModerator: newStatus } : u))
+      );
+
       const res = await fetch(`${API_BASE}/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -189,45 +191,18 @@ const AdminDashboard = () => {
         body: JSON.stringify({ isModerator: newStatus }),
       });
 
-      let result = {};
-      const text = await res.text();
-      if (text) result = JSON.parse(text);
-
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.userId === userId ? { ...u, isModerator: newStatus } : u
-        )
-      );
+      if (!res.ok) {
+        // Revert on failure
+        setUsers((prev) =>
+          prev.map((u) => (u.userId === userId ? { ...u, isModerator: !newStatus } : u))
+        );
+        throw new Error(await res.text());
+      }
     } catch (err) {
       alert(`Failed to update user: ${err.message}`);
     }
   };
 
-  // ======= GUARD RENDERING =======
-  if (loading) {
-    return (
-      <div className="container">
-        <Toaster />
-        <div className="form-box login">
-          <h1>Loading…</h1>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isModerator) {
-    return (
-      <div className="container">
-        <Toaster />
-        <div className="form-box login">
-          <h1>403 – Moderator Access Required</h1>
-          <p>You don’t have permission to view this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ======= MAIN (authorized) =======
   return (
     <div className={`container${isActive ? " active" : ""}`}>
       <Toaster />
@@ -344,10 +319,7 @@ const AdminDashboard = () => {
                       name="isActive"
                       checked={questData.isActive}
                       onChange={(e) =>
-                        setQuestData({
-                          ...questData,
-                          isActive: e.target.checked,
-                        })
+                        setQuestData((prev) => ({ ...prev, isActive: e.target.checked }))
                       }
                     />
                     Active
@@ -357,8 +329,8 @@ const AdminDashboard = () => {
                 <div className="btn">
                   <IconButton type="submit" icon="save" label="Create Quest" />
                   <IconButton
+                    type="button"
                     onClick={handleBack}
-                    type="return"
                     icon="arrow_back"
                     label="Back"
                   />
@@ -412,14 +384,10 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="btn">
+                  <IconButton type="submit" icon="save" label="Create Location" />
                   <IconButton
-                    type="submit"
-                    icon="save"
-                    label="Create Location"
-                  />
-                  <IconButton
+                    type="button"
                     onClick={handleBack}
-                    type="return"
                     icon="arrow_back"
                     label="Back"
                   />
@@ -442,76 +410,26 @@ const AdminDashboard = () => {
                   >
                     <thead>
                       <tr>
-                        <th style={{ textAlign: "left", padding: "8px" }}>
-                          Email
-                        </th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>
-                          Is Moderator
-                        </th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>
-                          Created At
-                        </th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>
-                          Action
-                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Email</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Is Moderator</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Created At</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((u) => (
                         <tr key={u.userId}>
                           <td style={{ padding: "8px" }}>{u.email}</td>
+                          <td style={{ padding: "8px" }}>{u.isModerator ? "Yes" : "No"}</td>
                           <td style={{ padding: "8px" }}>
-                            {u.isModerator ? "Yes" : "No"}
-                          </td>
-                          <td style={{ padding: "8px" }}>
-                            {new Date(u.created_at).toLocaleString()}
+                            {u.created_at ? new Date(u.created_at).toLocaleString() : "—"}
                           </td>
                           <td style={{ padding: "8px" }}>
                             <button
-                              onClick={async () => {
-                                // optimistic UI
-                                setUsers((prev) =>
-                                  prev.map((userItem) =>
-                                    userItem.userId === u.userId
-                                      ? {
-                                          ...userItem,
-                                          isModerator: !u.isModerator,
-                                        }
-                                      : userItem
-                                  )
-                                );
-                                try {
-                                  await fetch(`${API_BASE}/users/${u.userId}`, {
-                                    method: "PATCH",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    credentials: "include",
-                                    body: JSON.stringify({
-                                      isModerator: !u.isModerator,
-                                    }),
-                                  });
-                                } catch (err) {
-                                  // revert on failure
-                                  setUsers((prev) =>
-                                    prev.map((userItem) =>
-                                      userItem.userId === u.userId
-                                        ? {
-                                            ...userItem,
-                                            isModerator: u.isModerator,
-                                          }
-                                        : userItem
-                                    )
-                                  );
-                                  alert(
-                                    `Failed to update user: ${err.message}`
-                                  );
-                                }
-                              }}
+                              type="button"
+                              onClick={() => handleToggleModerator(u.userId, !u.isModerator)}
                               style={{
-                                backgroundColor: u.isModerator
-                                  ? "#ff4d4f"
-                                  : "#4caf50",
+                                backgroundColor: u.isModerator ? "#ff4d4f" : "#4caf50",
                                 color: "#fff",
                                 border: "none",
                                 padding: "4px 8px",
@@ -519,9 +437,7 @@ const AdminDashboard = () => {
                                 borderRadius: "4px",
                               }}
                             >
-                              {u.isModerator
-                                ? "Remove Moderator"
-                                : "Make Moderator"}
+                              {u.isModerator ? "Remove Moderator" : "Make Moderator"}
                             </button>
                           </td>
                         </tr>
@@ -532,8 +448,8 @@ const AdminDashboard = () => {
 
                 <div className="btn">
                   <IconButton
+                    type="button"
                     onClick={handleBack}
-                    type="return"
                     icon="arrow_back"
                     label="Back"
                   />
@@ -545,8 +461,8 @@ const AdminDashboard = () => {
               <form className="user-form" onSubmit={(e) => e.preventDefault()}>
                 <div className="btn">
                   <IconButton
+                    type="button"
                     onClick={handleBack}
-                    type="return"
                     icon="arrow_back"
                     label="Back"
                   />
@@ -556,12 +472,9 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
       <div className="toggle">
-        <div
-          className={`toggle-panel ${
-            selectedTask ? "toggle-left" : "toggle-right"
-          }`}
-        >
+        <div className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"}`}>
           <img src={SignupImage} alt="Quest" />
           {!selectedTask ? (
             <>

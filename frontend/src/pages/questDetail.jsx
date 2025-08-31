@@ -141,7 +141,7 @@ export default function QuestDetail() {
             const j = await res.json();
             if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
             toast.success("Quest completed! Points awarded.");
-            navigate("/");
+            navigate("/dashboard");
         } catch (e) {
             toast.error(e.message || "Completion failed");
         }
@@ -236,7 +236,7 @@ export default function QuestDetail() {
                     {withinRadius ? "You are inside the radius" : "You are outside the radius"}
                 </div>
                 <button className="primary" disabled={!withinRadius} onClick={onComplete}>
-                    Check-in & Complete
+                    Complete
                 </button>
                 <button
                     className="secondary"

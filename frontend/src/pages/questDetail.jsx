@@ -10,32 +10,30 @@ const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 function haversineMeters(aLat, aLng, bLat, bLng) {
     const toRad = (d) => (d * Math.PI) / 180;
-    const R = 6371000; // meters
+    const R = 6371000;
     const dLat = toRad(bLat - aLat);
     const dLng = toRad(bLng - aLng);
     const s1 =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
-    return R * c;
+        Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
 }
 
 export default function QuestDetail() {
     const { questId } = useParams();
-    const [params] = useSearchParams(); // ?uq=USER_QUEST_ID
+    const [params] = useSearchParams();
     const userQuestId = params.get("uq");
     const navigate = useNavigate();
 
     const [accessToken, setAccessToken] = useState(null);
     const [me, setMe] = useState(null);
 
-    const [quest, setQuest] = useState(null);   // { id, name, pointsAchievable, locationId, ... }
-    const [loc, setLoc] = useState(null);       // { id, name, lat, lng, radius }
+    const [quest, setQuest] = useState(null);
+    const [loc, setLoc] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // live user position
-    const [pos, setPos] = useState(null);       // { lat, lng, accuracy? }
+    const [pos, setPos] = useState(null);
     const watchIdRef = useRef(null);
 
     const { isLoaded } = useLoadScript({ googleMapsApiKey: GMAPS_KEY || "" });
@@ -48,12 +46,11 @@ export default function QuestDetail() {
 
     const withinRadius = useMemo(() => {
         if (!pos || !loc) return false;
-        const r = Number(loc.radius) || 0;
-        if (!r) return false;
+        const r = Number(loc.radius);
+        if (!Number.isFinite(r) || r <= 0) return false;
         return haversineMeters(pos.lat, pos.lng, loc.lat, loc.lng) <= r;
     }, [pos, loc]);
 
-    // session
     useEffect(() => {
         (async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -62,7 +59,7 @@ export default function QuestDetail() {
         })();
     }, []);
 
-    // fetch quest + location (normalize radius/lat/lng here)
+    // fetch quest + location (backend now guarantees numbers / no NaN)
     useEffect(() => {
         if (!accessToken) return;
 
@@ -70,7 +67,6 @@ export default function QuestDetail() {
             try {
                 setLoading(true);
 
-                // 1) Quest
                 const resQ = await fetch(`${API_BASE}/quests?id=${encodeURIComponent(questId)}`, {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 });
@@ -79,20 +75,23 @@ export default function QuestDetail() {
                 if (!q) throw new Error(`Quest ${questId} not found`);
                 setQuest(q);
 
-                // 2) Location (normalize numbers, including radius)
                 if (!q.locationId) throw new Error("Quest has no locationId");
+
                 const resL = await fetch(`${API_BASE}/locations/${q.locationId}`, {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 });
                 const raw = await resL.json();
 
-                const toNum = (v) => (typeof v === "number" ? v : v != null ? parseFloat(v) : NaN);
-                const lat = toNum(raw.lat ?? raw.latitude);
-                const lng = toNum(raw.lng ?? raw.longitude);
-                const radius =
-                    toNum(raw.radius ?? raw.radiusMeters ?? raw.range ?? raw.distance) || 0;
+                // trust backend normalisation; ensure numbers are finite, fall back to 0
+                const lat = Number.isFinite(Number(raw.lat)) ? Number(raw.lat) : 0;
+                const lng = Number.isFinite(Number(raw.lng)) ? Number(raw.lng) : 0;
+                const radius = Number.isFinite(Number(raw.radius)) ? Number(raw.radius) : 0;
 
-                setLoc({ ...raw, lat, lng, radius });
+                const normalised = { ...raw, lat, lng, radius };
+                // helpful debug once:
+                console.debug("[QuestDetail] location loaded:", normalised);
+
+                setLoc(normalised);
             } catch (e) {
                 toast.error(e.message || "Failed to load quest");
             } finally {
@@ -101,33 +100,24 @@ export default function QuestDetail() {
         })();
     }, [accessToken, questId]);
 
-    // start geolocation watch (live location)
     useEffect(() => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser.");
             return;
         }
         const id = navigator.geolocation.watchPosition(
-            (p) => {
-                const next = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
-                setPos(next);
-            },
+            (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
             (err) => toast.error(err.message || "Unable to get your location"),
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
         );
         watchIdRef.current = id;
         return () => {
-            if (watchIdRef.current != null) {
-                navigator.geolocation.clearWatch(watchIdRef.current);
-            }
+            if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
         };
     }, []);
 
-    // Optional: auto-center the map to your live location once it appears
     useEffect(() => {
-        if (mapRef.current && pos) {
-            mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
-        }
+        if (mapRef.current && pos) mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
     }, [pos]);
 
     const onComplete = async () => {
@@ -145,13 +135,13 @@ export default function QuestDetail() {
                 },
                 body: JSON.stringify({
                     questId: quest.id,
-                    points: quest.pointsAchievable, // server re-validates points from DB
+                    points: quest.pointsAchievable,
                 }),
             });
             const j = await res.json();
             if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
             toast.success("Quest completed! Points awarded.");
-            navigate("/"); // back to dashboard
+            navigate("/");
         } catch (e) {
             toast.error(e.message || "Completion failed");
         }
@@ -159,7 +149,7 @@ export default function QuestDetail() {
 
     const mapCenter = useMemo(() => {
         if (loc?.lat && loc?.lng) return { lat: loc.lat, lng: loc.lng };
-        return { lat: -26.2041, lng: 28.0473 }; // Johannesburg fallback
+        return { lat: -26.2041, lng: 28.0473 };
     }, [loc]);
 
     if (loading) {
@@ -180,15 +170,19 @@ export default function QuestDetail() {
         );
     }
 
-    const youIcon = {
-        path: google.maps.SymbolPath.CIRCLE,
-        fillColor: "#1E90FF", // DodgerBlue
-        fillOpacity: 1,
-        strokeColor: "white",
-        strokeWeight: 2,
-        scale: 10, // bigger size (default ~4)
-    };
+    // guard use of google symbol until loaded
+    const youIcon = isLoaded
+        ? {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: "#1E90FF",
+            fillOpacity: 1,
+            strokeColor: "white",
+            strokeWeight: 2,
+            scale: 10,
+        }
+        : undefined;
 
+    const hasRadius = Number.isFinite(Number(loc.radius)) && Number(loc.radius) > 0;
 
     return (
         <div className="page quest-detail">
@@ -218,32 +212,18 @@ export default function QuestDetail() {
                             fullscreenControl: false,
                         }}
                     >
-                        {/* Quest location + radius */}
                         <Marker position={mapCenter} title={loc.name || "Quest location"} />
-                        {!!(Number(loc.radius) || 0) && (
+
+                        {hasRadius && (
                             <Circle
                                 center={mapCenter}
-                                radius={Number(loc.radius) || 0}
-                                options={{
-                                    strokeOpacity: 0.6,
-                                    fillOpacity: 0.12,
-                                }}
+                                radius={Number(loc.radius)}
+                                options={{ strokeOpacity: 0.6, fillOpacity: 0.12 }}
                             />
                         )}
 
-                        {/* Your live position */}
                         {pos && (
-                            <>
-                                <Marker position={{ lat: pos.lat, lng: pos.lng }} icon={youIcon} title="You" />
-                                {/* (optional) accuracy circle around you
-                {pos.accuracy && (
-                  <Circle
-                    center={{ lat: pos.lat, lng: pos.lng }}
-                    radius={pos.accuracy}
-                    options={{ strokeOpacity: 0.2, fillOpacity: 0.05 }}
-                  />
-                )} */}
-                            </>
+                            <Marker position={{ lat: pos.lat, lng: pos.lng }} icon={youIcon} title="You" />
                         )}
                     </GoogleMap>
                 ) : (

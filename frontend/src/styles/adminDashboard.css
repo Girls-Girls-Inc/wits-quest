@@ -1,0 +1,205 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900&display=swap");
+
+/* === Container & Layout === */
+
+.form-box {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.task-panel h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.task-panel p {
+  margin-bottom: 1.5rem;
+  color: #bbb;
+}
+
+.admin-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.admin-buttons .icon-button {
+  background: #1f2a33;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #eee;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.admin-buttons .icon-button i,
+.admin-buttons .icon-button svg {
+  font-size: 20px;
+}
+
+.admin-buttons .icon-button:hover {
+  background: #2a3a44;
+  transform: translateY(-1px);
+  border-color: #4aa3ff;
+}
+
+.admin-buttons .icon-button:active {
+  transform: translateY(1px);
+}
+
+.input-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-box input,
+.input-box select,
+.input-box textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #2c3a44;
+  background: var(--background);
+  color: #eee;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Labels inside input-box */
+.input-box label {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #bbb;
+}
+
+/* === Dropdown Styling === */
+.input-box select {
+  appearance: none;
+  background: var(--background)
+    url("data:image/svg+xml;utf8,<svg fill='%23bbb' height='24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>")
+    no-repeat right 12px center/16px;
+  cursor: pointer;
+}
+
+.input-box select option {
+  background: #1f2a33;
+  color: #eee;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #eee;
+}
+
+th,
+td {
+  padding: 8px 12px;
+  text-align: left;
+}
+
+th {
+  background: #1f2a33;
+}
+
+tr:nth-child(even) {
+  background: #171f26;
+}
+
+tr:hover {
+  background: #2a3a44;
+}
+
+/* Table Action Button */
+table button {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.15s ease;
+}
+
+table button:hover {
+  filter: brightness(1.2);
+}
+
+/* Make/Remove Moderator Colors */
+table button.make {
+  background: #4caf50;
+}
+
+table button.remove {
+  background: #ff4d4f;
+}
+
+/* === Toggle Panel === */
+.toggle {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(160deg, #1f2a33, #121a22);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #eee;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+.toggle-panel {
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.toggle-panel img {
+  width: 160px;
+  margin-bottom: 1rem;
+}
+
+.toggle-panel h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.toggle-panel p {
+  color: #bbb;
+  font-size: 14px;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .toggle {
+    order: -1;
+    padding: 1.5rem;
+  }
+
+  .login-form {
+    width: 100%;
+  }
+
+  .admin-buttons {
+    flex-direction: column;
+  }
+
+  .admin-buttons .icon-button {
+    justify-content: center;
+    gap: 6px;
+  }
+}

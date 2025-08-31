@@ -212,7 +212,7 @@ export default function QuestMap() {
     <div>
       <Toaster />
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Quests Map</h1>
+        <h1>Quests Map</h1>
         <button
           type="button"
           onClick={loadQuests}

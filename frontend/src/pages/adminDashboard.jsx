@@ -163,7 +163,9 @@ const AdminDashboard = () => {
   const handleToggleModerator = async (userId, newStatus) => {
     try {
       setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? { ...u, isModerator: newStatus } : u))
+        prev.map((u) =>
+          u.userId === userId ? { ...u, isModerator: newStatus } : u
+        )
       );
       const res = await fetch(`${API_BASE}/users/${userId}`, {
         method: "PATCH",
@@ -173,7 +175,9 @@ const AdminDashboard = () => {
       });
       if (!res.ok) {
         setUsers((prev) =>
-          prev.map((u) => (u.userId === userId ? { ...u, isModerator: !newStatus } : u))
+          prev.map((u) =>
+            u.userId === userId ? { ...u, isModerator: !newStatus } : u
+          )
         );
         throw new Error(await res.text());
       }

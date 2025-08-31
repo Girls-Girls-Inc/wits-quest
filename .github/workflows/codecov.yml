@@ -26,14 +26,32 @@ jobs:
           cd frontend && npm install
           cd ../backend && npm install
 
-      - name: Run tests with coverage
+      #- name: Run tests with coverage
         #run: npm run test:coverage
-        run: npx jest --coverage
-        continue-on-error: true
+      #  run: npx jest --coverage
+      #  continue-on-error: true
 
-      - name: Upload coverage reports to Codecov
+      #- name: Upload coverage reports to Codecov
+      #  uses: codecov/codecov-action@v5
+      #  with:
+      #    token: ${{ secrets.CODECOV_TOKEN }}
+      #    flags: unittests
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npx jest --coverage --coverageDirectory=../coverage/frontend
+          cd ..
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npx jest --coverage --coverageDirectory=../coverage/backend
+          cd ..
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: unittests
-         
+          files: "coverage/frontend/lcov.info,coverage/backend/lcov.info"

@@ -1,7 +1,7 @@
 // src/roleWatcher.js
 import supabase from "./supabase/supabaseClient";
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_WEB_URL || "").replace(/\/$/, "");
 
 async function fetchIsModeratorById(userId, token) {
     const res = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}`, {

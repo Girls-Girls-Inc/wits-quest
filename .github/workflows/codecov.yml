@@ -35,6 +35,5 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: Girls-Girls-Inc/wits-quest
           flags: unittests
-          name: coverage-report
+         

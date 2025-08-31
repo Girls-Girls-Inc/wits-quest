@@ -59,9 +59,10 @@ const LeaderboardModel = {
   // ───────────── READ (unchanged) ─────────────
   async getLeaderboard(periodType, start, end, userId, id) {
     let query = readClient
-      .from("leaderboard_with_users") // your view
+      .from("leaderboard_with_users")
       .select("*")
-      .order("rank", { ascending: true });
+      // sort by points descending, highest first
+      .order("points", { ascending: false, nullsFirst: false });
 
     if (periodType) query = query.ilike("periodType", periodType);
     if (id) query = query.eq("id", id.trim());

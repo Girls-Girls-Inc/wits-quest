@@ -1,20 +1,31 @@
 // backend/models/questModel.js
-const supabase = require('../supabase/supabaseClient'); // using require to match LeaderboardModel style
+const { createClient } = require('@supabase/supabase-js');
+
+// Admin client (trusted writes, bypasses RLS). Use sparingly.
+const admin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+);
+
+// Prefer the passed sb (per-request client) when you need RLS;
+// fall back to admin when you don't.
+const pick = (sb) => sb || admin;
 
 const QuestModel = {
-  async createQuest(questData) {
+  async createQuest(questData, sb) {
+    const supabase = pick(sb);
     const { data, error } = await supabase
       .from('quests')
       .insert([questData])
-      .select(); // optional: return the inserted row
-
+      .select();
     return { data, error };
   },
 
-  async getQuests(filter = {}) {
+  async getQuests(filter = {}, sb) {
+    const supabase = pick(sb);
     let query = supabase.from('quests').select('*');
 
-    // Apply filters if provided
     if (filter.id) query = query.eq('id', filter.id);
     if (filter.createdBy) query = query.eq('createdBy', filter.createdBy);
     if (filter.collectibleId) query = query.eq('collectibleId', filter.collectibleId);
@@ -22,6 +33,58 @@ const QuestModel = {
     if (filter.isActive !== undefined) query = query.eq('isActive', filter.isActive);
 
     const { data, error } = await query;
+    return { data, error };
+  },
+
+  // -------- userQuests (RLS) ----------
+  async addForUser(payload, sb) {
+    const supabase = pick(sb); // per-request client
+    const { data, error } = await supabase
+      .from('userQuests')
+      .insert([payload])
+      .select();
+    return { data, error };
+  },
+
+  async listForUser(userId, sb) {
+    const supabase = pick(sb); // per-request client so RLS filters to auth.uid()
+    const { data, error } = await supabase
+      .from('userQuests')
+      .select('id, userId, questId, step, isComplete, completedAt, quests(*)')
+      .eq('userId', userId)
+      .order('id', { ascending: true });
+    return { data, error };
+  },
+
+  async getUserQuestById(userQuestId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from('userQuests')
+      .select('id, userId, questId, step, isComplete, completedAt')
+      .eq('id', userQuestId)
+      .single();
+    return { data, error };
+  },
+
+  async setCompleteById(userQuestId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from('userQuests')
+      .update({ isComplete: true, completedAt: new Date().toISOString() })
+      .eq('id', userQuestId)
+      .eq('isComplete', false)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async getQuestById(questId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from('quests')
+      .select('*')
+      .eq('id', questId)
+      .single();
     return { data, error };
   },
 };

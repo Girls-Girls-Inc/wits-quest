@@ -3,10 +3,15 @@ const express = require('express');
 const router = express.Router();
 const QuestController = require('../controllers/questController');
 
-// POST /api/quests → create a new quest
+// Quests CRUD-ish
 router.post('/quests', QuestController.createQuest);
-
-// Optional: GET /api/quests → fetch quests (supports query filters like createdBy)
 router.get('/quests', QuestController.getQuests);
+
+// User quests
+router.post('/user-quests', QuestController.add);
+router.get('/user-quests', QuestController.mine);
+
+// Complete + award points
+router.post('/user-quests/:id/complete', QuestController.complete);
 
 module.exports = router;

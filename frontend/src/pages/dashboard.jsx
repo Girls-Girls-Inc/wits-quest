@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/dashboard.css";
+import "../styles/leaderboard.css"; // add this line
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
@@ -252,27 +253,36 @@ const Dashboard = () => {
             aria-labelledby="ongoing-quests-title"
           >
             <h3 id="ongoing-quests-title">Ongoing Quests</h3>
-            <div
-              className="quests-table"
-              role="table"
-              aria-label="Ongoing quests"
-            >
-              {ongoingQuests.map((quest) => (
-                <div key={quest.id} className="quest-row" role="row">
-                  <span className="quest-name" role="cell">
-                    {quest.name}
-                  </span>
-                  <span className="quest-location" role="cell">
-                    {quest.location}
-                  </span>
-                  <span className="quest-time" role="cell">
-                    {quest.timeLeft}
-                  </span>
-                </div>
-              ))}
+            <div className="leaderboard-table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Quest</th>
+                    <th>Location</th>
+                    <th>Time Left</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ongoingQuests.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="empty">
+                        No ongoing quests
+                      </td>
+                    </tr>
+                  )}
+                  {ongoingQuests.map((quest) => (
+                    <tr key={quest.id}>
+                      <td>{quest.name}</td>
+                      <td>{quest.location}</td>
+                      <td>{quest.timeLeft}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </article>
 
+          {/* Leaderboard Card */}
           {/* Leaderboard Card */}
           <article
             className="dashboard-card leaderboard-card"
@@ -280,20 +290,46 @@ const Dashboard = () => {
           >
             <h3 id="leaderboard-title">Leaderboard</h3>
 
-            <div className="leaderboard-list" role="list">
-              {leaderboard.map((person) => (
-                <div
-                  key={person.rank}
-                  className={`leaderboard-row ${
-                    person.name === "Me" ? "me" : ""
-                  }`}
-                  role="listitem"
-                  aria-label={`Rank ${person.rank}, ${person.name}`}
-                >
-                  <span className="rank">{person.rank}</span>
-                  <span className="name">{person.name}</span>
-                </div>
-              ))}
+            <div className="leaderboard-table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="empty">
+                        No entries yet
+                      </td>
+                    </tr>
+                  )}
+
+                  {leaderboard.map((person) => (
+                    <tr
+                      key={person.rank}
+                      className={person.name === "Me" ? "me" : ""}
+                    >
+                      <td>
+                        <strong>{person.rank}</strong>
+                        {person.rank <= 3 && (
+                          <span
+                            className="material-symbols-outlined trophy"
+                            title="Top rank"
+                          >
+                            emoji_events
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <strong>{person.name}</strong>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </article>
 

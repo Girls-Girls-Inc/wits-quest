@@ -13,7 +13,7 @@ const Quests = () => {
       name: "Campus Check-In",
       description: "Sometimes, just showing up is the adventure.",
       location: "Wits Campus",
-      rewards: "100 points",
+      pointsAchievable: "100 points",
       imageUrl: "https://picsum.photos/200/300",
       createdAt: new Date().toISOString(),
     },
@@ -22,7 +22,7 @@ const Quests = () => {
       name: "Library Explorer",
       description: "Find the hidden book in the library!",
       location: "Wits Library",
-      rewards: "150 points",
+      pointsAchievable: "150 points",
       imageUrl: "https://picsum.photos/200/300",
       createdAt: new Date().toISOString(),
     },
@@ -33,7 +33,7 @@ const Quests = () => {
 
     try {
       const { data, error } = await supabase
-        .from("quests")
+        .from("quest_with_badges")
         .select("*")
         .order("createdAt", { ascending: false });
 
@@ -60,7 +60,7 @@ const Quests = () => {
     <div className="quests-container">
       <Toaster />
       <div className="quests-header">
-        <h1>QUESTS</h1>
+        <h1>QUEST</h1>
         <div className="quest-buttons">
           <button onClick={() => toast("Create Quest clicked!")}>
             Create Quest
@@ -77,7 +77,6 @@ const Quests = () => {
                 src={q.imageUrl || "https://via.placeholder.com/100"}
                 alt="Quest maker"
               />
-              <p>Quest maker’s profile</p>
             </div>
 
             <div className="quest-info">
@@ -86,7 +85,7 @@ const Quests = () => {
                 <strong>Location:</strong> {q.location || "Unknown"}
               </p>
               <p>
-                <strong>Rewards:</strong> {q.rewards || "100 points"}
+                <strong>Rewards:</strong> {q.pointsAchievable || "100 points"}
               </p>
             </div>
 

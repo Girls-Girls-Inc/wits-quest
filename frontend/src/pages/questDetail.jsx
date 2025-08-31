@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
+import IconButton from "../components/IconButton"; // import your button
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -32,11 +33,9 @@ export default function QuestDetail() {
 
   const [accessToken, setAccessToken] = useState(null);
   const [me, setMe] = useState(null);
-
   const [quest, setQuest] = useState(null);
   const [loc, setLoc] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [pos, setPos] = useState(null);
   const watchIdRef = useRef(null);
 
@@ -65,14 +64,12 @@ export default function QuestDetail() {
     })();
   }, []);
 
-  // fetch quest + location (backend now guarantees numbers / no NaN)
   useEffect(() => {
     if (!accessToken) return;
 
     (async () => {
       try {
         setLoading(true);
-
         const resQ = await fetch(
           `${API_BASE}/quests?id=${encodeURIComponent(questId)}`,
           {
@@ -90,19 +87,12 @@ export default function QuestDetail() {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const raw = await resL.json();
-
-        // trust backend normalisation; ensure numbers are finite, fall back to 0
         const lat = Number.isFinite(Number(raw.lat)) ? Number(raw.lat) : 0;
         const lng = Number.isFinite(Number(raw.lng)) ? Number(raw.lng) : 0;
         const radius = Number.isFinite(Number(raw.radius))
           ? Number(raw.radius)
           : 0;
-
-        const normalised = { ...raw, lat, lng, radius };
-        // helpful debug once:
-        console.debug("[QuestDetail] location loaded:", normalised);
-
-        setLoc(normalised);
+        setLoc({ ...raw, lat, lng, radius });
       } catch (e) {
         toast.error(e.message || "Failed to load quest");
       } finally {
@@ -175,7 +165,7 @@ export default function QuestDetail() {
 
   if (loading) {
     return (
-      <div className="page">
+      <div className="page quest-detail">
         <Toaster />
         <h2>Loading quest…</h2>
       </div>
@@ -184,14 +174,13 @@ export default function QuestDetail() {
 
   if (!quest || !loc) {
     return (
-      <div className="page">
+      <div className="page quest-detail">
         <Toaster />
         <h2>Quest not found</h2>
       </div>
     );
   }
 
-  // guard use of google symbol until loaded
   const youIcon = isLoaded
     ? {
         path: window.google.maps.SymbolPath.CIRCLE,
@@ -209,6 +198,7 @@ export default function QuestDetail() {
   return (
     <div className="page quest-detail">
       <Toaster />
+
       <header className="quest-detail-header">
         <h1>{quest.name}</h1>
         <div className="meta">
@@ -247,7 +237,6 @@ export default function QuestDetail() {
             }}
           >
             <Marker position={mapCenter} title={loc.name || "Quest location"} />
-
             {hasRadius && (
               <Circle
                 center={mapCenter}
@@ -255,7 +244,6 @@ export default function QuestDetail() {
                 options={{ strokeOpacity: 0.6, fillOpacity: 0.12 }}
               />
             )}
-
             {pos && (
               <Marker
                 position={{ lat: pos.lat, lng: pos.lng }}
@@ -269,34 +257,33 @@ export default function QuestDetail() {
         )}
       </section>
 
-      <section
-        className="actions"
-        style={{ display: "flex", gap: 12, alignItems: "center" }}
-      >
+      <section className="actions">
         <div className={`radius-indicator ${withinRadius ? "ok" : "far"}`}>
           {withinRadius
             ? "You are inside the radius"
             : "You are outside the radius"}
         </div>
-        <button
-          className="primary"
-          disabled={!withinRadius}
-          onClick={onComplete}
-        >
-          Check-in & Complete
-        </button>
-        <button
-          className="secondary"
-          onClick={() => {
-            if (mapRef.current && pos)
-              mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
-          }}
-        >
-          Center on me
-        </button>
-        <button className="secondary" onClick={() => navigate(-1)}>
-          Back
-        </button>
+
+        <div className="action-buttons">
+          <IconButton
+            icon="check_circle"
+            label="Check-in & Complete"
+            onClick={onComplete}
+            disabled={!withinRadius}
+          />
+          <IconButton
+            icon="my_location"
+            label="Center on me"
+            onClick={() =>
+              pos && mapRef.current?.panTo({ lat: pos.lat, lng: pos.lng })
+            }
+          />
+          <IconButton
+            icon="arrow_back"
+            label="Back"
+            onClick={() => navigate(-1)}
+          />
+        </div>
       </section>
     </div>
   );

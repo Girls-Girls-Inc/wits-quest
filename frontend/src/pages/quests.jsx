@@ -3,6 +3,7 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
 import { useNavigate } from "react-router-dom";
+import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const LOCATIONS_API = `${API_BASE}/locations`;
@@ -194,9 +195,12 @@ export default function Quests() {
             onClick={(e) => e.stopPropagation()}
             tabIndex={-1}
           >
-            <button className="modal-close" onClick={closeModal}>
-              ✕
-            </button>
+            <IconButton
+              className="modal-close"
+              label="Close"
+              icon="close"
+              onClick={closeModal}
+            />
 
             <div className="modal-body">
               <div className="modal-left">
@@ -252,9 +256,11 @@ export default function Quests() {
                 </div>
 
                 <div className="modal-actions">
-                  <button onClick={() => addToMyQuests(activeQuest.questId)}>
-                    Add to my quests
-                  </button>
+                  <IconButton
+                    icon="add"
+                    label="Add to my Quests"
+                    onClick={() => addToMyQuests(activeQuest.questId)}
+                  />
                 </div>
               </div>
             </div>

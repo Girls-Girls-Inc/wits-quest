@@ -14,7 +14,6 @@
   font-weight: 500;
 }
 
-/* Controls (buttons) */
 .leaderboard-controls {
   display: flex;
   gap: 12px;
@@ -38,6 +37,7 @@
 }
 
 .leaderboard-table {
+  color: #222;
   width: 100%;
   min-width: 300px;
   border-collapse: collapse;
@@ -46,11 +46,11 @@
 }
 
 .leaderboard-table thead {
-  background: #ffeaa7;
-  color: #2d3436;
+  color: #fff;
 }
 
 .leaderboard-table th {
+  background-color: var(--wits-blue);
   padding: 14px;
   font-weight: 600;
   font-size: 15px;
@@ -60,14 +60,13 @@
 .leaderboard-table td {
   padding: 14px;
   font-size: 14px;
-  border-top: 1px solid #f1f1f1;
 }
 
 .leaderboard-table tbody tr:nth-child(odd) {
-  background: #eaf6ff;
+  background: #f2f5f7;
 }
 .leaderboard-table tbody tr:nth-child(even) {
-  background: #eaf6ff;
+  background: #b5c5d0;
 }
 
 .leaderboard-table tbody tr:hover {

@@ -262,7 +262,7 @@ export default function Quests() {
                 </div>
 
                 <div className="modal-actions">
-                  <button onClick={() => addToMyQuests(activeQuest.id)}>
+                  <button onClick={() => addToMyQuests(activeQuest.questId)}>
                     Add to my quests
                   </button>
                 </div>

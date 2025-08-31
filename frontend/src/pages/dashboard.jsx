@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
@@ -11,26 +10,25 @@ const API_BASE = import.meta.env.VITE_WEB_URL;
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  const [badges, setBadges] = useState([]);
-  const [loadingBadges, setLoadingBadges] = useState(true);
-
   const [accessToken, setAccessToken] = useState(null);
   const [me, setMe] = useState(null);
 
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [badges, setBadges] = useState([]);
+  const [loadingBadges, setLoadingBadges] = useState(true);
 
-  // Ongoing quests from API
   const [ongoing, setOngoing] = useState([]);
   const [loadingOngoing, setLoadingOngoing] = useState(true);
 
-  const dashboardData = {
-    badgesCollected: 45,
-    locationsVisited: 20,
-    points: 50,
-    questsCompleted: 35,
-    latestBadge: "Explorer",
-    latestLocation: "Central Park",
-  };
+  const [dashboardData, setDashboardData] = useState({
+    badgesCollected: 0,
+    locationsVisited: 0,
+    points: 0,
+    questsCompleted: 0,
+    latestBadge: "—",
+    latestLocation: "—",
+  });
+
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const leaderboard = [
     { rank: 1, name: "Person 1" },
@@ -41,10 +39,14 @@ const Dashboard = () => {
     { rank: 6, name: "Person 5" },
   ];
 
+  // Fetch Supabase session
   useEffect(() => {
     let mounted = true;
+
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!mounted) return;
       setAccessToken(session?.access_token || null);
       setMe(session?.user || null);
@@ -58,22 +60,20 @@ const Dashboard = () => {
     return () => sub?.subscription?.unsubscribe?.();
   }, []);
 
-  // ---------- BADGES ----------
-  const makeBadgesUrl = () => {
-    const userId = me?.id;
-    if (!userId) return null;
-    return `${API_BASE}/users/${encodeURIComponent(userId)}/collectibles`;
-  };
+  // Badge URL helper
+  const makeBadgesUrl = () =>
+    me?.id
+      ? `${API_BASE}/users/${encodeURIComponent(me.id)}/collectibles`
+      : null;
 
   const placeholder =
     "data:image/svg+xml;utf8," +
-    encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>
-        <rect width='100%' height='100%' fill='#eee'/>
-        <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='#888'>Badge</text>
-      </svg>`
-    );
+    encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>
+      <rect width='100%' height='100%' fill='#eee'/>
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='#888'>Badge</text>
+    </svg>`);
 
+  // Fetch badges
   const loadBadges = async () => {
     const url = makeBadgesUrl();
     if (!accessToken || !url) {
@@ -81,6 +81,7 @@ const Dashboard = () => {
       setLoadingBadges(false);
       return;
     }
+
     setLoadingBadges(true);
     try {
       const res = await fetch(url, {
@@ -91,8 +92,13 @@ const Dashboard = () => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("API did not return an array");
-      setBadges(data);
+      setBadges(data || []);
+
+      setDashboardData((prev) => ({
+        ...prev,
+        badgesCollected: data.length,
+        latestBadge: data[data.length - 1]?.name || "—",
+      }));
     } catch (e) {
       setBadges([]);
       toast.error(e.message || "Failed to load badges");
@@ -101,13 +107,14 @@ const Dashboard = () => {
     }
   };
 
-  // ---------- ONGOING QUESTS ----------
+  // Fetch ongoing quests
   const loadOngoing = async () => {
     if (!accessToken) {
       setOngoing([]);
       setLoadingOngoing(false);
       return;
     }
+
     setLoadingOngoing(true);
     try {
       const res = await fetch(`${API_BASE}/user-quests`, {
@@ -119,7 +126,6 @@ const Dashboard = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
 
-      // normalize for UI
       const rows = (Array.isArray(json) ? json : []).map((r) => {
         const j = r.quests || {};
         return {
@@ -133,12 +139,20 @@ const Dashboard = () => {
           location:
             j.location?.name ||
             j.locationName ||
-            (typeof j.locationId !== "undefined" ? `Location ${j.locationId}` : "—"),
-          timeLeft: r.isComplete ? "Completed" : "—", // placeholder
+            (typeof j.locationId !== "undefined"
+              ? `Location ${j.locationId}`
+              : "—"),
         };
       });
 
       setOngoing(rows.filter((q) => !q.isComplete));
+
+      // Update dashboard stats
+      setDashboardData((prev) => ({
+        ...prev,
+        questsCompleted: rows.filter((q) => q.isComplete).length,
+        locationsVisited: new Set(rows.map((q) => q.location)).size,
+      }));
     } catch (e) {
       setOngoing([]);
       toast.error(e.message || "Failed to load ongoing quests");
@@ -152,86 +166,80 @@ const Dashboard = () => {
       loadBadges();
       loadOngoing();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
-  // ---------- badges carousel helpers ----------
   const nextSlide = () => {
-    if (badges.length > 0) {
+    if (badges.length > 0)
       setCurrentSlide((prev) => (prev + 1) % Math.ceil(badges.length / 4));
-    }
   };
 
   const prevSlide = () => {
-    if (badges.length > 0) {
+    if (badges.length > 0)
       setCurrentSlide(
         (prev) =>
           (prev - 1 + Math.ceil(badges.length / 4)) %
           Math.ceil(badges.length / 4)
       );
-    }
   };
 
   const getBadgesToShow = () => {
     const itemsPerSlide = 4;
-    const start = currentSlide * itemsPerSlide;
-    return badges.slice(start, start + itemsPerSlide);
+    return badges.slice(
+      currentSlide * itemsPerSlide,
+      currentSlide * itemsPerSlide + itemsPerSlide
+    );
   };
 
   return (
     <div className="dashboard-container">
       <Toaster />
-
       <main className="main-content" role="main" aria-label="Dashboard">
         <header className="dashboard-header">
           <h1>DASHBOARD</h1>
         </header>
 
-        {/* Dashboard Cards Grid */}
-        <section className="dashboard-grid" aria-label="User statistics and badges">
-          {/* Badges Collected */}
-          <article className="dashboard-card badges-card" aria-labelledby="badges-collected-title">
+        <section
+          className="dashboard-grid"
+          aria-label="User statistics and badges"
+        >
+          {/* Badges Card */}
+          <article className="dashboard-card badges-card">
             <div className="card-header">
-              <h3 id="badges-collected-title">Badges collected</h3>
-              <div className="badge-count" aria-live="polite">
-                {dashboardData.badgesCollected}
-              </div>
+              <h3>Badges Collected</h3>
+              <div className="badge-count">{dashboardData.badgesCollected}</div>
             </div>
-
             <div className="latest-badge">
-              <div className="badge-circle" aria-label={`Latest badge: ${dashboardData.latestBadge}`}>
+              <div
+                className="badge-circle"
+                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
+              >
                 <span>Latest badge</span>
                 <div className="badge-name">{dashboardData.latestBadge}</div>
               </div>
             </div>
 
-            {/* Badges Carousel */}
-            <div className="badges-carousel" role="region" aria-label="Collected badges carousel">
+            <div className="badges-carousel">
               <div className="carousel-header">
-                <button className="view-badges-btn" aria-label="View all badges">
-                  View Badges
-                </button>
+                <button className="view-badges-btn">View Badges</button>
                 <div className="carousel-controls">
-                  <button onClick={prevSlide} className="carousel-btn" aria-label="Previous badges">←</button>
-                  <button onClick={nextSlide} className="carousel-btn" aria-label="Next badges">→</button>
+                  <button onClick={prevSlide}>←</button>
+                  <button onClick={nextSlide}>→</button>
                 </div>
               </div>
 
               <div className="carousel-container">
                 {loadingBadges ? (
-                  <div className="carousel-loading" role="status" aria-live="polite">
-                    Loading badges...
-                  </div>
+                  <div>Loading badges...</div>
                 ) : badges.length === 0 ? (
-                  <div className="no-badges">No badges yet</div>
+                  <div>No badges yet</div>
                 ) : (
                   <div className="carousel-track">
                     {getBadgesToShow().map((badge) => (
-                      <div key={badge.id} className="badge-item" role="group" aria-label={`Badge: ${badge.name}`}>
+                      <div key={badge.id} className="badge-item">
                         <img
                           src={badge.imageUrl || placeholder}
                           alt={badge.name || "badge"}
-                          onError={(e) => { e.currentTarget.src = placeholder; }}
+                          onError={(e) => (e.currentTarget.src = placeholder)}
                         />
                         <span className="badge-item-name">{badge.name}</span>
                       </div>
@@ -242,12 +250,10 @@ const Dashboard = () => {
             </div>
           </article>
 
-          {/* Locations Visited */}
-          <article className="dashboard-card" aria-labelledby="locations-visited-title">
-            <h3 id="locations-visited-title">Locations Visited</h3>
-            <div className="stat-number" aria-live="polite">
-              {dashboardData.locationsVisited}
-            </div>
+          {/* Locations Card */}
+          <article className="dashboard-card">
+            <h3>Locations Visited</h3>
+            <div className="stat-number">{dashboardData.locationsVisited}</div>
             <div className="latest-info">
               <div className="latest-box">
                 <span>Latest Location</span>
@@ -257,102 +263,85 @@ const Dashboard = () => {
           </article>
 
           {/* Ongoing Quests */}
-          <article className="dashboard-card quests-card" aria-labelledby="ongoing-quests-title">
-            <h3 id="ongoing-quests-title">Ongoing Quests</h3>
-
-            <div className="leaderboard-table-wrapper">
-              <table className="leaderboard-table">
-                <thead>
+          <article className="dashboard-card quests-card">
+            <h3>Ongoing Quests</h3>
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Quest</th>
+                  <th>Points</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingOngoing ? (
                   <tr>
-                    <th>Quest</th>
-                    <th>Points</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: "right" }}>Action</th>
+                    <td colSpan={5}>Loading quests…</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {!loadingOngoing && ongoing.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="empty">No ongoing quests</td>
-                    </tr>
-                  )}
-                  {loadingOngoing && (
-                    <tr><td colSpan={5} className="empty">Loading quests…</td></tr>
-                  )}
-                  {ongoing.map((q) => (
+                ) : ongoing.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No ongoing quests</td>
+                  </tr>
+                ) : (
+                  ongoing.map((q) => (
                     <tr key={q.id}>
                       <td>{q.name}</td>
                       <td>{q.points}</td>
                       <td>{q.location}</td>
                       <td>{q.isComplete ? "Completed" : "In progress"}</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td>
                         <button
-                          className="quest-view-btn"
-                          onClick={() => navigate(`/quests/${q.questId}?uq=${q.id}`)}
+                          onClick={() =>
+                            navigate(`/quests/${q.questId}?uq=${q.id}`)
+                          }
                           disabled={!q.questId}
-                          aria-label={`Open ${q.name}`}
                         >
                           View
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </article>
 
-          {/* Leaderboard Card */}
-          <article className="dashboard-card leaderboard-card" aria-labelledby="leaderboard-title">
-            <h3 id="leaderboard-title">Leaderboard</h3>
-
-            <div className="leaderboard-table-wrapper">
-              <table className="leaderboard-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Name</th>
+          {/* Leaderboard */}
+          <article className="dashboard-card leaderboard-card">
+            <h3>Leaderboard</h3>
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((person) => (
+                  <tr
+                    key={person.rank}
+                    className={person.name === "Me" ? "me" : ""}
+                  >
+                    <td>{person.rank}</td>
+                    <td>{person.name}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.length === 0 && (
-                    <tr>
-                      <td colSpan={2} className="empty">No entries yet</td>
-                    </tr>
-                  )}
-                  {leaderboard.map((person) => (
-                    <tr key={person.rank} className={person.name === "Me" ? "me" : ""}>
-                      <td>
-                        <strong>{person.rank}</strong>
-                        {person.rank <= 3 && (
-                          <span className="material-symbols-outlined trophy" title="Top rank">
-                            emoji_events
-                          </span>
-                        )}
-                      </td>
-                      <td><strong>{person.name}</strong></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </article>
 
           {/* Points */}
-          <article className="dashboard-card small-card" aria-labelledby="points-title">
-            <h3 id="points-title">Points</h3>
-            <div className="stat-number" aria-live="polite">
-              {dashboardData.points}
-            </div>
+          <article className="dashboard-card small-card">
+            <h3>Points</h3>
+            <div className="stat-number">{dashboardData.points}</div>
           </article>
 
           {/* Quests Completed */}
-          <article className="dashboard-card small-card" aria-labelledby="quests-completed-title">
-            <h3 id="quests-completed-title">Quests Completed</h3>
-            <div className="stat-number" aria-live="polite">
-              {dashboardData.questsCompleted}
-            </div>
+          <article className="dashboard-card small-card">
+            <h3>Quests Completed</h3>
+            <div className="stat-number">{dashboardData.questsCompleted}</div>
           </article>
         </section>
       </main>

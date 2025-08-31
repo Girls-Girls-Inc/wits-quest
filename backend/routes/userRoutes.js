@@ -2,6 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const UserController = require('../controllers/userController');
+const supabase = require('../supabase/supabaseClient');
+
+// GET all users
+router.get('/users', UserController.getAllUsers);
 
 // List (usually moderator-only)
 router.get('/users', /* requireAuth, requireModerator, */ UserController.getAllUsers);

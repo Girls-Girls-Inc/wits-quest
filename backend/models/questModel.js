@@ -87,6 +87,27 @@ const QuestModel = {
       .single();
     return { data, error };
   },
+
+async updateQuest(questId, questData, sb) {
+  const supabase = pick(sb);
+  const { data, error } = await supabase
+    .from("quests")
+    .update(questData)
+    .eq("id", questId)
+    .select();
+  return { data, error };
+},
+
+async deleteQuest(questId, sb) {
+  const supabase = pick(sb);
+  const { data, error } = await supabase
+    .from("quests")
+    .delete()
+    .eq("id", questId)
+    .select();
+  return { data, error };
+},
+
 };
 
 module.exports = QuestModel;

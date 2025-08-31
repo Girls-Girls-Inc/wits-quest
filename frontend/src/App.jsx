@@ -12,6 +12,7 @@ import QuestMap from "./pages/map";
 import Leaderboard from "./pages/leaderboard";
 import Admin from "./pages/adminDashboard";
 import QuestDetail from "./pages/questDetail";
+import ManageQuests from "./pages/manageQuests";
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/adminDashboard" element={<Admin />} />
           <Route path="/quests/:questId" element={<QuestDetail />} />
+          <Route path="/manage-quests" element={<ManageQuests />} />
         </Route>
       </Routes>
     </>

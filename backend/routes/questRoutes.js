@@ -6,6 +6,9 @@ const QuestController = require('../controllers/questController');
 // Quests CRUD-ish
 router.post('/quests', QuestController.createQuest);
 router.get('/quests', QuestController.getQuests);
+router.put('/quests/:id', QuestController.updateQuest);
+router.delete('/quests/:id', QuestController.deleteQuest);
+
 
 // User quests
 router.post('/user-quests', QuestController.add);

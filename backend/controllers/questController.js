@@ -150,6 +150,57 @@ const QuestController = {
       return res.status(500).json({ message: err.message });
     }
   },
+
+// PUT /quests/:id
+updateQuest: async (req, res) => {
+  try {
+    const questId = Number(req.params.id); // ensure questId is number
+    if (isNaN(questId)) return res.status(400).json({ message: "Quest ID is invalid" });
+
+    let questData = req.body;
+
+    // Safely convert optional numeric fields
+    if (questData.locationId !== undefined && questData.locationId !== null && questData.locationId !== "") {
+      questData.locationId = Number(questData.locationId);
+      if (isNaN(questData.locationId)) questData.locationId = null;
+    } else {
+      questData.locationId = null;
+    }
+
+    if (questData.pointsAchievable !== undefined && questData.pointsAchievable !== null && questData.pointsAchievable !== "") {
+      questData.pointsAchievable = Number(questData.pointsAchievable);
+      if (isNaN(questData.pointsAchievable)) questData.pointsAchievable = 0;
+    } else {
+      questData.pointsAchievable = 0;
+    }
+
+    const { data, error } = await QuestModel.updateQuest(questId, questData);
+    if (error) return res.status(500).json({ message: error.message });
+
+    return res.json({ message: "Quest updated successfully", quest: data[0] });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+},
+
+
+
+// DELETE /quests/:id
+deleteQuest: async (req, res) => {
+  try {
+    const questId = req.params.id;
+
+    if (!questId) return res.status(400).json({ message: "Quest ID is required" });
+
+    const { data, error } = await QuestModel.deleteQuest(questId);
+    if (error) return res.status(500).json({ message: error.message });
+
+    return res.json({ message: "Quest deleted successfully", quest: data[0] });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+},
+
 };
 
 module.exports = QuestController;

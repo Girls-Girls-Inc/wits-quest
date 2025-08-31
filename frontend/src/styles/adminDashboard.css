@@ -1,11 +1,25 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900&display=swap");
 
+.out {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+}
 .form-box {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 2rem;
+}
+
+.quests-header h1 {
+  display: flex;
+  text-align: center;
+  align-items: center;
+  align-content: center;
+  font-size: 2rem;
+  margin: 0;
 }
 
 .task-panel h1 {
@@ -75,14 +89,12 @@
   transition: all 0.2s ease;
 }
 
-/* Labels inside input-box */
 .input-box label {
   margin-bottom: 6px;
   font-size: 13px;
   color: #bbb;
 }
 
-/* === Dropdown Styling === */
 .input-box select {
   appearance: none;
   background: var(--background)
@@ -121,7 +133,6 @@ tr:hover {
   background: #2a3a44;
 }
 
-/* Table Action Button */
 table button {
   padding: 5px 10px;
   border-radius: 6px;
@@ -135,7 +146,6 @@ table button:hover {
   filter: brightness(1.2);
 }
 
-/* Make/Remove Moderator Colors */
 table button.make {
   background: #4caf50;
 }
@@ -144,7 +154,6 @@ table button.remove {
   background: #ff4d4f;
 }
 
-/* === Toggle Panel === */
 .toggle {
   flex: 1;
   position: relative;
@@ -177,7 +186,6 @@ table button.remove {
   font-size: 14px;
 }
 
-/* Responsive for mobile */
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
@@ -202,7 +210,6 @@ table button.remove {
   }
 }
 
-/* === Inputs, Selects, Textareas === */
 .input-box input,
 .input-box select,
 .input-box textarea {
@@ -225,7 +232,6 @@ table button.remove {
   box-shadow: 0 0 0 3px rgba(74, 163, 255, 0.2);
 }
 
-/* Labels */
 .input-box label {
   margin-bottom: 6px;
   font-size: 13px;
@@ -233,25 +239,24 @@ table button.remove {
   font-weight: 500;
 }
 
-/* Placeholder Styling */
 .input-box input::placeholder,
 .input-box textarea::placeholder {
   color: #888;
 }
 
-/* === Dropdowns Styling === */
 .input-box select {
   appearance: none;
   background: #1f2a33
     url("data:image/svg+xml;utf8,<svg fill='%23bbb' height='24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>")
     no-repeat right 12px center/16px;
   cursor: pointer;
-  padding-right: 36px; /* leave space for arrow */
+  padding-right: 36px;
   transition: all 0.2s ease;
+  margin-bottom: 20px;
 }
 
 .input-box select:hover {
-  border-color: #4aa3ff;
+  border-color: var(--wits-gold);
   background-color: #2a3a44;
 }
 
@@ -261,24 +266,9 @@ table button.remove {
   font-size: 14px;
 }
 
-/* === Textarea Styling (if used later) === */
 .input-box textarea {
   min-height: 80px;
   resize: vertical;
-}
-
-/* === Buttons in forms === */
-.btn .icon-button,
-.login-form button {
-  background: var(--wits-blue);
-  color: #fff;
-  border-radius: 12px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .btn .icon-button:hover,
@@ -313,7 +303,7 @@ table button.remove {
     font-size: 13px;
   }
 }
-/* Container */
+
 .input-box label {
   display: flex;
   align-items: center;
@@ -324,7 +314,6 @@ table button.remove {
   user-select: none;
 }
 
-/* Hide default checkbox */
 .input-box input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
@@ -338,7 +327,6 @@ table button.remove {
   transition: background 0.2s ease;
 }
 
-/* Circle inside toggle */
 .input-box input[type="checkbox"]::before {
   content: "";
   position: absolute;
@@ -351,9 +339,8 @@ table button.remove {
   transition: transform 0.2s ease, background 0.2s ease;
 }
 
-/* Checked state */
 .input-box input[type="checkbox"]:checked {
-  background: #4aa3ff;
+  background: var(--wits-yellow);
 }
 
 .input-box input[type="checkbox"]:checked::before {
@@ -361,12 +348,10 @@ table button.remove {
   background: #fff;
 }
 
-/* Hover effect */
 .input-box input[type="checkbox"]:hover {
   background: #3b4a55;
 }
 
-/* Optional: focus ring for accessibility */
 .input-box input[type="checkbox"]:focus-visible {
   box-shadow: 0 0 0 3px rgba(74, 163, 255, 0.3);
 }

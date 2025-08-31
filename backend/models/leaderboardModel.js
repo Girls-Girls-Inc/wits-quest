@@ -82,54 +82,37 @@ const LeaderboardModel = {
    * - Uses an RPC `lb_add_points` (defined below) for true atomicity.
    *   Falls back to upsert+update if the function is missing.
    */
-  async addPointsAtomic({ userId, points, periodType = "overall" }) {
-    const { periodStart, periodEnd, periodType: pType } = currentPeriod(periodType);
+  async addPointsAtomic({ userId, points }) {
+    const delta = Math.max(0, parseInt(points || 0, 10));
 
-    // 1) Try atomic RPC first
+    // 1) Preferred: atomic SQL function
     const { error: rpcErr } = await admin.rpc("lb_add_points", {
       in_user_id: userId,
-      in_points: Math.max(0, parseInt(points || 0, 10)),
-      in_period_type: pType,
-      in_period_start: periodStart,
-      in_period_end: periodEnd,
+      in_points: delta,
     });
-
     if (!rpcErr) return { ok: true, method: "rpc" };
 
-    // 2) Fallback (non-atomic under high contention) – adjust table name/cols if yours differ.
-    // Assumes a base table `leaderboard` with columns:
-    //   userId uuid, periodType text, periodStart timestamptz null, periodEnd timestamptz null, score int
-    // and a unique index on (userId, periodType, periodStart, periodEnd).
-    const upsert = await admin
+    // 2) Fallback: read -> compute -> update (not atomic under heavy contention)
+    // Load the 3 rows
+    const { data: rows, error: selErr } = await admin
       .from("leaderboard")
-      .upsert(
-        [{
-          userId,
-          periodType: pType,
-          periodStart,
-          periodEnd,
-          score: 0,
-        }],
-        { onConflict: "userId,periodType,periodStart,periodEnd" }
-      )
-      .select()
-      .single();
-
-    if (upsert.error) throw upsert.error;
-
-    const newScore = (upsert.data.score || 0) + Math.max(0, parseInt(points || 0, 10));
-    const inc = await admin
-      .from("leaderboard")
-      .update({ score: newScore, updatedAt: new Date().toISOString() })
+      .select("id, userId, points")
       .eq("userId", userId)
-      .eq("periodType", pType)
-      .is("periodStart", periodStart) // .is handles null equality
-      .is("periodEnd", periodEnd)
-      .select()
-      .single();
+      .in("id", [123, 1234, 12345]);
 
-    if (inc.error) throw inc.error;
-    return { ok: true, method: "fallback", row: inc.data };
+    if (selErr) throw selErr;
+
+    // Update each with new points
+    for (const r of rows || []) {
+      const newPts = (Number(r.points) || 0) + delta;
+      const { error: updErr } = await admin
+        .from("leaderboard")
+        .update({ points: newPts })
+        .eq("userId", userId)
+        .eq("id", r.id);
+      if (updErr) throw updErr;
+    }
+    return { ok: true, method: "fallback" };
   },
 };
 

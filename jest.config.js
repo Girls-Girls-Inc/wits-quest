@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: "node",
+  testEnvironment: "jsdom",
   roots: ["<rootDir>/backend/tests", "<rootDir>/frontend/src"],
 
   collectCoverage: true,

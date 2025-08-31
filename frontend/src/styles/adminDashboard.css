@@ -1,7 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900&display=swap");
 
-/* === Container & Layout === */
-
 .form-box {
   flex: 1;
   display: flex;
@@ -202,4 +200,173 @@ table button.remove {
     justify-content: center;
     gap: 6px;
   }
+}
+
+/* === Inputs, Selects, Textareas === */
+.input-box input,
+.input-box select,
+.input-box textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #2c3a44;
+  background: #1f2a33; /* Slightly lighter than container */
+  color: #eee;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.input-box input:focus,
+.input-box select:focus,
+.input-box textarea:focus {
+  border-color: #4aa3ff;
+  box-shadow: 0 0 0 3px rgba(74, 163, 255, 0.2);
+}
+
+/* Labels */
+.input-box label {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #bbb;
+  font-weight: 500;
+}
+
+/* Placeholder Styling */
+.input-box input::placeholder,
+.input-box textarea::placeholder {
+  color: #888;
+}
+
+/* === Dropdowns Styling === */
+.input-box select {
+  appearance: none;
+  background: #1f2a33
+    url("data:image/svg+xml;utf8,<svg fill='%23bbb' height='24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>")
+    no-repeat right 12px center/16px;
+  cursor: pointer;
+  padding-right: 36px; /* leave space for arrow */
+  transition: all 0.2s ease;
+}
+
+.input-box select:hover {
+  border-color: #4aa3ff;
+  background-color: #2a3a44;
+}
+
+.input-box select option {
+  background: #1f2a33;
+  color: #eee;
+  font-size: 14px;
+}
+
+/* === Textarea Styling (if used later) === */
+.input-box textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* === Buttons in forms === */
+.btn .icon-button,
+.login-form button {
+  background: var(--wits-blue);
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn .icon-button:hover,
+.login-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn .icon-button:active,
+.login-form button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.input-box input:focus-visible,
+.input-box select:focus-visible,
+.input-box textarea:focus-visible {
+  outline: 2px solid var(--wits-gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .input-box input,
+  .input-box select,
+  .input-box textarea {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .btn .icon-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+/* Container */
+.input-box label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #eee;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hide default checkbox */
+.input-box input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 20px;
+  background: #2c3a44;
+  border-radius: 12px;
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+/* Circle inside toggle */
+.input-box input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #eee;
+  border-radius: 50%;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+/* Checked state */
+.input-box input[type="checkbox"]:checked {
+  background: #4aa3ff;
+}
+
+.input-box input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+  background: #fff;
+}
+
+/* Hover effect */
+.input-box input[type="checkbox"]:hover {
+  background: #3b4a55;
+}
+
+/* Optional: focus ring for accessibility */
+.input-box input[type="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 3px rgba(74, 163, 255, 0.3);
 }

@@ -36,6 +36,7 @@ a:hover {
 }
 
 h1 {
+  align-self: center;
   font-size: 2rem;
   text-transform: uppercase;
   margin-bottom: 4px;

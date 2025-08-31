@@ -198,8 +198,10 @@ const AdminDashboard = () => {
     <div className="quests-container">
       <Toaster />
       {!selectedTask ? (
-        <div className="quests-header">
-          <h1>Admin Dashboard</h1>
+        <div className="out">
+          <div className="quests-header">
+            <h1>Admin Dashboard</h1>
+          </div>
           <div className="admin-buttons flex flex-wrap gap-2 mt-4">
             <IconButton
               icon="task"

@@ -1,10 +1,12 @@
 // backend/models/questModel.js
 const { createClient } = require('@supabase/supabase-js');
 
-// Admin client for non-RLS operations (reads or trusted writes)
-const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+// Admin client (trusted writes, bypasses RLS). Use sparingly.
+const admin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+);
 
 // Prefer the passed sb (per-request client) when you need RLS;
 // fall back to admin when you don't.
@@ -44,25 +46,45 @@ const QuestModel = {
     return { data, error };
   },
 
-
   async listForUser(userId, sb) {
     const supabase = pick(sb); // per-request client so RLS filters to auth.uid()
     const { data, error } = await supabase
       .from('userQuests')
-      .select('id, questId, step, isComplete, completedAt, quests(*)')
+      .select('id, userId, questId, step, isComplete, completedAt, quests(*)')
       .eq('userId', userId)
-      .order('createdAt', { ascending: false }); // if you have createdAt
+      .order('id', { ascending: true });
     return { data, error };
   },
 
-  async setComplete({ userId, questId }, sb) {
+  async getUserQuestById(userQuestId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from('userQuests')
+      .select('id, userId, questId, step, isComplete, completedAt')
+      .eq('id', userQuestId)
+      .single();
+    return { data, error };
+  },
+
+  async setCompleteById(userQuestId, sb) {
     const supabase = pick(sb);
     const { data, error } = await supabase
       .from('userQuests')
       .update({ isComplete: true, completedAt: new Date().toISOString() })
-      .eq('userId', userId)
-      .eq('questId', questId)
-      .select();
+      .eq('id', userQuestId)
+      .eq('isComplete', false)
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async getQuestById(questId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from('quests')
+      .select('*')
+      .eq('id', questId)
+      .single();
     return { data, error };
   },
 };

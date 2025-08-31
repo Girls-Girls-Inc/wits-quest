@@ -1,6 +1,7 @@
 // backend/controllers/questController.js
 const { createClient } = require('@supabase/supabase-js');
 const QuestModel = require('../models/questModel');
+const LeaderboardModel = require('../models/leaderboardModel'); // we'll call a helper below
 
 // Build a per-request client that forwards the user's JWT.
 // IMPORTANT: use the ANON key so RLS applies.
@@ -35,8 +36,6 @@ const QuestController = {
       questData.isActive = questData.isActive ?? true;
       questData.createdAt = new Date().toISOString();
 
-      // Public/admin reads/writes for quests (adjust to your policy);
-      // if you want RLS on create, you can also pass sbFromReq(req)
       const { data, error } = await QuestModel.createQuest(questData);
       if (error) return res.status(500).json({ message: error.message });
 
@@ -71,12 +70,11 @@ const QuestController = {
       const { questId } = req.body || {};
       if (!questId) return res.status(400).json({ message: 'questId is required' });
 
-      // Add defaults for new quests
       const payload = {
         userId,
         questId,
-        step: "0",           // default step
-        isComplete: false,   // default incomplete
+        step: "0",
+        isComplete: false,
       };
 
       const { data, error } = await QuestModel.addForUser(payload, sb);
@@ -102,6 +100,52 @@ const QuestController = {
       if (error) return res.status(400).json({ message: error.message });
 
       return res.json(data);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
+  // POST /user-quests/:id/complete
+  // Body: { questId }  // server verifies points from quests table
+  complete: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: 'Missing bearer token' });
+
+      const who = await sb.auth.getUser();
+      const userId = who.data?.user?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
+
+      const userQuestId = Number(req.params.id);
+      if (!userQuestId) return res.status(400).json({ message: 'Invalid userQuest id' });
+
+      // read the row (RLS ensures user owns it)
+      const { data: uq, error: uqErr } = await QuestModel.getUserQuestById(userQuestId, sb);
+      if (uqErr) return res.status(400).json({ message: uqErr.message });
+      if (!uq) return res.status(404).json({ message: 'userQuest not found' });
+      if (uq.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
+      if (uq.isComplete) return res.status(409).json({ message: 'Quest already completed' });
+
+      // verify quest + points
+      const { data: quest, error: qErr } = await QuestModel.getQuestById(uq.questId, sb);
+      if (qErr) return res.status(400).json({ message: qErr.message });
+      if (!quest) return res.status(404).json({ message: `Quest ${uq.questId} not found` });
+
+      const points = parseInt(quest.pointsAchievable, 10) || 0;
+
+      // mark complete (RLS still in effect)
+      const { data: upd, error: updErr } = await QuestModel.setCompleteById(userQuestId, sb);
+      if (updErr) return res.status(400).json({ message: updErr.message });
+      if (!upd) return res.status(409).json({ message: 'Nothing to update' });
+
+      // Award leaderboard points (trusted write, single place to mutate leaderboard)
+      // Implemented in LeaderboardModel below.
+      await LeaderboardModel.addPointsAtomic({
+        userId,
+        points,
+      });
+
+      return res.json({ ok: true, userQuest: upd, awarded: points });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }

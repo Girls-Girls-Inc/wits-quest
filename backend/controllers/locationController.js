@@ -21,6 +21,8 @@ const LocationController = {
       const toNum = (v) => (typeof v === 'number' ? v : (v != null ? parseFloat(v) : NaN));
       const lat = toNum(data.lat ?? data.latitude);
       const lng = toNum(data.lng ?? data.longitude);
+      const radius = toNum(data.radius);
+      res.json({ ...data, lat, lng, radius });
 
       res.json({ ...data, lat, lng });
     } catch (err) {

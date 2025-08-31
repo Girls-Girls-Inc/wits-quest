@@ -1,15 +1,17 @@
-// backend/routes/userRoutes.js
+// backend/routes/questRoutes.js
 const express = require('express');
 const router = express.Router();
-const UserController = require('../controllers/userController');
+const QuestController = require('../controllers/questController');
 
-// List (usually moderator-only)
-router.get('/users', /* requireAuth, requireModerator, */ UserController.getAllUsers);
+// Quests CRUD-ish
+router.post('/quests', QuestController.createQuest);
+router.get('/quests', QuestController.getQuests);
 
-// Get by id (auth — used by role watcher)
-router.get('/users/:id', /* requireAuth, */ UserController.getUserById);
+// User quests
+router.post('/user-quests', QuestController.add);
+router.get('/user-quests', QuestController.mine);
 
-// Update by id (auth; requireModerator if only admins can toggle)
-router.patch('/users/:id', /* requireAuth, requireModerator, */ UserController.patchUser);
+// Complete + award points
+router.post('/user-quests/:id/complete', QuestController.complete);
 
 module.exports = router;

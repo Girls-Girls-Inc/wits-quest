@@ -95,7 +95,7 @@ jest.mock("../supabase/supabaseClient", () => ({
 }));
 
 import supabase from "../supabase/supabaseClient";
-import Login from "../pages/login-signup";
+import Login from "../pages/loginSignup";
 
 const getLoginForm = () =>
     screen.getByRole("heading", { name: /login/i }).closest("form");

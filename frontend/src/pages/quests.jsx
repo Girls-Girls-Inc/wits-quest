@@ -3,9 +3,9 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
 
-const API_BASE = import.meta.env.VITE_WEB_URL;              // e.g. http://localhost:3000
-const LOCATIONS_API = `${API_BASE}/locations`;          // your router above
-const USER_QUESTS_API = `${API_BASE}/user-quests`;      // from earlier
+const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
+const LOCATIONS_API = `${API_BASE}/locations`; // your router above
+const USER_QUESTS_API = `${API_BASE}/user-quests`; // from earlier
 
 export default function Quests() {
   const [quests, setQuests] = useState([]);
@@ -14,16 +14,36 @@ export default function Quests() {
   const [activeLocation, setActiveLocation] = useState(null);
   const [jwt, setJwt] = useState(null);
 
-  // simple in-memory cache for locations this session
   const [locCache, setLocCache] = useState({});
   const cacheLocation = (loc) =>
     setLocCache((m) => (loc?.id ? { ...m, [loc.id]: loc } : m));
+
+  const dummyQuests = [
+    {
+      id: 101,
+      name: "Campus Check-In",
+      description: "Sometimes, just showing up is the adventure.",
+      location: "Wits Campus",
+      pointsAchievable: "100 points",
+      imageUrl: "https://picsum.photos/200/300",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 102,
+      name: "Library Explorer",
+      description: "Find the hidden book in the library!",
+      location: "Wits Library",
+      pointsAchievable: "150 points",
+      imageUrl: "https://picsum.photos/200/300",
+      createdAt: new Date().toISOString(),
+    },
+  ];
 
   const loadQuests = async () => {
     const t = toast.loading("Loading quests...");
     try {
       const { data, error } = await supabase
-        .from("quests")
+        .from("quest_with_badges")
         .select("*")
         .order("createdAt", { ascending: false });
 
@@ -67,7 +87,9 @@ export default function Quests() {
       const headers = { "Content-Type": "application/json" };
       if (jwt) headers.Authorization = `Bearer ${jwt}`;
 
-      const resp = await fetch(`${LOCATIONS_API}/${quest.locationId}`, { headers });
+      const resp = await fetch(`${LOCATIONS_API}/${quest.locationId}`, {
+        headers,
+      });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.message || "Failed to load location");
 
@@ -88,7 +110,9 @@ export default function Quests() {
   const addToMyQuests = async (questId) => {
     const t = toast.loading("Adding quest…");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error("Please sign in.");
 
@@ -96,7 +120,7 @@ export default function Quests() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ questId }),
       });
@@ -123,16 +147,20 @@ export default function Quests() {
       q.name ||
       activeQuest?.location ||
       "Wits University";
-    return `https://www.google.com/maps?q=${encodeURIComponent(text)}&hl=en&z=15&output=embed`;
+    return `https://www.google.com/maps?q=${encodeURIComponent(
+      text
+    )}&hl=en&z=15&output=embed`;
   }, [activeLocation, activeQuest]);
 
   return (
     <div className="quests-container">
       <Toaster />
       <div className="quests-header">
-        <h1>QUESTS</h1>
+        <h1>QUEST</h1>
         <div className="quest-buttons">
-          <button onClick={() => toast("Create Quest clicked!")}>Create Quest</button>
+          <button onClick={() => toast("Create Quest clicked!")}>
+            Create Quest
+          </button>
           <button onClick={loadQuests}>Refresh</button>
         </div>
       </div>
@@ -145,13 +173,23 @@ export default function Quests() {
                 src={q.imageUrl || "https://via.placeholder.com/100"}
                 alt="Quest"
               />
-              <p>Quest maker’s profile</p>
             </div>
 
             <div className="quest-info">
               <h2>{q.name}</h2>
-              <p><strong>Location:</strong> {q.location || "—"}</p>
-              <p><strong>Rewards:</strong> {q.rewards || `${q.pointsAchievable ?? 100} points`}</p>
+              <p>
+                <strong>Location:</strong> {q.location || "—"}
+              </p>
+              <p>
+                <strong>Rewards:</strong>{" "}
+                {q.rewards || `${q.pointsAchievable ?? 100} points`}
+              </p>
+              <p>
+                <strong>Location:</strong> {q.location || "Unknown"}
+              </p>
+              <p>
+                <strong>Rewards:</strong> {q.pointsAchievable || "100 points"}
+              </p>
             </div>
 
             <div className="quest-action">
@@ -165,12 +203,17 @@ export default function Quests() {
       {open && activeQuest && (
         <div className="modal-backdrop" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>✕</button>
+            <button className="modal-close" onClick={closeModal}>
+              ✕
+            </button>
 
             <div className="modal-body">
               <div className="modal-left">
                 <img
-                  src={activeQuest.imageUrl || "https://via.placeholder.com/600x300"}
+                  src={
+                    activeQuest.imageUrl ||
+                    "https://via.placeholder.com/600x300"
+                  }
                   alt={activeQuest.name}
                   className="modal-hero"
                 />
@@ -182,11 +225,19 @@ export default function Quests() {
                   <h3>Location</h3>
                   {activeLocation ? (
                     <>
-                      <p><strong>{activeLocation.name || "—"}</strong></p>
-                      {activeLocation.address && <p>{activeLocation.address}</p>}
-                      {activeLocation.description && <p>{activeLocation.description}</p>}
+                      <p>
+                        <strong>{activeLocation.name || "—"}</strong>
+                      </p>
+                      {activeLocation.address && (
+                        <p>{activeLocation.address}</p>
+                      )}
+                      {activeLocation.description && (
+                        <p>{activeLocation.description}</p>
+                      )}
                       {activeLocation.openingHours && (
-                        <p><em>Hours: {activeLocation.openingHours}</em></p>
+                        <p>
+                          <em>Hours: {activeLocation.openingHours}</em>
+                        </p>
                       )}
                     </>
                   ) : (
@@ -217,7 +268,6 @@ export default function Quests() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       )}

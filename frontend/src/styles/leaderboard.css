@@ -8,13 +8,6 @@
   flex-direction: column;
 }
 
-.leaderboard-header h1 {
-  font-size: 2rem;
-  margin-bottom: 4px;
-  color: var(--wits-gold);
-  font-weight: 700;
-}
-
 .leaderboard-header h2 {
   font-size: 1.2rem;
   color: #555;
@@ -37,13 +30,16 @@
 }
 
 .leaderboard-table-wrapper {
+  color: #333;
   overflow-x: auto;
   border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 12px rgba(71, 68, 68, 0.08);
 }
 
 .leaderboard-table {
   width: 100%;
+  min-width: 300px;
   border-collapse: collapse;
   border-radius: 12px;
   overflow: hidden;
@@ -197,7 +193,7 @@ td code {
   width: 100%;
 }
 
-.leaderboard-table {
+.full-width {
   min-width: 900px;
 }
 

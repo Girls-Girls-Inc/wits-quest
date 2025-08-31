@@ -106,7 +106,7 @@ const Leaderboard = () => {
       </div>
 
       <div className="leaderboard-table-wrapper">
-        <table className="leaderboard-table">
+        <table className="leaderboard-table full-width">
           <thead>
             <tr>
               <Th>#</Th>

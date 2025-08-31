@@ -15,8 +15,7 @@ function haversineMeters(aLat, aLng, bLat, bLng) {
     const dLng = toRad(bLng - aLng);
     const s1 =
         Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) *
-        Math.sin(dLng / 2) ** 2;
+        Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
 }
 
@@ -53,13 +52,15 @@ export default function QuestDetail() {
 
     useEffect(() => {
         (async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
             setAccessToken(session?.access_token || null);
             setMe(session?.user || null);
         })();
     }, []);
 
-    // fetch quest + location (backend now guarantees numbers / no NaN)
+    // fetch quest + location (backend guarantees valid numbers)
     useEffect(() => {
         if (!accessToken) return;
 
@@ -68,7 +69,7 @@ export default function QuestDetail() {
                 setLoading(true);
 
                 const resQ = await fetch(`${API_BASE}/quests?id=${encodeURIComponent(questId)}`, {
-                    headers: { Authorization: `Bearer ${accessToken}` }
+                    headers: { Authorization: `Bearer ${accessToken}` },
                 });
                 const list = await resQ.json();
                 const q = Array.isArray(list) ? list[0] : list;
@@ -78,17 +79,16 @@ export default function QuestDetail() {
                 if (!q.locationId) throw new Error("Quest has no locationId");
 
                 const resL = await fetch(`${API_BASE}/locations/${q.locationId}`, {
-                    headers: { Authorization: `Bearer ${accessToken}` }
+                    headers: { Authorization: `Bearer ${accessToken}` },
                 });
                 const raw = await resL.json();
 
-                // trust backend normalisation; ensure numbers are finite, fall back to 0
+                // normalize numbers
                 const lat = Number.isFinite(Number(raw.lat)) ? Number(raw.lat) : 0;
                 const lng = Number.isFinite(Number(raw.lng)) ? Number(raw.lng) : 0;
                 const radius = Number.isFinite(Number(raw.radius)) ? Number(raw.radius) : 0;
 
                 const normalised = { ...raw, lat, lng, radius };
-                // helpful debug once:
                 console.debug("[QuestDetail] location loaded:", normalised);
 
                 setLoc(normalised);
@@ -100,13 +100,19 @@ export default function QuestDetail() {
         })();
     }, [accessToken, questId]);
 
+    // watch user position
     useEffect(() => {
         if (!("geolocation" in navigator)) {
             toast.error("Geolocation not supported by your browser.");
             return;
         }
         const id = navigator.geolocation.watchPosition(
-            (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+            (p) =>
+                setPos({
+                    lat: p.coords.latitude,
+                    lng: p.coords.longitude,
+                    accuracy: p.coords.accuracy,
+                }),
             (err) => toast.error(err.message || "Unable to get your location"),
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
         );
@@ -149,7 +155,7 @@ export default function QuestDetail() {
 
     const mapCenter = useMemo(() => {
         if (loc?.lat && loc?.lng) return { lat: loc.lat, lng: loc.lng };
-        return { lat: -26.2041, lng: 28.0473 };
+        return { lat: -26.2041, lng: 28.0473 }; // fallback: Johannesburg
     }, [loc]);
 
     if (loading) {
@@ -170,7 +176,6 @@ export default function QuestDetail() {
         );
     }
 
-    // guard use of google symbol until loaded
     const youIcon = isLoaded
         ? {
             path: window.google.maps.SymbolPath.CIRCLE,
@@ -190,11 +195,19 @@ export default function QuestDetail() {
             <header className="quest-detail-header">
                 <h1>{quest.name}</h1>
                 <div className="meta">
-                    <span><strong>Points:</strong> {quest.pointsAchievable}</span>
-                    <span><strong>Location:</strong> {loc.name ?? "Unknown"}</span>
-                    <span><strong>Radius (m):</strong> {Number(loc.radius) || 0}</span>
+                    <span>
+                        <strong>Points:</strong> {quest.pointsAchievable}
+                    </span>
+                    <span>
+                        <strong>Location:</strong> {loc.name ?? "Unknown"}
+                    </span>
+                    <span>
+                        <strong>Radius (m):</strong> {Number(loc.radius) || 0}
+                    </span>
                     {distanceM != null && (
-                        <span><strong>Distance to target:</strong> {distanceM} m</span>
+                        <span>
+                            <strong>Distance to target:</strong> {distanceM} m
+                        </span>
                     )}
                 </div>
             </header>
@@ -222,9 +235,7 @@ export default function QuestDetail() {
                             />
                         )}
 
-                        {pos && (
-                            <Marker position={{ lat: pos.lat, lng: pos.lng }} icon={youIcon} title="You" />
-                        )}
+                        {pos && <Marker position={{ lat: pos.lat, lng: pos.lng }} icon={youIcon} title="You" />}
                     </GoogleMap>
                 ) : (
                     <div>Loading map…</div>
@@ -246,7 +257,9 @@ export default function QuestDetail() {
                 >
                     Center on me
                 </button>
-                <button className="secondary" onClick={() => navigate(-1)}>Back</button>
+                <button className="secondary" onClick={() => navigate(-1)}>
+                    Back
+                </button>
             </section>
         </div>
     );

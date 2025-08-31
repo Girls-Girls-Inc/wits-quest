@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const LOCATIONS_API = `${API_BASE}/locations`;
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
 
 export default function Quests() {
+  const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
   const [open, setOpen] = useState(false);
   const [activeQuest, setActiveQuest] = useState(null);
@@ -143,7 +145,7 @@ export default function Quests() {
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">
-          <button onClick={() => toast("Create Quest clicked!")}>
+          <button onClick={() => navigate("/adminDashboard")}>
             Create Quest
           </button>
           <button onClick={loadQuests}>Refresh</button>

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
@@ -56,7 +57,9 @@ const AdminDashboard = () => {
           collectRes.json(),
           locRes.json(),
         ]);
-        setCollectibles(Array.isArray(collectiblesData) ? collectiblesData : []);
+        setCollectibles(
+          Array.isArray(collectiblesData) ? collectiblesData : []
+        );
         setLocations(Array.isArray(locationsData) ? locationsData : []);
       } catch (err) {
         console.error(err);
@@ -65,7 +68,9 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_BASE}/users`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/users`, {
+          credentials: "include",
+        });
         const data = await res.json();
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -114,7 +119,9 @@ const AdminDashboard = () => {
       createdBy: user.id,
       pointsAchievable: Number(questData.pointsAchievable) || 0,
       locationId: questData.locationId ? Number(questData.locationId) : null,
-      collectibleId: questData.collectibleId ? Number(questData.collectibleId) : null,
+      collectibleId: questData.collectibleId
+        ? Number(questData.collectibleId)
+        : null,
     };
 
     try {
@@ -152,7 +159,8 @@ const AdminDashboard = () => {
         body: JSON.stringify(locationInsert),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to create location");
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
       alert(`Location "${result.name}" created successfully!`);
       handleBack();
     } catch (err) {
@@ -228,6 +236,7 @@ const AdminDashboard = () => {
             <form className="login-form" onSubmit={handleQuestSubmit}>
               <div className="input-box">
                 <InputField
+                  icon="question_mark"
                   type="text"
                   name="name"
                   placeholder="Quest Name"
@@ -238,6 +247,7 @@ const AdminDashboard = () => {
               </div>
               <div className="input-box">
                 <InputField
+                  icon="description"
                   type="text"
                   name="description"
                   placeholder="Quest Description"
@@ -292,7 +302,10 @@ const AdminDashboard = () => {
                     name="isActive"
                     checked={questData.isActive}
                     onChange={(e) =>
-                      setQuestData((prev) => ({ ...prev, isActive: e.target.checked }))
+                      setQuestData((prev) => ({
+                        ...prev,
+                        isActive: e.target.checked,
+                      }))
                     }
                   />
                   Active
@@ -300,7 +313,12 @@ const AdminDashboard = () => {
               </div>
               <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Quest" />
-                <IconButton type="button" icon="arrow_back" label="Back" onClick={handleBack} />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
               </div>
             </form>
           )}
@@ -352,7 +370,12 @@ const AdminDashboard = () => {
               </div>
               <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Location" />
-                <IconButton type="button" icon="arrow_back" label="Back" onClick={handleBack} />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
               </div>
             </form>
           )}
@@ -366,11 +389,14 @@ const AdminDashboard = () => {
                   className="quest-card flex items-center justify-between p-2 mb-2 border rounded"
                 >
                   <div>
-                    <strong>{u.email}</strong> ({u.isModerator ? "Moderator" : "User"})
+                    <strong>{u.email}</strong> (
+                    {u.isModerator ? "Moderator" : "User"})
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleToggleModerator(u.userId, !u.isModerator)}
+                      onClick={() =>
+                        handleToggleModerator(u.userId, !u.isModerator)
+                      }
                       className={`px-2 py-1 rounded text-white ${
                         u.isModerator ? "bg-red-500" : "bg-green-500"
                       }`}
@@ -381,7 +407,12 @@ const AdminDashboard = () => {
                 </div>
               ))}
               <div className="btn flex gap-2 mt-2">
-                <IconButton type="button" icon="arrow_back" label="Back" onClick={handleBack} />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
               </div>
             </div>
           )}
@@ -390,7 +421,12 @@ const AdminDashboard = () => {
             <div className="quest-list">
               <h2>Badge Creation (Coming Soon)</h2>
               <div className="btn flex gap-2 mt-2">
-                <IconButton type="button" icon="arrow_back" label="Back" onClick={handleBack} />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
               </div>
             </div>
           )}

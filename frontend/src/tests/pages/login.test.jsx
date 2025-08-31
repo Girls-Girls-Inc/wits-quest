@@ -44,10 +44,10 @@ jest.mock("react-hot-toast", () => {
 });
 
 // Minimal UI component mocks
-jest.mock("../components/IconButton", () => (props) => (
+jest.mock("../../components/IconButton", () => (props) => (
     <button {...props}>{props.label || "Button"}</button>
 ));
-jest.mock("../components/InputField", () => (props) => {
+jest.mock("../../components/InputField", () => (props) => {
     const { id, name, placeholder, value, onChange, required } = props;
     return (
         <input
@@ -61,7 +61,7 @@ jest.mock("../components/InputField", () => (props) => {
         />
     );
 });
-jest.mock("../components/PasswordInputField", () => (props) => {
+jest.mock("../../components/PasswordInputField", () => (props) => {
     const { id, placeholder, value, onChange, required } = props;
     return (
         <input
@@ -76,14 +76,14 @@ jest.mock("../components/PasswordInputField", () => (props) => {
 });
 
 // Static assets & CSS
-jest.mock("../assets/google-icon.png", () => "google.png");
-jest.mock("../assets/Logo.png", () => "logo.png");
-jest.mock("../assets/Signup3.png", () => "signup.png");
-jest.mock("../styles/login-signup.css", () => ({}));
-jest.mock("../index.css", () => ({}));
+jest.mock("../../assets/google-icon.png", () => "google.png");
+jest.mock("../../assets/Logo.png", () => "logo.png");
+jest.mock("../../assets/Signup3.png", () => "signup.png");
+jest.mock("../../styles/login-signup.css", () => ({}));
+jest.mock("../../index.css", () => ({}));
 
 // Supabase client (all 3 methods used)
-jest.mock("../supabase/supabaseClient", () => ({
+jest.mock("../../supabase/supabaseClient", () => ({
     __esModule: true,
     default: {
         auth: {
@@ -94,8 +94,8 @@ jest.mock("../supabase/supabaseClient", () => ({
     },
 }));
 
-import supabase from "../supabase/supabaseClient";
-import Login from "../pages/loginSignup";
+import supabase from "../../supabase/supabaseClient";
+import Login from "../../pages/loginSignup";
 
 const getLoginForm = () =>
     screen.getByRole("heading", { name: /login/i }).closest("form");
@@ -267,7 +267,6 @@ describe("Login/Signup page", () => {
 
     /* ------------------- LOGIN: unexpected error ------------------- */
     it("shows generic toast on unexpected login error", async () => {
-        // 🔇 silence console.error just for this test
         const errSpy = jest.spyOn(console, "error").mockImplementation(() => { });
 
         supabase.auth.signInWithPassword.mockRejectedValueOnce(new Error("boom"));

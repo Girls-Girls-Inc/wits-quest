@@ -28,11 +28,11 @@ jest.mock("../styles/navbar.css", () => ({}));
 jest.mock("../assets/logo.png", () => "logo.png");
 
 /* ---------- Import components under test (after mocks) ---------- */
-const IconButton = require("../components/IconButton").default;
-const InputField = require("../components/InputField").default;
-const PasswordInputField = require("../components/PasswordInputField").default;
-const NavButton = require("../components/NavButton").default;
-const Navbar = require("../components/NavBar").default;
+const IconButton = require("../../components/IconButton").default;
+const InputField = require("../../components/InputField").default;
+const PasswordInputField = require("../../components/PasswordInputField").default;
+const NavButton = require("../../components/NavButton").default;
+const Navbar = require("../../components/NavBar").default;
 
 /* ========================= IconButton ========================= */
 

@@ -63,7 +63,9 @@ const AdminDashboard = () => {
           locationRes.json(),
         ]);
 
-        setCollectibles(Array.isArray(collectiblesData) ? collectiblesData : []);
+        setCollectibles(
+          Array.isArray(collectiblesData) ? collectiblesData : []
+        );
         setLocations(Array.isArray(locationsData) ? locationsData : []);
       } catch (err) {
         console.error("Error fetching options:", err);
@@ -74,7 +76,9 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_BASE}/users`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/users`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
         setUsers(Array.isArray(data) ? data : []);
@@ -168,7 +172,8 @@ const AdminDashboard = () => {
       });
 
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to create location");
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
 
       alert(`Location "${result.name}" created successfully!`);
       handleBack();
@@ -181,7 +186,9 @@ const AdminDashboard = () => {
     try {
       // Optimistic UI
       setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? { ...u, isModerator: newStatus } : u))
+        prev.map((u) =>
+          u.userId === userId ? { ...u, isModerator: newStatus } : u
+        )
       );
 
       const res = await fetch(`${API_BASE}/users/${userId}`, {
@@ -194,7 +201,9 @@ const AdminDashboard = () => {
       if (!res.ok) {
         // Revert on failure
         setUsers((prev) =>
-          prev.map((u) => (u.userId === userId ? { ...u, isModerator: !newStatus } : u))
+          prev.map((u) =>
+            u.userId === userId ? { ...u, isModerator: !newStatus } : u
+          )
         );
         throw new Error(await res.text());
       }
@@ -269,7 +278,6 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="input-box">
-                  <label>Collectible</label>
                   <select
                     name="collectibleId"
                     value={questData.collectibleId}
@@ -286,7 +294,6 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="input-box">
-                  <label>Location</label>
                   <select
                     name="locationId"
                     value={questData.locationId}
@@ -319,7 +326,10 @@ const AdminDashboard = () => {
                       name="isActive"
                       checked={questData.isActive}
                       onChange={(e) =>
-                        setQuestData((prev) => ({ ...prev, isActive: e.target.checked }))
+                        setQuestData((prev) => ({
+                          ...prev,
+                          isActive: e.target.checked,
+                        }))
                       }
                     />
                     Active
@@ -384,7 +394,11 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="btn">
-                  <IconButton type="submit" icon="save" label="Create Location" />
+                  <IconButton
+                    type="submit"
+                    icon="save"
+                    label="Create Location"
+                  />
                   <IconButton
                     type="button"
                     onClick={handleBack}
@@ -410,26 +424,42 @@ const AdminDashboard = () => {
                   >
                     <thead>
                       <tr>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Email</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Is Moderator</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Created At</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Action</th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Email
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Is Moderator
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Created At
+                        </th>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((u) => (
                         <tr key={u.userId}>
                           <td style={{ padding: "8px" }}>{u.email}</td>
-                          <td style={{ padding: "8px" }}>{u.isModerator ? "Yes" : "No"}</td>
                           <td style={{ padding: "8px" }}>
-                            {u.created_at ? new Date(u.created_at).toLocaleString() : "—"}
+                            {u.isModerator ? "Yes" : "No"}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {u.created_at
+                              ? new Date(u.created_at).toLocaleString()
+                              : "—"}
                           </td>
                           <td style={{ padding: "8px" }}>
                             <button
                               type="button"
-                              onClick={() => handleToggleModerator(u.userId, !u.isModerator)}
+                              onClick={() =>
+                                handleToggleModerator(u.userId, !u.isModerator)
+                              }
                               style={{
-                                backgroundColor: u.isModerator ? "#ff4d4f" : "#4caf50",
+                                backgroundColor: u.isModerator
+                                  ? "#ff4d4f"
+                                  : "#4caf50",
                                 color: "#fff",
                                 border: "none",
                                 padding: "4px 8px",
@@ -437,7 +467,9 @@ const AdminDashboard = () => {
                                 borderRadius: "4px",
                               }}
                             >
-                              {u.isModerator ? "Remove Moderator" : "Make Moderator"}
+                              {u.isModerator
+                                ? "Remove Moderator"
+                                : "Make Moderator"}
                             </button>
                           </td>
                         </tr>
@@ -474,7 +506,11 @@ const AdminDashboard = () => {
       </div>
 
       <div className="toggle">
-        <div className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"}`}>
+        <div
+          className={`toggle-panel ${
+            selectedTask ? "toggle-left" : "toggle-right"
+          }`}
+        >
           <img src={SignupImage} alt="Quest" />
           {!selectedTask ? (
             <>

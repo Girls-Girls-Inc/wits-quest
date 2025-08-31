@@ -41,6 +41,17 @@
 }
 
 @media (max-width: 768px) {
+  .navbar-bottom .icon-button {
+    font-size: 0.8rem; /* smaller text if used */
+    padding: 6px; /* tighter button padding */
+    min-width: 40px; /* shrink width */
+    min-height: 40px; /* shrink height */
+  }
+
+  .navbar-bottom .icon-button i,
+  .navbar-bottom .icon-button svg {
+    font-size: 20px; /* smaller icons */
+  }
   .navbar-drawer {
     display: none;
   }

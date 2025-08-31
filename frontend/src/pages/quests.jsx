@@ -3,9 +3,9 @@ import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
 
-const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
-const LOCATIONS_API = `${API_BASE}/locations`; // your router above
-const USER_QUESTS_API = `${API_BASE}/user-quests`; // from earlier
+const API_BASE = import.meta.env.VITE_WEB_URL;
+const LOCATIONS_API = `${API_BASE}/locations`;
+const USER_QUESTS_API = `${API_BASE}/user-quests`;
 
 export default function Quests() {
   const [quests, setQuests] = useState([]);
@@ -17,27 +17,6 @@ export default function Quests() {
   const [locCache, setLocCache] = useState({});
   const cacheLocation = (loc) =>
     setLocCache((m) => (loc?.id ? { ...m, [loc.id]: loc } : m));
-
-  const dummyQuests = [
-    {
-      id: 101,
-      name: "Campus Check-In",
-      description: "Sometimes, just showing up is the adventure.",
-      location: "Wits Campus",
-      pointsAchievable: "100 points",
-      imageUrl: "https://picsum.photos/200/300",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 102,
-      name: "Library Explorer",
-      description: "Find the hidden book in the library!",
-      location: "Wits Library",
-      pointsAchievable: "150 points",
-      imageUrl: "https://picsum.photos/200/300",
-      createdAt: new Date().toISOString(),
-    },
-  ];
 
   const loadQuests = async () => {
     const t = toast.loading("Loading quests...");
@@ -52,7 +31,7 @@ export default function Quests() {
       toast.success("Quests loaded", { id: t });
     } catch (err) {
       toast.error(err.message || "Failed to load quests", { id: t });
-      setQuests([]); // or your dummy list if you prefer
+      setQuests([]);
     }
   };
 
@@ -75,7 +54,6 @@ export default function Quests() {
 
     if (!quest?.locationId) return;
 
-    // use cache first
     if (locCache[quest.locationId]) {
       setActiveLocation(locCache[quest.locationId]);
       return;
@@ -83,7 +61,6 @@ export default function Quests() {
 
     const t = toast.loading("Loading location…");
     try {
-      // Most setups keep locations public to read; if yours requires auth, include token:
       const headers = { "Content-Type": "application/json" };
       if (jwt) headers.Authorization = `Bearer ${jwt}`;
 
@@ -134,7 +111,6 @@ export default function Quests() {
     }
   };
 
-  // Decide map URL from the location object
   const mapSrc = useMemo(() => {
     const q = activeLocation;
     if (!q) return null;
@@ -151,6 +127,15 @@ export default function Quests() {
       text
     )}&hl=en&z=15&output=embed`;
   }, [activeLocation, activeQuest]);
+
+  // ESC closes modal
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") closeModal();
+    };
+    if (open) document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [open]);
 
   return (
     <div className="quests-container">
@@ -184,12 +169,6 @@ export default function Quests() {
                 <strong>Rewards:</strong>{" "}
                 {q.rewards || `${q.pointsAchievable ?? 100} points`}
               </p>
-              <p>
-                <strong>Location:</strong> {q.location || "Unknown"}
-              </p>
-              <p>
-                <strong>Rewards:</strong> {q.pointsAchievable || "100 points"}
-              </p>
             </div>
 
             <div className="quest-action">
@@ -201,8 +180,18 @@ export default function Quests() {
 
       {/* Modal */}
       {open && activeQuest && (
-        <div className="modal-backdrop" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quest-title"
+          onClick={closeModal}
+        >
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            tabIndex={-1}
+          >
             <button className="modal-close" onClick={closeModal}>
               ✕
             </button>
@@ -217,10 +206,9 @@ export default function Quests() {
                   alt={activeQuest.name}
                   className="modal-hero"
                 />
-                <h2>{activeQuest.name}</h2>
+                <h2 id="quest-title">{activeQuest.name}</h2>
                 <p>{activeQuest.description || "No description provided."}</p>
 
-                {/* Location block */}
                 <div className="location-block">
                   <h3>Location</h3>
                   {activeLocation ? (

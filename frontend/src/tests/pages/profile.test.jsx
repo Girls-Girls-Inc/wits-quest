@@ -26,10 +26,10 @@ jest.mock("react-hot-toast", () => {
 });
 
 // Mock minimal UI primitives used in the page
-jest.mock("../components/IconButton", () => (props) => (
+jest.mock("../../components/IconButton", () => (props) => (
     <button {...props}>{props.label || "Button"}</button>
 ));
-jest.mock("../components/InputField", () => (props) => {
+jest.mock("../../components/InputField", () => (props) => {
     const { id, name, placeholder, value, onChange, required } = props;
     return (
         <input
@@ -43,7 +43,7 @@ jest.mock("../components/InputField", () => (props) => {
         />
     );
 });
-jest.mock("../components/PasswordInputField", () => (props) => {
+jest.mock("../../components/PasswordInputField", () => (props) => {
     const { id, placeholder, value, name, onChange, required } = props;
     return (
         <input
@@ -59,12 +59,12 @@ jest.mock("../components/PasswordInputField", () => (props) => {
 });
 
 // Assets & CSS
-jest.mock("../styles/login-signup.css", () => ({}));
-jest.mock("../index.css", () => ({}));
-jest.mock("../assets/signup.png", () => "signup.png");
+jest.mock("../../styles/login-signup.css", () => ({}));
+jest.mock("../../index.css", () => ({}));
+jest.mock("../../assets/signup.png", () => "signup.png");
 
 // Supabase
-jest.mock("../supabase/supabaseClient", () => ({
+jest.mock("../../supabase/supabaseClient", () => ({
     __esModule: true,
     default: {
         auth: {
@@ -74,8 +74,8 @@ jest.mock("../supabase/supabaseClient", () => ({
     },
 }));
 
-import supabase from "../supabase/supabaseClient";
-import Profile from "../pages/profile";
+import supabase from "../../supabase/supabaseClient";
+import Profile from "../../pages/profile";
 
 const toast = require("react-hot-toast").default;
 

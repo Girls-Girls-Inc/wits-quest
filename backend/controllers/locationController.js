@@ -1,11 +1,43 @@
+// backend/controllers/locationController.js
 const LocationModel = require("../models/locationModel");
+
+// helper: coerce many possible field names -> number (no NaN)
+function toNum(v) {
+  if (typeof v === "number") return v;
+  if (v == null) return NaN;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+// prefer-first helper, returns first finite number or undefined
+function firstFinite(...vals) {
+  for (const v of vals) {
+    const n = toNum(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
 
 const LocationController = {
   getLocations: async (req, res) => {
     try {
       const { id, name } = req.query;
       const data = await LocationModel.getLocations(id, name);
-      res.json(Array.isArray(data) ? data : []);
+
+      const normalised = (Array.isArray(data) ? data : []).map((row) => {
+        const lat = firstFinite(row.lat, row.latitude);
+        const lng = firstFinite(row.lng, row.longitude);
+        const radius = firstFinite(row.radius, row.radiusMeters, row.range, row.distance);
+
+        return {
+          ...row,
+          lat: Number.isFinite(lat) ? lat : 0,
+          lng: Number.isFinite(lng) ? lng : 0,
+          radius: Number.isFinite(radius) ? radius : 0,
+        };
+      });
+
+      res.json(normalised);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -17,12 +49,22 @@ const LocationController = {
       const data = await LocationModel.getLocationById(id);
       if (!data) return res.status(404).json({ error: `Location ${id} not found` });
 
-      // normalise (coerce to numbers if strings)
-      const toNum = (v) => (typeof v === 'number' ? v : (v != null ? parseFloat(v) : NaN));
-      const lat = toNum(data.lat ?? data.latitude);
-      const lng = toNum(data.lng ?? data.longitude);
+      const lat = firstFinite(data.lat, data.latitude);
+      const lng = firstFinite(data.lng, data.longitude);
+      const radius = firstFinite(
+        data.radius,
+        data.radiusMeters,
+        data.range,
+        data.distance
+      );
 
-      res.json({ ...data, lat, lng });
+      // IMPORTANT: never send NaN in JSON (JSON.stringify turns NaN -> null)
+      res.json({
+        ...data,
+        lat: Number.isFinite(lat) ? lat : 0,
+        lng: Number.isFinite(lng) ? lng : 0,
+        radius: Number.isFinite(radius) ? radius : 0,
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

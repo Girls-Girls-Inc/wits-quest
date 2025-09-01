@@ -1,5 +1,7 @@
 # Wits Quest
+
 [![codecov](https://codecov.io/gh/Girls-Girls-Inc/wits-quest/branch/dev/graph/badge.svg)](https://codecov.io/gh/Girls-Girls-Inc/wits-quest)
+
 
 ## Description
 Wits Quest is a location-based game centred around landmarks at the University of the Witwatersrand campus.  

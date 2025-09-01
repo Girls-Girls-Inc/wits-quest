@@ -4,9 +4,10 @@
 }
 
 .main-content {
+  min-width: 90%;
   flex: 1;
   padding: 1rem;
-  margin-left: 250px;
+  margin-left: 150px;
   overflow-y: auto;
 }
 

@@ -3,8 +3,8 @@ name: Run Tests and Upload Coverage
 on:
   push:
     branches: [ dev ]
-  pull_request:
-    branches: [ dev ]
+  #pull_request:
+  #  branches: [ dev ]
 
 jobs:
   test:
@@ -19,22 +19,29 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install all dependencies (root, frontend, backend)
+      - name: Install dependencies
         run: |
-          rm -rf node_modules
           npm install
           cd frontend && npm install
           cd ../backend && npm install
+          cd ..
 
-      - name: Run tests with coverage
-        #run: npm run test:coverage
-        run: npx jest --coverage
-        continue-on-error: true
+      - name: Run all tests with coverage
+        run: |
+          # Run frontend tests
+          cd frontend
+          npx jest --coverage --coverageDirectory=../coverage
+          cd ..
 
-      - name: Upload coverage reports to Codecov
+          # Run backend tests
+          cd backend
+          npx jest --coverage --coverageDirectory=../coverage
+          cd ..
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: Girls-Girls-Inc/wits-quest
+          token: ${{ secrets.CODECOV_TOKEN }}   # Only needed for private repos
           flags: unittests
-          name: coverage-report
+          files: "coverage/lcov.info"
+

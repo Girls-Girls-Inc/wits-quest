@@ -1,79 +1,123 @@
-// tests/models/leaderboardModel.test.js
-const LeaderboardModel = require('../../models/leaderboardModel');
-const supabase = require('../../supabase/supabaseClient');
+// backend/tests/models/leaderboardModel.test.js
 
-jest.mock('../../supabase/supabaseClient', () => ({
-  from: jest.fn(),
-}));
-
-// helper to create a chainable supabase mock
-function makeQueryMock({ data = [], error = null } = {}) {
-  const query = {
+// Must mock before importing the model
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     ilike: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     gte: jest.fn().mockReturnThis(),
     lte: jest.fn().mockReturnThis(),
-  };
+    rpc: jest.fn().mockResolvedValue({ error: null }),
+    upsert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: { score: 0 }, error: null }),
+    is: jest.fn().mockReturnThis(),
+  })),
+}));
 
-  // the last link in the chain should resolve to { data, error }
-  return { query, result: Promise.resolve({ data, error }) };
-}
+jest.mock('../../supabase/supabaseClient', () => ({
+  from: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
+  order: jest.fn().mockReturnThis(),
+  ilike: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  gte: jest.fn().mockReturnThis(),
+  lte: jest.fn().mockReturnThis(),
+}));
+
+const readClient = require('../../supabase/supabaseClient');
+const { createClient } = require('@supabase/supabase-js');
+const LeaderboardModel = require('../../models/leaderboardModel');
 
 describe('LeaderboardModel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns leaderboard data with no filters', async () => {
-    const { query, result } = makeQueryMock({ data: [{ id: 1, rank: 1 }] });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
+  describe('getLeaderboard', () => {
+    it('returns leaderboard data with no filters', async () => {
+      readClient.from().select().order.mockResolvedValue({ data: [{ id: 1, rank: 1 }], error: null });
 
-    const res = await LeaderboardModel.getLeaderboard();
+      const res = await LeaderboardModel.getLeaderboard();
 
-    expect(supabase.from).toHaveBeenCalledWith('leaderboard');
-    expect(query.select).toHaveBeenCalledWith('*');
-    expect(query.order).toHaveBeenCalledWith('rank', { ascending: true });
-    expect(res).toEqual([{ id: 1, rank: 1 }]);
+      expect(readClient.from).toHaveBeenCalledWith('leaderboard_with_users');
+      expect(readClient.from().select).toHaveBeenCalledWith('*');
+      expect(readClient.from().order).toHaveBeenCalledWith('rank', { ascending: true });
+      expect(res).toEqual([{ id: 1, rank: 1 }]);
+    });
+
+    it('applies all filters', async () => {
+      // Fully chainable mock
+      const chain = {
+        ilike: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockResolvedValue({ data: [{ id: 2 }], error: null }),
+        select: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+      };
+      readClient.from.mockReturnValue(chain);
+
+      const res = await LeaderboardModel.getLeaderboard(
+        'monthly',
+        '2023-01-01',
+        '2023-01-31',
+        'user123',
+        'id456'
+      );
+
+      expect(chain.ilike).toHaveBeenCalledWith('periodType', 'monthly');
+      expect(chain.eq).toHaveBeenCalledWith('id', 'id456');
+      expect(chain.eq).toHaveBeenCalledWith('userId', 'user123');
+      expect(chain.gte).toHaveBeenCalledWith('periodStart', new Date('2023-01-01').toISOString());
+      expect(chain.lte).toHaveBeenCalledWith('periodEnd', new Date('2023-01-31').toISOString());
+      expect(res).toEqual([{ id: 2 }]);
+    });
+
+    it('throws if Supabase returns an error', async () => {
+      const chain = {
+        select: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: null, error: new Error('DB failed') }),
+        from: jest.fn().mockReturnThis(),
+      };
+      readClient.from.mockReturnValue(chain);
+
+      await expect(LeaderboardModel.getLeaderboard()).rejects.toThrow('DB failed');
+    });
+
+    it('returns empty array if data is null', async () => {
+      const chain = {
+        select: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: null, error: null }),
+        from: jest.fn().mockReturnThis(),
+      };
+      readClient.from.mockReturnValue(chain);
+
+      const res = await LeaderboardModel.getLeaderboard();
+      expect(res).toEqual([]);
+    });
   });
 
-  it('applies all filters', async () => {
-    const { query, result } = makeQueryMock({ data: [{ id: 2 }] });
-    supabase.from.mockReturnValue(query);
-    query.lte.mockReturnValue(result); // last in chain resolves the promise
+  describe('addPointsAtomic', () => {
+    it('calls rpc and succeeds', async () => {
+      const adminClient = createClient();
+      const spyRpc = adminClient.rpc;
 
-    const res = await LeaderboardModel.getLeaderboard(
-      'monthly',
-      '2023-01-01',
-      '2023-01-31',
-      'user123',
-      'id456'
-    );
+      const result = await LeaderboardModel.addPointsAtomic({
+        userId: 'u1',
+        points: 50,
+        periodType: 'overall',
+      });
 
-    expect(query.ilike).toHaveBeenCalledWith('periodType', 'monthly');
-    expect(query.eq).toHaveBeenCalledWith('id', 'id456');
-    expect(query.eq).toHaveBeenCalledWith('userId', 'user123');
-    expect(query.gte).toHaveBeenCalledWith('periodStart', new Date('2023-01-01').toISOString());
-    expect(query.lte).toHaveBeenCalledWith('periodEnd', new Date('2023-01-31').toISOString());
-    expect(res).toEqual([{ id: 2 }]);
-  });
-
-  it('throws on supabase error', async () => {
-    const { query, result } = makeQueryMock({ error: new Error('DB failed') });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
-
-    await expect(LeaderboardModel.getLeaderboard()).rejects.toThrow('DB failed');
-  });
-
-  it('returns empty array if no data', async () => {
-    const { query, result } = makeQueryMock({ data: null });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
-
-    const res = await LeaderboardModel.getLeaderboard();
-    expect(res).toEqual([]);
+      expect(spyRpc).toHaveBeenCalledWith(
+        'lb_add_points',
+        expect.objectContaining({ in_user_id: 'u1', in_points: 50 })
+      );
+      expect(result).toEqual({ ok: true, method: 'rpc' });
+    });
   });
 });
+

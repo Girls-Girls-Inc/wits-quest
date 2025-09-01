@@ -1,3 +1,4 @@
+// frontend/src/tests/pages/loginSignup.test.jsx
 /** @jest-environment jsdom */
 
 const WEB_URL = process.env.VITE_WEB_URL; // from your .env/.env.test
@@ -23,8 +24,7 @@ jest.mock("react-router-dom", () => {
     };
 });
 
-// Toasts – return an id string for loading so your effects (which store the id)
-// can later call success/dismiss with it.
+// Toasts
 jest.mock("react-hot-toast", () => {
     const mockToast = {
         success: jest.fn(),
@@ -82,7 +82,7 @@ jest.mock("../../assets/Signup3.png", () => "signup.png");
 jest.mock("../../styles/login-signup.css", () => ({}));
 jest.mock("../../index.css", () => ({}));
 
-// Supabase client (all 3 methods used)
+// Supabase client (all 3 methods used + onAuthStateChange)
 jest.mock("../../supabase/supabaseClient", () => ({
     __esModule: true,
     default: {
@@ -90,6 +90,7 @@ jest.mock("../../supabase/supabaseClient", () => ({
             signInWithPassword: jest.fn(),
             signUp: jest.fn(),
             signInWithOAuth: jest.fn(),
+            onAuthStateChange: jest.fn((callback) => ({ data: { subscription: {} } })),
         },
     },
 }));
@@ -199,7 +200,6 @@ describe("Login/Signup page", () => {
         await userEvent.clear(within(form).getByTestId("signup-email"));
         await userEvent.type(within(form).getByTestId("signup-email"), "good@test.com");
 
-        // Because we return an id from loading(), the success path can fire
         await waitFor(() => {
             expect(toast.success).toHaveBeenCalledWith("✔ Valid email format", expect.any(Object));
         });
@@ -284,9 +284,8 @@ describe("Login/Signup page", () => {
             );
         });
 
-        errSpy.mockRestore(); // ✅ restore after assertions
+        errSpy.mockRestore();
     });
-
 
     /* ----------------- GOOGLE: success + error paths ---------------- */
     it("Google sign-in success", async () => {

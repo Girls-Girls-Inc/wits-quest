@@ -16,6 +16,9 @@ jest.mock('../../controllers/questController', () => ({
   mine: jest.fn((req, res) =>
     res.status(200).json([{ id: 1, userId: 'mock-user', questId: 1 }])
   ),
+  complete: jest.fn((req, res) =>
+    res.status(200).json({ message: 'Quest completed', id: req.params.id })
+  ),
 }));
 
 const questRoutes = require('../../routes/questRoutes');
@@ -66,5 +69,13 @@ describe('Quest Routes', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(QuestController.mine).toHaveBeenCalled();
+  });
+
+  it('POST /api/user-quests/:id/complete → should call complete', async () => {
+    const res = await request(app).post('/api/user-quests/1/complete');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Quest completed');
+    expect(QuestController.complete).toHaveBeenCalled();
   });
 });

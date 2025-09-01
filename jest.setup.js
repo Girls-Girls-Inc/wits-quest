@@ -1,6 +1,5 @@
-// jest.setup.js
 require('@testing-library/jest-dom'); // adds .toBeInTheDocument, etc.
-// (optional) polyfill fetch/Response if you prefer using Response in tests
+
 try { require('whatwg-fetch'); } catch {}
 
 global.TextEncoder = require('util').TextEncoder;
@@ -14,7 +13,7 @@ if (typeof window !== 'undefined' && !('matchMedia' in window)) {
       matches: false,
       media: query,
       onchange: null,
-      addListener: jest.fn(),          // deprecated; some libs still call it
+      addListener: jest.fn(),
       removeListener: jest.fn(),
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),

@@ -8,20 +8,12 @@
   flex-direction: column;
 }
 
-.leaderboard-header h1 {
-  font-size: 2rem;
-  margin-bottom: 4px;
-  color: var(--wits-gold);
-  font-weight: 700;
-}
-
 .leaderboard-header h2 {
   font-size: 1.2rem;
   color: #555;
   font-weight: 500;
 }
 
-/* Controls (buttons) */
 .leaderboard-controls {
   display: flex;
   gap: 12px;
@@ -37,24 +29,28 @@
 }
 
 .leaderboard-table-wrapper {
+  color: #333;
   overflow-x: auto;
   border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 12px rgba(71, 68, 68, 0.08);
 }
 
 .leaderboard-table {
+  color: #222;
   width: 100%;
+  min-width: 300px;
   border-collapse: collapse;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .leaderboard-table thead {
-  background: #ffeaa7;
-  color: #2d3436;
+  color: #fff;
 }
 
 .leaderboard-table th {
+  background-color: var(--wits-blue);
   padding: 14px;
   font-weight: 600;
   font-size: 15px;
@@ -64,14 +60,13 @@
 .leaderboard-table td {
   padding: 14px;
   font-size: 14px;
-  border-top: 1px solid #f1f1f1;
 }
 
 .leaderboard-table tbody tr:nth-child(odd) {
-  background: #eaf6ff;
+  background: #f2f5f7;
 }
 .leaderboard-table tbody tr:nth-child(even) {
-  background: #eaf6ff;
+  background: #b5c5d0;
 }
 
 .leaderboard-table tbody tr:hover {
@@ -165,7 +160,7 @@ td code {
   background: none;
   border: none;
   font-weight: bold;
-  font-size: 15px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -197,7 +192,7 @@ td code {
   width: 100%;
 }
 
-.leaderboard-table {
+.full-width {
   min-width: 900px;
 }
 

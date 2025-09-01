@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: "node",
+  testEnvironment: "jsdom",
   roots: ["<rootDir>/backend/tests", "<rootDir>/frontend/src"],
 
   collectCoverage: true,
@@ -24,5 +24,9 @@ module.exports = {
     "^react/jsx-runtime$": "<rootDir>/frontend/node_modules/react/jsx-runtime",
     "\\.css$": "identity-obj-proxy",
     "\\.(png|jpe?g|gif|svg|webp)$": "<rootDir>/frontend/src/tests/__mocks__/fileMock.js"
-  }
+  },
+
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
+  resolver: "<rootDir>/jest.resolver.js"
 };

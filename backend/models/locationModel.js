@@ -1,10 +1,11 @@
+// backend/models/locationModel.js
 const supabase = require('../supabase/supabaseClient');
 
 const LocationModel = {
   async getLocations(id, name) {
     let query = supabase
       .from('locations')
-      .select('id, name, latitude, longitude')
+      .select('*') // include radius / aliases too
       .order('id', { ascending: true });
 
     if (id) query = query.eq('id', id);
@@ -12,7 +13,6 @@ const LocationModel = {
 
     const { data, error } = await query;
     if (error) throw error;
-
     return data || [];
   },
 
@@ -20,7 +20,7 @@ const LocationModel = {
     const { data, error } = await supabase
       .from('locations')
       .insert([locationData])
-      .select();
+      .select('*');
     if (error) throw error;
     return data;
   },
@@ -30,7 +30,7 @@ const LocationModel = {
       .from('locations')
       .update(updatedData)
       .eq('id', id)
-      .select();
+      .select('*');
     if (error) throw error;
     return data;
   },
@@ -42,10 +42,11 @@ const LocationModel = {
       .eq('id', id);
     return { error };
   },
+
   async getLocationById(id) {
     const { data, error } = await supabase
       .from('locations')
-      .select('id, name, latitude, longitude')  // <-- include coords
+      .select('*') // include radius / aliases too
       .eq('id', id)
       .limit(1)
       .single();

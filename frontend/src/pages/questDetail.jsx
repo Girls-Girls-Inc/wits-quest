@@ -1,7 +1,15 @@
 // src/pages/QuestDetail.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { GoogleMap, Marker, Circle, useLoadScript } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  Marker,
+  Circle,
+  DirectionsService,
+  DirectionsRenderer,
+  useLoadScript,
+} from "@react-google-maps/api";
+
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import IconButton from "../components/IconButton";
@@ -33,8 +41,10 @@ export default function QuestDetail() {
   const [loading, setLoading] = useState(true);
   const [pos, setPos] = useState(null);
   const watchIdRef = useRef(null);
+  // const [directions, setDirections] = useState(null);
 
   const { isLoaded } = useLoadScript({ googleMapsApiKey: GMAPS_KEY || "" });
+
   const mapRef = useRef(null);
 
   const distanceM = useMemo(() => {
@@ -220,9 +230,7 @@ export default function QuestDetail() {
           <span>
             <strong>Location:</strong> {loc.name ?? "Unknown"}
           </span>
-          <span>
-            <strong>Radius (m):</strong> {Number(loc.radius) || 0}
-          </span>
+
           {distanceM != null && (
             <span>
               <strong>Distance to target:</strong> {distanceM} m
@@ -240,11 +248,54 @@ export default function QuestDetail() {
             zoom={16}
             options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
           >
+            {/* Quest location */}
             <Marker position={mapCenter} title={loc.name || "Quest location"} />
+
+            {/* Radius circle */}
             {hasRadius && (
-              <Circle center={mapCenter} radius={Number(loc.radius)} options={{ strokeOpacity: 0.6, fillOpacity: 0.12 }} />
+              <Circle
+                center={mapCenter}
+                radius={Number(loc.radius)}
+                options={{ strokeOpacity: 0.6, fillOpacity: 0.12 }}
+              />
             )}
-            {pos && <Marker position={{ lat: pos.lat, lng: pos.lng }} icon={youIcon} title="You" />}
+
+            {/* User marker */}
+            {pos && (
+              <Marker
+                position={{ lat: pos.lat, lng: pos.lng }}
+                icon={youIcon}
+                title="You"
+              />
+            )}
+
+            {/* Actual road path
+            {pos && !directions && (
+              <DirectionsService
+                options={{
+                  origin: { lat: pos.lat, lng: pos.lng },
+                  destination: { lat: mapCenter.lat, lng: mapCenter.lng },
+                  travelMode: "WALKING",
+                }}
+                callback={(res) => {
+                  if (res !== null && res.status === "OK") {
+                    setDirections(res);
+                  }
+                }}
+              />
+            )}
+            {directions && (
+              <DirectionsRenderer
+                options={{
+                  directions: directions,
+                  suppressMarkers: true,
+                  polylineOptions: {
+                    strokeColor: "#FF0000",
+                    strokeWeight: 4,
+                  },
+                }}
+              />
+            )} */}
           </GoogleMap>
         ) : (
           <div>Loading map…</div>
@@ -252,8 +303,17 @@ export default function QuestDetail() {
       </section>
 
       <section className="actions">
-        <div className={`radius-indicator ${withinRadius ? "ok" : "far"}`}>
-          {withinRadius ? "You are inside the radius" : "You are outside the radius"}
+        <div
+          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
+            }`}
+        >
+          {withinRadius
+            ? "You are inside the radius"
+            : "You are outside the radius"}
+          <br />
+          <span>
+            <strong> Radius (m):</strong> {Number(loc.radius) || 0}
+          </span>
         </div>
 
         <div className="action-buttons">

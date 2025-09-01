@@ -15,7 +15,6 @@ const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
 
-// ---------- helpers ----------
 const asLatLng = (obj) => {
   if (!obj) return null;
   const toNum = (v) =>
@@ -125,8 +124,8 @@ export default function QuestMap() {
       return Array.isArray(arr)
         ? arr[0]
         : Array.isArray(arr?.data)
-          ? arr.data[0]
-          : null;
+        ? arr.data[0]
+        : null;
     }
     throw new Error(`Location ${id} not found`);
   };
@@ -258,7 +257,6 @@ export default function QuestMap() {
       <div className="map-container">
         <div className="map-header">
           <h1>Quests Map</h1>
-
           <IconButton
             type="button"
             onClick={loadQuests}
@@ -268,6 +266,7 @@ export default function QuestMap() {
           />
         </div>
 
+        <div></div>
         <GoogleMap
           mapContainerStyle={MAP_CONTAINER_STYLE}
           center={center}

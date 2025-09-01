@@ -1,0 +1,241 @@
+.quests-container {
+  padding: 20px;
+}
+
+.quests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.quest-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 15px;
+  background: var(--background);
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.quest-card:hover {
+  transform: scale(1.01);
+}
+
+.quest-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.quest-profile img {
+  max-width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 1px solid #555;
+  object-fit: cover;
+  margin-bottom: 5px;
+}
+
+.quest-info {
+  flex: 1;
+  padding: 0 10px;
+}
+
+.quest-info h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .quest-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .quest-profile {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 0;
+    gap: 10px;
+  }
+
+  .quest-profile img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .quest-info {
+    padding: 0;
+  }
+
+  .quest-action {
+    align-self: flex-end;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .quest-action button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .quest-profile img {
+    max-width: 20px;
+    height: auto;
+  }
+  .quests-container {
+    padding: 10px;
+  }
+
+  .quest-info h2 {
+    font-size: 16px;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal {
+  background: var(--background);
+  border-radius: 16px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transform: scale(0.8);
+  opacity: 0;
+  animation: popUp 0.3s ease forwards;
+}
+
+.modal-body {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.modal-left,
+.modal-right {
+  flex: 1;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.map-frame {
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    background: rgba(0, 0, 0, 0);
+  }
+  to {
+    background: rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes popUp {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-left img {
+  width: 200px;
+  height: auto;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .modal-body {
+    flex-direction: column;
+  }
+
+  .modal-left img {
+    width: 100%;
+    height: auto;
+  }
+}
+.quest-detail-header {
+  margin-bottom: 16px;
+}
+
+.quest-detail-header h1 {
+  margin-bottom: 8px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.map-wrap {
+  margin: 20px 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.radius-indicator.ok {
+  color: green;
+}
+
+.radius-indicator.far {
+  color: red;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}

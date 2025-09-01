@@ -1,142 +1,138 @@
+// src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
 import "../styles/button.css";
-import SignupImage from "../assets/signup.png";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_WEB_URL; // use your backend base URL
+const API_BASE = import.meta.env.VITE_WEB_URL;
 
 const AdminDashboard = () => {
-  const [isActive, setIsActive] = useState(true);
+  const navigate = useNavigate();
   const [selectedTask, setSelectedTask] = useState(null);
+  const [quests, setQuests] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState(null);
+
   const [questData, setQuestData] = useState({
     name: "",
     description: "",
-    imageUrl: "",
     collectibleId: "",
     locationId: "",
     pointsAchievable: "",
     isActive: true,
   });
-  const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]);
 
   const [locationData, setLocationData] = useState({
     name: "",
     latitude: "",
     longitude: "",
-    radius: ""
+    radius: "",
   });
 
+  // Signed-in Supabase user
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) console.error(error);
-      else setUser(user);
-    };
-    fetchUser();
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error) setUser(data?.user ?? null);
+    })();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/users`); // your backend endpoint
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Users API did not return an array");
-      setUsers(data);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setUsers([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-
-
-
+  // Fetch collectibles, locations, and users
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [collectibleRes, locationRes] = await Promise.all([
-          fetch(`${API_BASE}/collectibles`),
-          fetch(`${API_BASE}/locations`),
+        const [collectRes, locRes] = await Promise.all([
+          fetch(`${API_BASE}/collectibles`, { credentials: "include" }),
+          fetch(`${API_BASE}/locations`, { credentials: "include" }),
         ]);
-
-        if (!collectibleRes.ok) throw new Error("Failed to fetch collectibles");
-        if (!locationRes.ok) throw new Error("Failed to fetch locations");
-
         const [collectiblesData, locationsData] = await Promise.all([
-          collectibleRes.json(),
-          locationRes.json(),
+          collectRes.json(),
+          locRes.json(),
         ]);
-
-        if (!Array.isArray(collectiblesData)) throw new Error("Collectibles API did not return an array");
-        if (!Array.isArray(locationsData)) throw new Error("Locations API did not return an array");
-
-        setCollectibles(collectiblesData);
-        setLocations(locationsData);
+        setCollectibles(
+          Array.isArray(collectiblesData) ? collectiblesData : []
+        );
+        setLocations(Array.isArray(locationsData) ? locationsData : []);
       } catch (err) {
-        console.error("Error fetching options:", err);
-        setCollectibles([]);
-        setLocations([]);
+        console.error(err);
       }
     };
-    fetchOptions();
-  }, []);
 
-  const handleTaskClick = (task) => {
-    setSelectedTask(task);
-    setIsActive(false);
-  };
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setUsers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchOptions();
+    fetchUsers();
+  }, []);
 
   const handleBack = () => {
     setSelectedTask(null);
-    setIsActive(true);
     setQuestData({
       name: "",
       description: "",
-      imageUrl: "",
       collectibleId: "",
       locationId: "",
       pointsAchievable: "",
       isActive: true,
     });
+    setLocationData({
+      name: "",
+      latitude: "",
+      longitude: "",
+      radius: "",
+    });
   };
 
   const handleQuestChange = (e) => {
     const { name, value } = e.target;
-    setQuestData({ ...questData, [name]: value });
+    setQuestData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLocationChange = (e) => {
+    const { name, value } = e.target;
+    setLocationData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleQuestSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert("You must be logged in to create a quest");
+    if (!user) return alert("You must be logged in");
 
     const questInsert = {
       ...questData,
       createdBy: user.id,
-      pointsAchievable: parseInt(questData.pointsAchievable, 10) || 0,
+      pointsAchievable: Number(questData.pointsAchievable) || 0,
+      locationId: questData.locationId ? Number(questData.locationId) : null,
+      collectibleId: questData.collectibleId
+        ? Number(questData.collectibleId)
+        : null,
     };
 
     try {
       const res = await fetch(`${API_BASE}/quests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(questInsert),
       });
-
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Failed to create quest");
-
       alert(`Quest "${result.name}" created successfully!`);
       handleBack();
     } catch (err) {
@@ -144,32 +140,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLocationChange = (e) => {
-    const { name, value } = e.target;
-    setLocationData({ ...locationData, [name]: value });
-  };
-
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert("You must be logged in to create a location");
+    if (!user) return alert("You must be logged in");
 
     const locationInsert = {
       ...locationData,
       latitude: parseFloat(locationData.latitude),
       longitude: parseFloat(locationData.longitude),
-      radius: parseFloat(locationData.radius)
+      radius: parseFloat(locationData.radius),
     };
 
     try {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(locationInsert)
+        credentials: "include",
+        body: JSON.stringify(locationInsert),
       });
-
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to create location");
-
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
       alert(`Location "${result.name}" created successfully!`);
       handleBack();
     } catch (err) {
@@ -179,197 +170,268 @@ const AdminDashboard = () => {
 
   const handleToggleModerator = async (userId, newStatus) => {
     try {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.userId === userId ? { ...u, isModerator: newStatus } : u
+        )
+      );
       const res = await fetch(`${API_BASE}/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isModerator: newStatus }),
       });
-
-      let result = {};
-      const text = await res.text();
-      if (text) result = JSON.parse(text);
-
-      // update local state regardless
-      setUsers(users.map(u => u.userId === userId ? { ...u, isModerator: newStatus } : u));
+      if (!res.ok) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.userId === userId ? { ...u, isModerator: !newStatus } : u
+          )
+        );
+        throw new Error(await res.text());
+      }
     } catch (err) {
       alert(`Failed to update user: ${err.message}`);
     }
   };
 
   return (
-    <div className={`container${isActive ? " active" : ""}`}>
+    <div className="admin-container">
       <Toaster />
-      <div className="form-box login">
-        {!selectedTask ? (
-          <div className="admin-menu">
-            <div className="admin-buttons">
-              <button onClick={() => handleTaskClick("Quest Creation")}>Quest Creation</button>
-              <button onClick={() => handleTaskClick("Location Creation")}>Location Creation</button>
-              <button onClick={() => handleTaskClick("Badge Creation")}>Create Badge</button>
-              <button onClick={() => handleTaskClick("Admin Privilege")}>Admin Privilege</button>
-            </div>
+      {!selectedTask ? (
+        <div className="admin-header">
+          <h1 className="heading">Admin Dashboard</h1>
+          <div className="admin-buttons flex flex-wrap gap-2 mt-4">
+            <IconButton
+              icon="task"
+              label="Quest Creation"
+              onClick={() => setSelectedTask("Quest Creation")}
+            />
+            <IconButton
+              icon="place"
+              label="Location Creation"
+              onClick={() => setSelectedTask("Location Creation")}
+            />
+            <IconButton
+              icon="admin_panel_settings"
+              label="Admin Privilege"
+              onClick={() => setSelectedTask("Admin Privilege")}
+            />
+            <IconButton
+              icon="badge"
+              label="Badge Creation"
+              onClick={() => setSelectedTask("Badge Creation")}
+            />
+            <IconButton
+              icon="list_alt"
+              label="Manage Quests"
+              onClick={() => navigate("/manage-quests")}
+            />
           </div>
-        ) : (
-          <div className="task-panel signup">
-            <h1>{selectedTask}</h1>
-            {selectedTask === "Quest Creation" && (
-              <form className="login-form" onSubmit={handleQuestSubmit}>
-                <div className="input-box">
-                  <InputField type="text" name="name" placeholder="Quest Name" value={questData.name} onChange={handleQuestChange} required />
-                </div>
-                <div className="input-box">
-                  <InputField type="text" name="description" placeholder="Quest Description" value={questData.description} onChange={handleQuestChange} required />
-                </div>
-                <div className="input-box">
-                  <InputField type="text" name="imageUrl" placeholder="Image URL" value={questData.imageUrl} onChange={handleQuestChange} />
-                </div>
-                <div className="input-box">
-                  <label>Collectible</label>
-                  <select name="collectibleId" value={questData.collectibleId} onChange={handleQuestChange} required>
-                    <option value="">Select a collectible</option>
-                    {collectibles.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="input-box">
-                  <label>Location</label>
-                  <select name="locationId" value={questData.locationId} onChange={handleQuestChange} required>
-                    <option value="">Select a location</option>
-                    {locations.map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="input-box">
-                  <InputField type="number" name="pointsAchievable" placeholder="Points Achievable" value={questData.pointsAchievable} onChange={handleQuestChange} />
-                </div>
-                <div className="input-box">
-                  <label>
-                    <input type="checkbox" name="isActive" checked={questData.isActive} onChange={(e) => setQuestData({ ...questData, isActive: e.target.checked })} />
-                    Active
-                  </label>
-                </div>
-                <div className="btn">
-                  <IconButton type="submit" icon="save" label="Create Quest" />
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
-                </div>
-              </form>
-            )}
-            {selectedTask === "Location Creation" && (
-              <form className="login-form" onSubmit={handleLocationSubmit}>
-                <div className="input-box">
-                  <InputField type="text" name="name" placeholder="Location Name" value={locationData.name} onChange={handleLocationChange} required />
-                </div>
-                <div className="input-box">
-                  <InputField type="number" step="any" name="latitude" placeholder="Latitude" value={locationData.latitude} onChange={handleLocationChange} required />
-                </div>
-                <div className="input-box">
-                  <InputField type="number" step="any" name="longitude" placeholder="Longitude" value={locationData.longitude} onChange={handleLocationChange} required />
-                </div>
-                <div className="input-box">
-                  <InputField type="number" step="any" name="radius" placeholder="Radius" value={locationData.radius} onChange={handleLocationChange} required />
-                </div>
-                <div className="btn">
-                  <IconButton type="submit" icon="save" label="Create Location" />
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
-                </div>
-              </form>
-            )}
-            {selectedTask === "Admin Privilege" && (
-              <div className="task-panel signup">
-                <h1>Admin Privileges</h1>
-                <p>Promote or remove users as moderators.</p>
+        </div>
+      ) : (
+        <div>
+          <h1>{selectedTask}</h1>
 
-                <div style={{ maxHeight: "400px", overflowY: "auto", overflowX: "auto" }}>
-                  <table style={{ width: "100%", minWidth: "600px", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Email</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Is Moderator</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Created At</th>
-                        <th style={{ textAlign: "left", padding: "8px" }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((u) => (
-                        <tr key={u.userId}>
-                          <td style={{ padding: "8px" }}>{u.email}</td>
-                          <td style={{ padding: "8px" }}>{u.isModerator ? "Yes" : "No"}</td>
-                          <td style={{ padding: "8px" }}>{new Date(u.created_at).toLocaleString()}</td>
-                          <td style={{ padding: "8px" }}>
-                            <button
-                              onClick={async () => {
-                                // Optimistic UI update
-                                setUsers(users.map(userItem =>
-                                  userItem.userId === u.userId ? { ...userItem, isModerator: !u.isModerator } : userItem
-                                ));
-                                try {
-                                  await fetch(`${API_BASE}/users/${u.userId}`, {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ isModerator: !u.isModerator }),
-                                  });
-                                } catch (err) {
-                                  // revert state if network fails
-                                  setUsers(users.map(userItem =>
-                                    userItem.userId === u.userId ? { ...userItem, isModerator: u.isModerator } : userItem
-                                  ));
-                                  alert(`Failed to update user: ${err.message}`);
-                                }
-                              }}
-                              style={{
-                                backgroundColor: u.isModerator ? "#ff4d4f" : "#4caf50",
-                                color: "#fff",
-                                border: "none",
-                                padding: "4px 8px",
-                                cursor: "pointer",
-                                borderRadius: "4px"
-                              }}
-                            >
-                              {u.isModerator ? "Remove Moderator" : "Make Moderator"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="btn">
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
-                </div>
+          {selectedTask === "Quest Creation" && (
+            <form className="login-form" onSubmit={handleQuestSubmit}>
+              <div className="input-box">
+                <InputField
+                  icon="question_mark"
+                  type="text"
+                  name="name"
+                  placeholder="Quest Name"
+                  value={questData.name}
+                  onChange={handleQuestChange}
+                  required
+                />
               </div>
-            )}
+              <div className="input-box">
+                <InputField
+                  icon="description"
+                  type="text"
+                  name="description"
+                  placeholder="Quest Description"
+                  value={questData.description}
+                  onChange={handleQuestChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <label>Collectible</label>
+                <select
+                  name="collectibleId"
+                  value={questData.collectibleId}
+                  onChange={handleQuestChange}
+                >
+                  <option value="">Select a collectible</option>
+                  {collectibles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-box">
+                <label>Location</label>
+                <select
+                  name="locationId"
+                  value={questData.locationId}
+                  onChange={handleQuestChange}
+                >
+                  <option value="">Select a location</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-box">
+                <InputField
+                  type="number"
+                  name="pointsAchievable"
+                  placeholder="Points Achievable"
+                  value={questData.pointsAchievable}
+                  onChange={handleQuestChange}
+                />
+              </div>
+              <div className="input-box">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={questData.isActive}
+                    onChange={(e) =>
+                      setQuestData((prev) => ({
+                        ...prev,
+                        isActive: e.target.checked,
+                      }))
+                    }
+                  />
+                  Active
+                </label>
+              </div>
+              <div className="btn flex gap-2">
+                <IconButton type="submit" icon="save" label="Create Quest" />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </form>
+          )}
 
-            {selectedTask === "Badge Creation" && (
-              <form className="user-form" onSubmit={handleUserUpdate}>
-                <div className="btn">
-                  <IconButton onClick={handleBack} type="return" icon="arrow_back" label="Back" />
+          {selectedTask === "Location Creation" && (
+            <form className="login-form" onSubmit={handleLocationSubmit}>
+              <div className="input-box">
+                <InputField
+                  type="text"
+                  name="name"
+                  placeholder="Location Name"
+                  value={locationData.name}
+                  onChange={handleLocationChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  type="number"
+                  name="latitude"
+                  step="any"
+                  placeholder="Latitude"
+                  value={locationData.latitude}
+                  onChange={handleLocationChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  type="number"
+                  name="longitude"
+                  step="any"
+                  placeholder="Longitude"
+                  value={locationData.longitude}
+                  onChange={handleLocationChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  type="number"
+                  name="radius"
+                  step="any"
+                  placeholder="Radius"
+                  value={locationData.radius}
+                  onChange={handleLocationChange}
+                  required
+                />
+              </div>
+              <div className="btn flex gap-2">
+                <IconButton type="submit" icon="save" label="Create Location" />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </form>
+          )}
+
+          {selectedTask === "Admin Privilege" && (
+            <div className="quest-list">
+              <h2>Manage Admin Privileges</h2>
+              {users.map((u) => (
+                <div
+                  key={u.userId}
+                  className="quest-card flex items-center justify-between p-2 mb-2 border rounded"
+                >
+                  <div>
+                    <strong>{u.email}</strong> (
+                    {u.isModerator ? "Moderator" : "User"})
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        handleToggleModerator(u.userId, !u.isModerator)
+                      }
+                      className={`px-2 py-1 rounded text-white ${
+                        u.isModerator ? "bg-red-500" : "bg-green-500"
+                      }`}
+                    >
+                      {u.isModerator ? "Remove Moderator" : "Make Moderator"}
+                    </button>
+                  </div>
                 </div>
-              </form>
-            )}
+              ))}
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          )}
 
-          </div>
-        )}
-      </div>
-
-      <div className="toggle">
-        <div className={`toggle-panel ${selectedTask ? "toggle-left" : "toggle-right"}`}>
-          <img src={SignupImage} alt="Quest" />
-          {!selectedTask ? (
-            <>
-              <h1>Select a Task</h1>
-              <p>What would you like to do?</p>
-            </>
-          ) : (
-            <>
-              <h1>{selectedTask} Panel</h1>
-              <p>Detailed view of {selectedTask} operations.</p>
-            </>
+          {selectedTask === "Badge Creation" && (
+            <div className="quest-list">
+              <h2>Badge Creation (Coming Soon)</h2>
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

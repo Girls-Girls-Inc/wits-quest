@@ -15,13 +15,12 @@ const Settings = () => {
     setSelectedTask(null);
   };
 
-  // show toast whenever a task is selected
   useEffect(() => {
     if (selectedTask === "My Profile") {
       toast.success("Opening your profile details...");
     } else if (selectedTask === "Edit Profile") {
-      toast("Edit your profile here (form coming soon).");
-    } else if (selectedTask === "Given Feedback") {
+      toast("Edit your profile here.");
+    } else if (selectedTask === "Give Feedback") {
       toast.success("Loading your submitted feedback...");
     } else if (selectedTask === "Logout") {
       toast.error("Ready to log out?");
@@ -43,12 +42,12 @@ const Settings = () => {
             <IconButton
               icon="edit"
               label="Edit Profile"
-              onClick={() => setSelectedTask("Edit Profile")}
+              onClick={() => navigate("/edit-profile")}
             />
             <IconButton
               icon="feedback"
-              label="Given Feedback"
-              onClick={() => setSelectedTask("Given Feedback")}
+              label="Give Feedback"
+              onClick={() => setSelectedTask("Give Feedback")}
             />
             <IconButton
               icon="logout"
@@ -87,7 +86,7 @@ const Settings = () => {
             </div>
           )}
 
-          {selectedTask === "Given Feedback" && (
+          {selectedTask === "Give Feedback" && (
             <div className="quest-list">
               <div className="btn flex gap-2 mt-2">
                 <IconButton

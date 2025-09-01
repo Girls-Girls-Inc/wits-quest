@@ -257,7 +257,6 @@ export default function QuestMap() {
       <div className="map-container">
         <div className="map-header">
           <h1>Quests Map</h1>
-
           <IconButton
             type="button"
             onClick={loadQuests}

@@ -41,7 +41,7 @@ export default function QuestDetail() {
   const [loading, setLoading] = useState(true);
   const [pos, setPos] = useState(null);
   const watchIdRef = useRef(null);
-  const [directions, setDirections] = useState(null);
+  // const [directions, setDirections] = useState(null);
 
   const { isLoaded } = useLoadScript({ googleMapsApiKey: GMAPS_KEY || "" });
 
@@ -260,7 +260,7 @@ export default function QuestDetail() {
               />
             )}
 
-            {/* Actual road path */}
+            {/* Actual road path
             {pos && !directions && (
               <DirectionsService
                 options={{
@@ -286,7 +286,7 @@ export default function QuestDetail() {
                   },
                 }}
               />
-            )}
+            )} */}
           </GoogleMap>
         ) : (
           <div>Loading map…</div>

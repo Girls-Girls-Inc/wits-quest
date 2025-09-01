@@ -124,8 +124,8 @@ export default function QuestMap() {
       return Array.isArray(arr)
         ? arr[0]
         : Array.isArray(arr?.data)
-          ? arr.data[0]
-          : null;
+        ? arr.data[0]
+        : null;
     }
     throw new Error(`Location ${id} not found`);
   };

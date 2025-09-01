@@ -8,13 +8,13 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/map.css";
 import IconButton from "../components/IconButton";
+import supabase from "../supabase/supabaseClient";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
 
-// ---------- helpers ----------
 const asLatLng = (obj) => {
   if (!obj) return null;
   const toNum = (v) =>
@@ -267,6 +267,7 @@ export default function QuestMap() {
           />
         </div>
 
+        <div></div>
         <GoogleMap
           mapContainerStyle={MAP_CONTAINER_STYLE}
           center={center}

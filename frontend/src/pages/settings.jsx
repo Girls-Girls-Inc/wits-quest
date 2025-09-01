@@ -1,0 +1,130 @@
+import React, { useState, useEffect } from "react";
+import { Toaster, toast } from "react-hot-toast";
+import "../styles/layout.css";
+import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
+import "../styles/button.css";
+import IconButton from "../components/IconButton";
+import { useNavigate } from "react-router-dom";
+
+const Settings = () => {
+  const navigate = useNavigate();
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const handleBack = () => {
+    setSelectedTask(null);
+  };
+
+  // show toast whenever a task is selected
+  useEffect(() => {
+    if (selectedTask === "My Profile") {
+      toast.success("Opening your profile details...");
+    } else if (selectedTask === "Edit Profile") {
+      toast("Edit your profile here (form coming soon).");
+    } else if (selectedTask === "Given Feedback") {
+      toast.success("Loading your submitted feedback...");
+    } else if (selectedTask === "Logout") {
+      toast.error("Ready to log out?");
+    }
+  }, [selectedTask]);
+
+  return (
+    <div className="admin-container">
+      <Toaster />
+      {!selectedTask ? (
+        <div className="admin-header">
+          <h1 className="heading">Settings</h1>
+          <div className="admin-buttons flex flex-wrap gap-2 mt-4">
+            <IconButton
+              icon="person"
+              label="My Profile"
+              onClick={() => setSelectedTask("My Profile")}
+            />
+            <IconButton
+              icon="edit"
+              label="Edit Profile"
+              onClick={() => setSelectedTask("Edit Profile")}
+            />
+            <IconButton
+              icon="feedback"
+              label="Given Feedback"
+              onClick={() => setSelectedTask("Given Feedback")}
+            />
+            <IconButton
+              icon="logout"
+              label="Logout"
+              onClick={() => setSelectedTask("Logout")}
+            />
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h1>{selectedTask}</h1>
+
+          {selectedTask === "My Profile" && (
+            <div className="quest-list">
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedTask === "Edit Profile" && (
+            <div className="quest-list">
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedTask === "Given Feedback" && (
+            <div className="quest-list">
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedTask === "Logout" && (
+            <div className="quest-list">
+              <div className="btn flex gap-2 mt-2">
+                <IconButton
+                  type="button"
+                  icon="check"
+                  label="Confirm Logout"
+                  onClick={() => {
+                    toast.success("Logged out!");
+                    navigate("/login");
+                  }}
+                />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Cancel"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Settings;

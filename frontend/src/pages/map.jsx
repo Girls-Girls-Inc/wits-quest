@@ -10,6 +10,7 @@ import "../styles/map.css";
 import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
+const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
 
@@ -98,6 +99,7 @@ export default function QuestMap() {
   const [quests, setQuests] = useState([]);
   const [markers, setMarkers] = useState([]);
   const [selected, setSelected] = useState(null); // store full marker for InfoWindow
+  const [adding, setAdding] = useState(false); // add-to-my-quests button state
 
   const center = useMemo(() => ({ lat: -26.19, lng: 28.03 }), []);
   const bounds = useMemo(
@@ -207,12 +209,49 @@ export default function QuestMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- Add to My Quests (same behaviour as quests.jsx) ----
+  const addToMyQuests = async (marker) => {
+    const questId = resolveQuestId(marker);
+    if (!questId) {
+      toast.error("Could not determine questId for this quest.");
+      return;
+    }
+    const t = toast.loading("Adding quest…");
+    setAdding(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Please sign in.");
+
+      const resp = await fetch(USER_QUESTS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ questId }),
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.message || "Failed to add quest");
+
+      toast.success("Added to your quests!", { id: t });
+    } catch (e) {
+      toast.error(e.message, { id: t });
+    } finally {
+      setAdding(false);
+    }
+  };
+
   if (loadError) return <div>Failed to load Google Maps.</div>;
   if (!isLoaded) return <div>Loading map…</div>;
 
   return (
     <div>
       <Toaster />
+      <div className="map-header">
       <div className="map-container">
         <h1>Quests Map</h1>
         {/* <button

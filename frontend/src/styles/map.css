@@ -37,3 +37,22 @@
   opacity: 0.7;
   margin-top: 6px;
 }
+.map-header {
+  display: flex;
+  align-items: center;
+  /* center vertically, not baseline */
+  justify-content: flex-start;
+  width: 100%;
+  /* take full width of page */
+}
+
+.map-parent {
+  width: 100%;
+}
+
+/* If your layout uses flex/grid, let this child grow */
+.map-parent {
+  flex: 1 1 100%;
+  min-width: 0;
+  /* important inside flex to allow stretching/shrinking */
+}

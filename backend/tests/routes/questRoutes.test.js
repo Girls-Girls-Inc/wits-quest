@@ -10,11 +10,20 @@ jest.mock('../../controllers/questController', () => ({
   getQuests: jest.fn((req, res) =>
     res.status(200).json([{ id: 1, title: 'Mock Quest' }])
   ),
+  updateQuest: jest.fn((req, res) =>
+    res.status(200).json({ message: 'Quest updated', id: req.params.id, body: req.body })
+  ),
+  deleteQuest: jest.fn((req, res) =>
+    res.status(200).json({ message: 'Quest deleted', id: req.params.id })
+  ),
   add: jest.fn((req, res) =>
     res.status(201).json({ message: 'User quest added', body: req.body })
   ),
   mine: jest.fn((req, res) =>
     res.status(200).json([{ id: 1, userId: 'mock-user', questId: 1 }])
+  ),
+  complete: jest.fn((req, res) =>
+    res.status(200).json({ message: 'Quest completed', id: req.params.id })
   ),
 }));
 
@@ -67,4 +76,30 @@ describe('Quest Routes', () => {
     expect(Array.isArray(res.body)).toBe(true);
     expect(QuestController.mine).toHaveBeenCalled();
   });
+
+  it('POST /api/user-quests/:id/complete → should call complete', async () => {
+    const res = await request(app).post('/api/user-quests/1/complete');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Quest completed');
+    expect(QuestController.complete).toHaveBeenCalled();
+  });
+
+  it('PUT /api/quests/:id → should call updateQuest', async () => {
+    const payload = { title: 'Updated Quest' };
+    const res = await request(app).put('/api/quests/1').send(payload);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Quest updated');
+    expect(QuestController.updateQuest).toHaveBeenCalled();
+  });
+
+it('DELETE /api/quests/:id → should call deleteQuest', async () => {
+    const res = await request(app).delete('/api/quests/1');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Quest deleted');
+    expect(QuestController.deleteQuest).toHaveBeenCalled();
+  });
+
 });

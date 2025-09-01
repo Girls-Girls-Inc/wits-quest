@@ -1,3 +1,4 @@
+
 name: Run Tests and Upload Coverage
 
 on:
@@ -25,16 +26,12 @@ jobs:
           npm install
           cd frontend && npm install
           cd ../backend && npm install
-
       - name: Run tests with coverage
-        #run: npm run test:coverage
-        run: npx jest --coverage
-        continue-on-error: true
+        run: npm run test:coverage
+        continue-on-error: false
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: Girls-Girls-Inc/wits-quest
-          flags: unittests
-          name: coverage-report

@@ -1,5 +1,4 @@
 node_modules
-
 package-lock.json
 
 coverage/
@@ -8,3 +7,4 @@ replace.txt
 coverage/
 ./frontend/.env
 ./backend/.env
+

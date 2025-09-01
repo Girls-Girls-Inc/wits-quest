@@ -7,7 +7,8 @@
     "dev": "concurrently \"npm run backend --prefix ..\" \"vite\"",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview --port 8080"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",

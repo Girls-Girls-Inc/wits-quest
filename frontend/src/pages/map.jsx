@@ -8,6 +8,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/map.css";
 import IconButton from "../components/IconButton";
+import supabase from "../supabase/supabaseClient";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
@@ -124,8 +125,8 @@ export default function QuestMap() {
       return Array.isArray(arr)
         ? arr[0]
         : Array.isArray(arr?.data)
-        ? arr.data[0]
-        : null;
+          ? arr.data[0]
+          : null;
     }
     throw new Error(`Location ${id} not found`);
   };

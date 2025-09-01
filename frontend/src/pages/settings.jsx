@@ -108,7 +108,7 @@ const Settings = () => {
                   label="Confirm Logout"
                   onClick={() => {
                     toast.success("Logged out!");
-                    navigate("/login");
+                    navigate("/");
                   }}
                 />
                 <IconButton

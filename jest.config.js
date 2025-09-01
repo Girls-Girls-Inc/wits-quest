@@ -28,5 +28,4 @@ module.exports = {
 
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 
-  resolver: "<rootDir>/jest.resolver.js"
 };

@@ -21,20 +21,6 @@ function sbFromReq(req) {
   });
 }
 
-function timeframeFromBoard(boardId = 'year') {
-  const now = new Date();
-  const end = now.toISOString();
-  let start;
-  if (boardId === 'week') {
-    const d = new Date(now); d.setDate(d.getDate() - 7); start = d.toISOString();
-  } else if (boardId === 'month') {
-    const d = new Date(now); d.setMonth(d.getMonth() - 1); start = d.toISOString();
-  } else { // year (default)
-    const d = new Date(now); d.setFullYear(d.getFullYear() - 1); start = d.toISOString();
-  }
-  return { start, end };
-}
-
 async function isModerator(sb, userId) {
   const { data, error } = await sb
     .from('userData')
@@ -71,7 +57,7 @@ const CollectiblesController = {
         sb
       );
 
-      res.json(rows); // [{ id, name, description, imageUrl, createdAt, earnedAt }, ...]
+      res.json(rows);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -100,26 +86,20 @@ const CollectiblesController = {
     }
   },
 
-  // CREATE must respect RLS -> use anon client with user's JWT
-  // CREATE must respect RLS -> use anon client with user's JWT
   create: async (req, res) => {
     try {
       const sb = sbFromReq(req);
       if (!sb) return res.status(401).json({ error: 'Missing bearer token' });
 
-      // (optional) prove the JWT is being forwarded
       const who = await sb.auth.getUser();
       console.log('caller uid:', who.data?.user?.id);
 
-      // pull fields from the request body
       const { id, name, description, imageUrl, createdAt } = req.body || {};
       if (!name || !String(name).trim()) {
         return res.status(400).json({ error: 'name is required' });
       }
 
-      // IMPORTANT: keys must match your camelCase columns ("imageUrl", "createdAt")
       const row = {
-        // include id only if you assign it yourself (your table uses BIGINT)
         ...(id != null ? { id: Number(id) } : {}),
         name: String(name).trim(),
         description: description ?? null,
@@ -127,7 +107,7 @@ const CollectiblesController = {
         createdAt: createdAt ?? new Date().toISOString(),
       };
 
-      const data = await CollectiblesModel.create(row, sb); // model must use the passed sb
+      const data = await CollectiblesModel.create(row, sb);
       res.status(201).json(data);
     } catch (err) {
       if (String(err.message || '').toLowerCase().includes('row-level security')) {
@@ -137,7 +117,6 @@ const CollectiblesController = {
     }
   },
 
-  // UPDATE via RLS (moderators only, per your policy)
   update: async (req, res) => {
     try {
       const sb = sbFromReq(req);
@@ -161,7 +140,6 @@ const CollectiblesController = {
     }
   },
 
-  // DELETE via RLS (moderators only)
   remove: async (req, res) => {
     try {
       const sb = sbFromReq(req);
@@ -180,12 +158,41 @@ const CollectiblesController = {
     }
   },
 
-  // GET /collectibles?id=&name=
+  // POST /users/:userId/collectibles/:collectibleId
+  // Adds (or keeps) a collectible in a user's inventory (idempotent).
+  earnForUser: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ error: 'Missing bearer token' });
+
+      const who = await sb.auth.getUser();
+      const callerId = who.data?.user?.id;
+      if (!callerId) return res.status(401).json({ error: 'Unauthenticated' });
+
+      const userId = String(req.params.userId);
+      const collectibleId = asBigIntId(req.params.collectibleId);
+      if (collectibleId === null) return res.status(400).json({ error: 'Invalid collectibleId' });
+
+      // Only the user themselves or a moderator can award into that inventory
+      const mod = await isModerator(sb, callerId);
+      if (!mod && callerId !== userId) {
+        return res.status(403).json({ error: 'Not permitted' });
+      }
+
+      const { earnedAt } = req.body || {};
+      const row = await CollectiblesModel.addToInventory(userId, collectibleId, earnedAt, sb);
+      res.status(201).json(row);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  // keep your simple list for dropdowns
   getCollectibles: async (req, res) => {
     try {
       const { id, name } = req.query;
       const data = await CollectiblesModel.getCollectibles(id, name);
-      res.json(Array.isArray(data) ? data : []); // always return array
+      res.json(Array.isArray(data) ? data : []);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

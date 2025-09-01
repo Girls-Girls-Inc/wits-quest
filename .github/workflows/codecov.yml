@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install all dependencies (root, frontend, backend)
+      - name: Install all dependencies
         run: |
           rm -rf node_modules
           npm install
@@ -27,14 +27,13 @@ jobs:
           cd ../backend && npm install
 
       - name: Run tests with coverage
-        #run: npm run test:coverage
-        run: npx jest --coverage
-        continue-on-error: true
+        run: npm run test:coverage
+        # keep false if you want failing tests to block CI
+        continue-on-error: false
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: Girls-Girls-Inc/wits-quest
           flags: unittests
           name: coverage-report
+          fail_ci_if_error: false

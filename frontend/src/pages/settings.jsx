@@ -47,7 +47,12 @@ const Settings = () => {
             <IconButton
               icon="feedback"
               label="Give Feedback"
-              onClick={() => setSelectedTask("Give Feedback")}
+              onClick={() =>
+                window.open(
+                  "https://docs.google.com/forms/d/e/1FAIpQLSdpNVwJkldfLiQ42pFO5Ic7PHw8KhOeu2THb0UgA64tP-1z4w/viewform?usp=sharing&ouid=101378631951017579634",
+                  "_blank"
+                )
+              }
             />
             <IconButton
               icon="logout"

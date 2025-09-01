@@ -203,22 +203,22 @@ const AdminDashboard = () => {
           <div className="admin-buttons flex flex-wrap gap-2 mt-4">
             <IconButton
               icon="task"
-              label="Quest Creation"
+              label="Create Quest"
               onClick={() => setSelectedTask("Quest Creation")}
             />
             <IconButton
               icon="place"
-              label="Location Creation"
+              label="Add Location"
               onClick={() => setSelectedTask("Location Creation")}
             />
             <IconButton
               icon="admin_panel_settings"
-              label="Admin Privilege"
+              label="Adjust Admins"
               onClick={() => setSelectedTask("Admin Privilege")}
             />
             <IconButton
               icon="badge"
-              label="Badge Creation"
+              label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
             />
             <IconButton
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
                   Active
                 </label>
               </div>
-              <div className="btn flex gap-2">
+              <div className="flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Quest" />
                 <IconButton
                   type="button"

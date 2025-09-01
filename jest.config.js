@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: "node",
+  testEnvironment: "jsdom",
   roots: ["<rootDir>/backend/tests", "<rootDir>/frontend/src"],
 
   collectCoverage: true,
@@ -12,12 +12,10 @@ module.exports = {
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov"],
 
-  // ensure JSX/TSX is transpiled
   transform: {
     "^.+\\.[jt]sx?$": "babel-jest"
   },
 
-  // 👇 force a single React copy everywhere + stub CSS/assets
   moduleNameMapper: {
     "^react$": "<rootDir>/frontend/node_modules/react",
     "^react-dom$": "<rootDir>/frontend/node_modules/react-dom",
@@ -27,4 +25,9 @@ module.exports = {
   },
 
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
+  // optional: ignore transforming most node_modules, but allow specific ESM packages if needed
+  transformIgnorePatterns: [
+    "node_modules/(?!some-esm-package)"
+  ]
 };

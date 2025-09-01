@@ -1,79 +1,106 @@
-// tests/models/leaderboardModel.test.js
-const LeaderboardModel = require('../../models/leaderboardModel');
-const supabase = require('../../supabase/supabaseClient');
+// backend/tests/models/leaderboardModel.test.js
+import { createClient } from '@supabase/supabase-js';
+import LeaderboardModel from '../../models/leaderboardModel';
 
-jest.mock('../../supabase/supabaseClient', () => ({
-  from: jest.fn(),
-}));
-
-// helper to create a chainable supabase mock
-function makeQueryMock({ data = [], error = null } = {}) {
-  const query = {
-    select: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    ilike: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-  };
-
-  // the last link in the chain should resolve to { data, error }
-  return { query, result: Promise.resolve({ data, error }) };
-}
+jest.mock('@supabase/supabase-js');
 
 describe('LeaderboardModel', () => {
+  let mockRpc, mockFrom, mockSelect, mockInsert;
+
   beforeEach(() => {
+    // fresh mocks every test
+    mockRpc = jest.fn();
+    mockSelect = jest.fn();
+    mockInsert = jest.fn();
+
+    mockFrom = jest.fn(() => ({
+      select: mockSelect,
+      insert: mockInsert,
+    }));
+
+    // supabase client "factory"
+    createClient.mockReturnValue({
+      rpc: mockRpc,
+      from: mockFrom,
+    });
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns leaderboard data with no filters', async () => {
-    const { query, result } = makeQueryMock({ data: [{ id: 1, rank: 1 }] });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
+  describe('addPointsAtomic', () => {
+    it('calls rpc and succeeds', async () => {
+      mockRpc.mockResolvedValue({ data: { success: true }, error: null });
 
-    const res = await LeaderboardModel.getLeaderboard();
+      const result = await LeaderboardModel.addPointsAtomic({
+        userId: '123',
+        points: 10,
+      });
 
-    expect(supabase.from).toHaveBeenCalledWith('leaderboard');
-    expect(query.select).toHaveBeenCalledWith('*');
-    expect(query.order).toHaveBeenCalledWith('rank', { ascending: true });
-    expect(res).toEqual([{ id: 1, rank: 1 }]);
+      expect(mockRpc).toHaveBeenCalledWith('add_points_atomic', {
+        user_id: '123',
+        points_to_add: 10,
+      });
+
+      expect(result).toEqual({ success: true });
+    });
+
+    it('returns error when rpc fails', async () => {
+      mockRpc.mockResolvedValue({ data: null, error: { message: 'fail' } });
+
+      const result = await LeaderboardModel.addPointsAtomic({
+        userId: '123',
+        points: 5,
+      });
+
+      expect(result).toEqual({ error: 'fail' });
+    });
   });
 
-  it('applies all filters', async () => {
-    const { query, result } = makeQueryMock({ data: [{ id: 2 }] });
-    supabase.from.mockReturnValue(query);
-    query.lte.mockReturnValue(result); // last in chain resolves the promise
+  describe('getLeaderboard', () => {
+    it('fetches leaderboard successfully', async () => {
+      mockSelect.mockResolvedValue({
+        data: [{ user_id: '123', points: 50 }],
+        error: null,
+      });
 
-    const res = await LeaderboardModel.getLeaderboard(
-      'monthly',
-      '2023-01-01',
-      '2023-01-31',
-      'user123',
-      'id456'
-    );
+      const result = await LeaderboardModel.getLeaderboard();
 
-    expect(query.ilike).toHaveBeenCalledWith('periodType', 'monthly');
-    expect(query.eq).toHaveBeenCalledWith('id', 'id456');
-    expect(query.eq).toHaveBeenCalledWith('userId', 'user123');
-    expect(query.gte).toHaveBeenCalledWith('periodStart', new Date('2023-01-01').toISOString());
-    expect(query.lte).toHaveBeenCalledWith('periodEnd', new Date('2023-01-31').toISOString());
-    expect(res).toEqual([{ id: 2 }]);
+      expect(mockFrom).toHaveBeenCalledWith('leaderboard');
+      expect(mockSelect).toHaveBeenCalled();
+      expect(result).toEqual([{ user_id: '123', points: 50 }]);
+    });
+
+    it('handles select error', async () => {
+      mockSelect.mockResolvedValue({ data: null, error: { message: 'db error' } });
+
+      const result = await LeaderboardModel.getLeaderboard();
+
+      expect(result).toEqual({ error: 'db error' });
+    });
   });
 
-  it('throws on supabase error', async () => {
-    const { query, result } = makeQueryMock({ error: new Error('DB failed') });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
+  describe('createEntry', () => {
+    it('inserts new entry', async () => {
+      mockInsert.mockResolvedValue({
+        data: { user_id: '123', points: 0 },
+        error: null,
+      });
 
-    await expect(LeaderboardModel.getLeaderboard()).rejects.toThrow('DB failed');
-  });
+      const result = await LeaderboardModel.createEntry({ userId: '123' });
 
-  it('returns empty array if no data', async () => {
-    const { query, result } = makeQueryMock({ data: null });
-    supabase.from.mockReturnValue(query);
-    query.order.mockReturnValue(result);
+      expect(mockFrom).toHaveBeenCalledWith('leaderboard');
+      expect(mockInsert).toHaveBeenCalledWith([{ user_id: '123', points: 0 }]);
+      expect(result).toEqual({ user_id: '123', points: 0 });
+    });
 
-    const res = await LeaderboardModel.getLeaderboard();
-    expect(res).toEqual([]);
+    it('handles insert error', async () => {
+      mockInsert.mockResolvedValue({ data: null, error: { message: 'insert fail' } });
+
+      const result = await LeaderboardModel.createEntry({ userId: '123' });
+
+      expect(result).toEqual({ error: 'insert fail' });
+    });
   });
 });

@@ -12,7 +12,7 @@ import supabase from "../supabase/supabaseClient";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
-const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
+const MAP_CONTAINER_STYLE = { width: "75vw", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
 
 const asLatLng = (obj) => {
@@ -307,7 +307,7 @@ const [myQuestIds, setMyQuestIds] = useState(null);
             type="button"
             onClick={loadQuests}
             disabled={loading}
-            className="btn"
+            icon="refresh"
             label="Refresh"
           />
         </div>
@@ -359,7 +359,9 @@ const [myQuestIds, setMyQuestIds] = useState(null);
                 {selected.overlappedOffset && (
                   <div className="info-window-overlap"></div>
                 )}
+                <br />
                 <IconButton
+                  icon="add"
                   type="button"
                   onClick={() => addToMyQuests(selected)}
                   disabled={adding}

@@ -6,6 +6,8 @@ import {
   useLoadScript,
 } from "@react-google-maps/api";
 import toast, { Toaster } from "react-hot-toast";
+import "../styles/map.css";
+import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
 const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
@@ -211,9 +213,9 @@ export default function QuestMap() {
   return (
     <div>
       <Toaster />
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+      <div className="map-container">
         <h1>Quests Map</h1>
-        <button
+        {/* <button
           type="button"
           onClick={loadQuests}
           disabled={loading}
@@ -222,10 +224,14 @@ export default function QuestMap() {
           style={{ padding: "6px 10px", borderRadius: 8 }}
         >
           {loading ? "Loading…" : "Refresh"}
-        </button>
-        <span style={{ opacity: 0.8 }}>
-          Quests: {quests.length} • Plotted: {markers.length}
-        </span>
+        </button> */}
+        <IconButton
+          type="button"
+          onClick={loadQuests}
+          disabled={loading}
+          className="btn"
+          label="Refresh"
+        />
       </div>
 
       <GoogleMap
@@ -260,28 +266,36 @@ export default function QuestMap() {
             position={selected.position}
             onCloseClick={() => setSelected(null)}
           >
-            <div style={{ maxWidth: 260, color: "black" }}>
-              <strong style={{ fontSize: 16 }}>{selected.title}</strong>
+            <div className="info-window-content">
+              <strong className="info-window-title">{selected.title}</strong>
               {selected.description && (
-                <div style={{ marginTop: 6 }}>{selected.description}</div>
+                <div className="info-window-desc">{selected.description}</div>
               )}
               {typeof selected.points === "number" && (
-                <div style={{ marginTop: 6 }}>Points: {selected.points}</div>
+                <div className="info-window-points">
+                  Points: {selected.points}
+                </div>
               )}
-              <div>Status: {selected.isActive ? "Active" : "Inactive"}</div>
+              <div className="info-window-status">
+                Status: {selected.isActive ? "Active" : "Inactive"}
+              </div>
               {selected.createdAt && (
-                <div>
+                <div className="info-window-created">
                   Created: {new Date(selected.createdAt).toLocaleString()}
                 </div>
               )}
               {selected.raw?.collectibleId && (
-                <div>Collectible: {selected.raw.collectibleId}</div>
+                <div className="info-window-collectible">
+                  Collectible: {selected.raw.collectibleId}
+                </div>
               )}
               {selected.raw?.locationId && (
-                <div>Location ID: {selected.raw.locationId}</div>
+                <div className="info-window-location">
+                  Location ID: {selected.raw.locationId}
+                </div>
               )}
               {selected.overlappedOffset && (
-                <div style={{ opacity: 0.7, marginTop: 6 }}></div>
+                <div className="info-window-overlap"></div>
               )}
             </div>
           </InfoWindow>

@@ -1,9 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900&display=swap");
 
-.out {
+.admin-container {
   display: flex;
   flex-direction: column;
-  align-content: center;
+  justify-content: center;
+}
+.admin-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header h1 {
+  padding: 1rem;
 }
 .form-box {
   flex: 1;
@@ -13,7 +21,7 @@
   padding: 2rem;
 }
 
-.quests-header h1 {
+.admin-header h1 {
   display: flex;
   text-align: center;
   align-items: center;
@@ -40,7 +48,6 @@
 }
 
 .admin-buttons .icon-button {
-  background: #1f2a33;
   border-radius: 12px;
   padding: 14px 18px;
   display: flex;
@@ -60,9 +67,7 @@
 }
 
 .admin-buttons .icon-button:hover {
-  background: #2a3a44;
   transform: translateY(-1px);
-  border-color: #4aa3ff;
 }
 
 .admin-buttons .icon-button:active {

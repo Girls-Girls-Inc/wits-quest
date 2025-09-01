@@ -30,14 +30,54 @@ const Dashboard = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const leaderboard = [
-    { rank: 1, name: "Person 1" },
-    { rank: 2, name: "Person 2" },
-    { rank: 3, name: "Me" },
-    { rank: 4, name: "Person 3" },
-    { rank: 5, name: "Person 4" },
-    { rank: 6, name: "Person 5" },
-  ];
+  // const leaderboard = [
+  //   { rank: 1, name: "Person 1" },
+  //   { rank: 2, name: "Person 2" },
+  //   { rank: 3, name: "Me" },
+  //   { rank: 4, name: "Person 3" },
+  //   { rank: 5, name: "Person 4" },
+  //   { rank: 6, name: "Person 5" },
+  // ];
+
+  // Leaderboard state
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+
+  // Fetch leaderboard via backend API (like Leaderboard.jsx)
+  const loadLeaderboard = async () => {
+    try 
+    {
+      setLoadingLeaderboard(true);
+
+      // Always fetch yearly (id=12345). Change if you want monthly/weekly.
+      const res = await fetch(`${API_BASE}/leaderboard?id=12345`, {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("API did not return an array");
+
+      // Add rank numbers
+      const rows = data.map((r, i) => ({
+        rank: i + 1,
+        name: r.username,
+        points: r.points,
+      }));
+
+      setLeaderboard(rows);
+    } 
+    catch (e) 
+    {
+      console.error("Leaderboard fetch failed:", e.message);
+      setLeaderboard([]);
+    } 
+    finally 
+    {
+      setLoadingLeaderboard(false);
+    }
+  };
+
 
   // Fetch Supabase session
   useEffect(() => {
@@ -165,6 +205,7 @@ const Dashboard = () => {
     if (accessToken) {
       loadBadges();
       loadOngoing();
+      loadLeaderboard();
     }
   }, [accessToken]);
 
@@ -311,26 +352,44 @@ const Dashboard = () => {
           {/* Leaderboard */}
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((person) => (
-                  <tr
-                    key={person.rank}
-                    className={person.name === "Me" ? "me" : ""}
-                  >
-                    <td>{person.rank}</td>
-                    <td>{person.name}</td>
+            <div className="leaderboard-scroll">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Points</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {loadingLeaderboard ? (
+                    <tr>
+                      <td colSpan={3}>Loading leaderboard…</td>
+                    </tr>
+                  ) : leaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>No leaderboard data</td>
+                    </tr>
+                  ) : (
+                    leaderboard.map((person) => (
+                      <tr
+                        key={person.rank}
+                        className={
+                          person.name === me?.user_metadata?.username ? "me" : ""
+                        }
+                      >
+                        <td>{person.rank}</td>
+                        <td>{person.name}</td>
+                        <td>{person.points}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
+
+
 
           {/* Points */}
           <article className="dashboard-card small-card">

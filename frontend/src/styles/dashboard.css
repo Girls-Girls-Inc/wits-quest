@@ -349,6 +349,12 @@
   color: #fff;
 }
 
+.leaderboard-scroll {
+  max-height: 300px; 
+  overflow-y: auto;    
+}
+
+
 .rank {
   font-weight: 600;
   color: #fff;

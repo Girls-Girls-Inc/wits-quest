@@ -1,0 +1,30 @@
+/* Ensure the page and parent are not width-capped */
+body,
+#root,
+.App,
+.map-page {
+    width: 70vw;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.map-header {
+    display: flex;
+    /* center vertically, not baseline */
+    justify-content: flex-start;
+    width: 100%;
+    /* take full width of page */
+}
+
+.map-parent {
+    width: 100%;
+}
+
+/* If your layout uses flex/grid, let this child grow */
+.map-parent {
+    flex: 1 1 100%;
+    min-width: 0;
+    /* important inside flex to allow stretching/shrinking */
+}

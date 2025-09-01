@@ -6,8 +6,11 @@ import {
   useLoadScript,
 } from "@react-google-maps/api";
 import toast, { Toaster } from "react-hot-toast";
+import supabase from "../supabase/supabaseClient";
+import "../styles/map.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
+const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "100%", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
 
@@ -85,6 +88,13 @@ const spreadOverlaps = (markers, radiusMeters = 15) => {
   return result;
 };
 
+// Resolve a usable questId from a marker's raw quest object
+const resolveQuestId = (marker) =>
+  marker?.raw?.questId ??
+  marker?.raw?.id ??
+  marker?.id ??
+  null;
+
 // ---------- component ----------
 export default function QuestMap() {
   const { isLoaded, loadError } = useLoadScript({
@@ -96,6 +106,7 @@ export default function QuestMap() {
   const [quests, setQuests] = useState([]);
   const [markers, setMarkers] = useState([]);
   const [selected, setSelected] = useState(null); // store full marker for InfoWindow
+  const [adding, setAdding] = useState(false); // add-to-my-quests button state
 
   const center = useMemo(() => ({ lat: -26.19, lng: 28.03 }), []);
   const bounds = useMemo(
@@ -120,8 +131,8 @@ export default function QuestMap() {
       return Array.isArray(arr)
         ? arr[0]
         : Array.isArray(arr?.data)
-        ? arr.data[0]
-        : null;
+          ? arr.data[0]
+          : null;
     }
     throw new Error(`Location ${id} not found`);
   };
@@ -205,14 +216,119 @@ export default function QuestMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- Add to My Quests (same behaviour as quests.jsx) ----
+  const addToMyQuests = async (marker) => {
+    const questId = resolveQuestId(marker);
+    if (!questId) {
+      toast.error("Could not determine questId for this quest.");
+      return;
+    }
+    const t = toast.loading("Adding quest…");
+    setAdding(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Please sign in.");
+
+      const resp = await fetch(USER_QUESTS_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ questId }),
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.message || "Failed to add quest");
+
+      toast.success("Added to your quests!", { id: t });
+    } catch (e) {
+      toast.error(e.message, { id: t });
+    } finally {
+      setAdding(false);
+    }
+  };
+
   if (loadError) return <div>Failed to load Google Maps.</div>;
   if (!isLoaded) return <div>Loading map…</div>;
 
   return (
     <div>
       <Toaster />
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+      <div className="map-header">
         <h1>Quests Map</h1>
+      </div>
+
+      <div className="map-parent">
+        <GoogleMap
+          mapContainerStyle={{ width: "100%", height: "70vh", borderRadius: 12 }}
+          center={center}
+          zoom={12}
+          options={{
+            restriction: { latLngBounds: bounds, strictBounds: true },
+            disableDefaultUI: false,
+            clickableIcons: true,
+          }}
+          onLoad={(map) => {
+            const b = new window.google.maps.LatLngBounds(
+              { lat: bounds.south, lng: bounds.west },
+              { lat: bounds.north, lng: bounds.east }
+            );
+            map.fitBounds(b);
+          }}
+          onClick={() => setSelected(null)} // click map to close info
+        >
+          {markers.map((m) => (
+            <Marker
+              key={m.id}
+              position={m.position}
+              title={m.title}
+              onClick={() => setSelected(m)}
+            />
+          ))}
+
+          {selected && (
+            <InfoWindow
+              position={selected.position}
+              onCloseClick={() => setSelected(null)}
+            >
+              <div style={{ maxWidth: 260, color: "black" }}>
+                <strong style={{ fontSize: 16 }}>{selected.title}</strong>
+                {selected.description && (
+                  <div style={{ marginTop: 6 }}>{selected.description}</div>
+                )}
+                {typeof selected.points === "number" && (
+                  <div style={{ marginTop: 6 }}>Points: {selected.points}</div>
+                )}
+                {selected.overlappedOffset && (
+                  <div style={{ opacity: 0.7, marginTop: 6 }}></div>
+                )}
+
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => addToMyQuests(selected)}
+                    disabled={adding}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: adding ? "not-allowed" : "pointer",
+                    }}
+                    title="Add to my Quests"
+                  >
+                    {adding ? "Adding…" : "Add to my Quests"}
+                  </button>
+                </div>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+      </div>
+      <div>
         <button
           type="button"
           onClick={loadQuests}
@@ -223,70 +339,7 @@ export default function QuestMap() {
         >
           {loading ? "Loading…" : "Refresh"}
         </button>
-        <span style={{ opacity: 0.8 }}>
-          Quests: {quests.length} • Plotted: {markers.length}
-        </span>
       </div>
-
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
-        center={center}
-        zoom={12}
-        options={{
-          restriction: { latLngBounds: bounds, strictBounds: true },
-          disableDefaultUI: false,
-          clickableIcons: true,
-        }}
-        onLoad={(map) => {
-          const b = new window.google.maps.LatLngBounds(
-            { lat: bounds.south, lng: bounds.west },
-            { lat: bounds.north, lng: bounds.east }
-          );
-          map.fitBounds(b);
-        }}
-        onClick={() => setSelected(null)} // click map to close info
-      >
-        {markers.map((m) => (
-          <Marker
-            key={m.id}
-            position={m.position}
-            title={m.title}
-            onClick={() => setSelected(m)}
-          />
-        ))}
-
-        {selected && (
-          <InfoWindow
-            position={selected.position}
-            onCloseClick={() => setSelected(null)}
-          >
-            <div style={{ maxWidth: 260, color: "black" }}>
-              <strong style={{ fontSize: 16 }}>{selected.title}</strong>
-              {selected.description && (
-                <div style={{ marginTop: 6 }}>{selected.description}</div>
-              )}
-              {typeof selected.points === "number" && (
-                <div style={{ marginTop: 6 }}>Points: {selected.points}</div>
-              )}
-              <div>Status: {selected.isActive ? "Active" : "Inactive"}</div>
-              {selected.createdAt && (
-                <div>
-                  Created: {new Date(selected.createdAt).toLocaleString()}
-                </div>
-              )}
-              {selected.raw?.collectibleId && (
-                <div>Collectible: {selected.raw.collectibleId}</div>
-              )}
-              {selected.raw?.locationId && (
-                <div>Location ID: {selected.raw.locationId}</div>
-              )}
-              {selected.overlappedOffset && (
-                <div style={{ opacity: 0.7, marginTop: 6 }}></div>
-              )}
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
     </div>
   );
 }

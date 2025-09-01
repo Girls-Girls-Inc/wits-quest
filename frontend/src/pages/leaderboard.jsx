@@ -25,7 +25,9 @@ const Leaderboard = () => {
   const loadBoard = async (key = boardKey) => {
     const reqId = ++latestReqId.current;
     setRows([]);
-    try { abortRef.current?.abort(); } catch {}
+    try {
+      abortRef.current?.abort();
+    } catch {}
     const ac = new AbortController();
     abortRef.current = ac;
     const loadingToast = toast.loading("Loading leaderboard…");
@@ -63,102 +65,106 @@ const Leaderboard = () => {
     await loadBoard(key);
   };
 
-return (
-  <div className="leaderboard-container">
-    <Toaster />
-    <div className="leaderboard-header">
-      <h1>LEADERBOARD</h1>
-      <h2>{BOARDS[boardKey].label}</h2>
-    </div>
-
-    <div className="leaderboard-controls">
-      <div className="dropdown">
-        <button
-          className="dropdown-toggle"
-          onClick={() =>
-            document.querySelector(".dropdown").classList.toggle("open")
-          }
-        >
-          <span className="material-symbols-outlined">
-            {BOARDS[boardKey].icon}
-          </span>
-          {BOARDS[boardKey].label}
-          <span className="material-symbols-outlined caret">expand_more</span>
-        </button>
-
-        <ul className="dropdown-menu">
-          {Object.keys(BOARDS).map((key) => (
-            <li key={key}>
-              <button
-                className={`dropdown-item ${boardKey === key ? "active" : ""}`}
-                onClick={() => {
-                  switchBoard(key);
-                  document.querySelector(".dropdown").classList.remove("open");
-                }}
-              >
-                <span className="material-symbols-outlined">
-                  {BOARDS[key].icon}
-                </span>
-                {BOARDS[key].label}
-              </button>
-            </li>
-          ))}
-        </ul>
+  return (
+    <div className="leaderboard-container">
+      <Toaster />
+      <div className="leaderboard-header">
+        <h1>LEADERBOARD</h1>
+        <h2>{BOARDS[boardKey].label}</h2>
       </div>
 
-      <div className="btn">
-        <IconButton
-          type="button"
-          icon="refresh"
-          onClick={() => loadBoard(boardKey)}
-        />
-      </div>
-    </div>
+      <div className="leaderboard-controls">
+        <div className="dropdown">
+          <button
+            className="dropdown-toggle"
+            onClick={() =>
+              document.querySelector(".dropdown").classList.toggle("open")
+            }
+          >
+            <span className="material-symbols-outlined">
+              {BOARDS[boardKey].icon}
+            </span>
+            {BOARDS[boardKey].label}
+            <span className="material-symbols-outlined caret">expand_more</span>
+          </button>
 
-    <div className="leaderboard-table-wrapper">
-      <table className="leaderboard-table full-width">
-        <thead>
-          <tr>
-            <Th>#</Th>
-            <Th>Name</Th>
-            <Th>Points</Th>
-          </tr>
-        </thead>
-        {/* single keyed tbody to force remount on board change */}
-        <tbody key={boardKey}>
-          {rows.length === 0 && (
-            <tr>
-              <Td colSpan={3} className="empty">
-                No entries yet.
-              </Td>
-            </tr>
-          )}
-
-          {rows.map((r, i) => (
-            <tr key={r.id ?? `${i}`}>
-              <Td>
-                <strong>{i + 1}</strong>{" "}
-                {i < 3 && (
-                  <span
-                    className="material-symbols-outlined trophy"
-                    title="Top rank"
-                  >
-                    emoji_events
+          <ul className="dropdown-menu">
+            {Object.keys(BOARDS).map((key) => (
+              <li key={key}>
+                <button
+                  className={`dropdown-item ${
+                    boardKey === key ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    switchBoard(key);
+                    document
+                      .querySelector(".dropdown")
+                      .classList.remove("open");
+                  }}
+                >
+                  <span className="material-symbols-outlined">
+                    {BOARDS[key].icon}
                   </span>
-                )}
-              </Td>
-              <Td>
-                <strong>{r.username}</strong>
-              </Td>
-              <Td>{r.points}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+                  {BOARDS[key].label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
 
+        <div className="btn">
+          <IconButton
+            type="button"
+            label="Refresh"
+            icon="refresh"
+            onClick={() => loadBoard(boardKey)}
+          />
+        </div>
+      </div>
+
+      <div className="leaderboard-table-wrapper">
+        <table className="leaderboard-table full-width">
+          <thead>
+            <tr>
+              <Th>#</Th>
+              <Th>Name</Th>
+              <Th>Points</Th>
+            </tr>
+          </thead>
+          {/* single keyed tbody to force remount on board change */}
+          <tbody key={boardKey}>
+            {rows.length === 0 && (
+              <tr>
+                <Td colSpan={3} className="empty">
+                  No entries yet.
+                </Td>
+              </tr>
+            )}
+
+            {rows.map((r, i) => (
+              <tr key={r.id ?? `${i}`}>
+                <Td>
+                  <strong>{i + 1}</strong>{" "}
+                  {i < 3 && (
+                    <span
+                      className="material-symbols-outlined trophy"
+                      title="Top rank"
+                    >
+                      emoji_events
+                    </span>
+                  )}
+                </Td>
+                <Td>
+                  <strong>{r.username}</strong>
+                </Td>
+                <Td>{r.points}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 const Th = ({ children }) => <th>{children}</th>;

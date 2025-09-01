@@ -26,9 +26,10 @@
   .dashboard-grid {
     grid-template-columns: 2fr 1fr 1fr;
     grid-template-areas:
-      "badges locations points"
-      "badges quests completed";
+      "quests locations points"
+      "badges badges completed";
   }
+
   .badges-card {
     grid-area: badges;
   }
@@ -37,6 +38,7 @@
     grid-column: span 2;
   }
 }
+
 @media (min-width: 768px) and (max-width: 1023px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -174,8 +176,15 @@
   margin-bottom: 1rem;
 }
 
+.dash-btn {
+  border-radius: 0.5rem;
+  background-color: var(--wits-blue);
+  padding: 10px;
+  margin: 1px;
+}
+
 .view-badges-btn {
-  background-color: #131f24;
+  background-color: var(--background);
   border: 1px solid #333;
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
@@ -186,7 +195,7 @@
 }
 
 .view-badges-btn:hover {
-  background-color: #1f2a2f;
+  background-color: var(--wits-yellow);
 }
 
 .carousel-controls {
@@ -198,7 +207,7 @@
   width: 2rem;
   height: 2rem;
   border: 1px solid #333;
-  border-radius: 50%;
+  border-radius: 50%px;
   background: #131f24;
   cursor: pointer;
   display: flex;
@@ -236,8 +245,8 @@
 }
 
 .badge-item img {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #333;

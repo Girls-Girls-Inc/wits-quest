@@ -16,6 +16,7 @@
 
 .leaderboard-controls {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
   margin: 20px 0;
   flex-wrap: wrap;
@@ -67,11 +68,6 @@
 }
 .leaderboard-table tbody tr:nth-child(even) {
   background: #b5c5d0;
-}
-
-.leaderboard-table tbody tr:hover {
-  background: #eaf6ff;
-  transition: 0.2s ease;
 }
 
 .trophy {

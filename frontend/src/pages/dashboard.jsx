@@ -131,14 +131,14 @@ const Dashboard = () => {
         return {
           id: r.id,
           questId: r.questId,
+          userId: r.userId,
           step: r.step ?? "0",
           isComplete: !!r.isComplete,
           completedAt: r.completedAt || null,
           name: j.name ?? `Quest ${r.questId}`,
           points: j.pointsAchievable ?? 0,
           location:
-            j.location?.name ||
-            j.locationName ||
+            j.locations?.name ||
             (typeof j.locationId !== "undefined"
               ? `Location ${j.locationId}`
               : "—"),
@@ -146,12 +146,29 @@ const Dashboard = () => {
       });
 
       setOngoing(rows.filter((q) => !q.isComplete));
+      const completedQuests = rows.filter((q) => q.isComplete);
+      const uniqueLocations = new Set(
+        completedQuests
+          .map((q) => q.location)
+          .filter((loc) => loc && loc !== "—")
+      );
+      const completedRows = rows.filter(
+        (q) => q.isComplete && q.userId === me?.id
+      );
 
-      // Update dashboard stats
+      const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
+      const latestRow = completedRows.sort(
+        (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
+      )[0];
+
+      const latestLocation = latestRow?.location || "—";
+
       setDashboardData((prev) => ({
         ...prev,
-        questsCompleted: rows.filter((q) => q.isComplete).length,
-        locationsVisited: new Set(rows.map((q) => q.location)).size,
+        questsCompleted: completedRows.length,
+        locationsVisited: uniqueLocations.size,
+        points: totalPoints,
+        latestLocation,
       }));
     } catch (e) {
       setOngoing([]);
@@ -202,66 +219,6 @@ const Dashboard = () => {
           className="dashboard-grid"
           aria-label="User statistics and badges"
         >
-          {/* Badges Card */}
-          <article className="dashboard-card badges-card">
-            <div className="card-header">
-              <h3>Badges Collected</h3>
-              <div className="badge-count">{dashboardData.badgesCollected}</div>
-            </div>
-            <div className="latest-badge">
-              <div
-                className="badge-circle"
-                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
-              >
-                <span>Latest badge</span>
-                <div className="badge-name">{dashboardData.latestBadge}</div>
-              </div>
-            </div>
-
-            <div className="badges-carousel">
-              <div className="carousel-header">
-                <button className="view-badges-btn">View Badges</button>
-                <div className="carousel-controls">
-                  <button onClick={prevSlide}>←</button>
-                  <button onClick={nextSlide}>→</button>
-                </div>
-              </div>
-
-              <div className="carousel-container">
-                {loadingBadges ? (
-                  <div>Loading badges...</div>
-                ) : badges.length === 0 ? (
-                  <div>No badges yet</div>
-                ) : (
-                  <div className="carousel-track">
-                    {getBadgesToShow().map((badge) => (
-                      <div key={badge.id} className="badge-item">
-                        <img
-                          src={badge.imageUrl || placeholder}
-                          alt={badge.name || "badge"}
-                          onError={(e) => (e.currentTarget.src = placeholder)}
-                        />
-                        <span className="badge-item-name">{badge.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </article>
-
-          {/* Locations Card */}
-          <article className="dashboard-card">
-            <h3>Locations Visited</h3>
-            <div className="stat-number">{dashboardData.locationsVisited}</div>
-            <div className="latest-info">
-              <div className="latest-box">
-                <span>Latest Location</span>
-                <div>{dashboardData.latestLocation}</div>
-              </div>
-            </div>
-          </article>
-
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -293,6 +250,7 @@ const Dashboard = () => {
                       <td>{q.isComplete ? "Completed" : "In progress"}</td>
                       <td>
                         <button
+                          className="dash-btn"
                           onClick={() =>
                             navigate(`/quests/${q.questId}?uq=${q.id}`)
                           }
@@ -307,7 +265,69 @@ const Dashboard = () => {
               </tbody>
             </table>
           </article>
+          {/* Locations Card */}
+          <article className="dashboard-card">
+            <h3>Locations Visited</h3>
+            <div className="stat-number">{dashboardData.locationsVisited}</div>
+            <div className="latest-info">
+              <div className="latest-box">
+                <span>Latest Location</span>
+                <div>{dashboardData.latestLocation}</div>
+              </div>
+            </div>
+          </article>
 
+          {/* Badges Card */}
+          <article className="dashboard-card badges-card">
+            <div className="card-header">
+              <h3>Badges Collected</h3>
+              <div className="badge-count">{dashboardData.badgesCollected}</div>
+            </div>
+            <div className="latest-badge">
+              <div
+                className="badge-circle"
+                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
+              >
+                <span>Latest badge</span>
+                <div className="badge-name">{dashboardData.latestBadge}</div>
+              </div>
+            </div>
+
+            <div className="badges-carousel">
+              <div className="carousel-header">
+                <button className="view-badges-btn">View Badges</button>
+                <div className="carousel-controls">
+                  <button className="carousel-btn" onClick={prevSlide}>
+                    ←
+                  </button>
+                  <button className="carousel-btn" onClick={nextSlide}>
+                    →
+                  </button>
+                </div>
+              </div>
+
+              <div className="carousel-container">
+                {loadingBadges ? (
+                  <div>Loading badges...</div>
+                ) : badges.length === 0 ? (
+                  <div>No badges yet</div>
+                ) : (
+                  <div className="carousel-track">
+                    {getBadgesToShow().map((badge) => (
+                      <div key={badge.id} className="badge-item">
+                        <img
+                          src={badge.imageUrl || placeholder}
+                          alt={badge.name || "badge"}
+                          onError={(e) => (e.currentTarget.src = placeholder)}
+                        />
+                        <span className="badge-item-name">{badge.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </article>
           {/* Leaderboard */}
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>

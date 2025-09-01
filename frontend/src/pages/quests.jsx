@@ -146,10 +146,7 @@ export default function Quests() {
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">
-          <button onClick={() => navigate("/adminDashboard")}>
-            Create Quest
-          </button>
-          <button onClick={loadQuests}>Refresh</button>
+          <IconButton icon="refresh" onClick={loadQuests} label="Refresh" />
         </div>
       </div>
 
@@ -175,7 +172,11 @@ export default function Quests() {
             </div>
 
             <div className="quest-action">
-              <button onClick={() => openModal(q)}>View Details</button>
+              <IconButton
+                icon="find_in_page"
+                onClick={() => openModal(q)}
+                label="View Details"
+              />
             </div>
           </div>
         ))}

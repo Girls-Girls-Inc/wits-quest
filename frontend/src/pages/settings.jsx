@@ -42,7 +42,7 @@ const Settings = () => {
             <IconButton
               icon="edit"
               label="Edit Profile"
-              onClick={() => navigate("/edit-profile")}
+              onClick={() => navigate("/profile")}
             />
             <IconButton
               icon="feedback"

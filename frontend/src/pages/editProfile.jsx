@@ -4,9 +4,7 @@ import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/login-signup.css";
 import "../index.css";
-import SignupImage from "../assets/signup.png";
 
 const Profile = () => {
   const [form, setForm] = useState({
@@ -16,6 +14,8 @@ const Profile = () => {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [joinedDate, setJoinedDate] = useState("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,6 +42,7 @@ const Profile = () => {
           password: "",
           confirmPassword: "",
         });
+        setJoinedDate(new Date(user.created_at).toLocaleDateString());
       }
       setLoading(false);
     };
@@ -62,28 +63,23 @@ const Profile = () => {
     }
 
     setLoading(true);
-
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
+
     if (userError) {
       toast.error("Error fetching user data");
       setLoading(false);
       return;
     }
 
-    // Build the update payload
     const updatePayload = {};
-    if (form.email && form.email !== user.email) {
-      updatePayload.email = form.email;
-    }
+    if (form.email && form.email !== user.email) updatePayload.email = form.email;
     if (form.displayName !== (user.user_metadata?.displayName || "")) {
       updatePayload.data = { displayName: form.displayName };
     }
-    if (form.password) {
-      updatePayload.password = form.password;
-    }
+    if (form.password) updatePayload.password = form.password;
 
     if (Object.keys(updatePayload).length === 0) {
       toast("No changes to update");
@@ -91,7 +87,6 @@ const Profile = () => {
       return;
     }
 
-    // Send update
     const { data, error } = await supabase.auth.updateUser(updatePayload);
     setLoading(false);
 
@@ -100,14 +95,12 @@ const Profile = () => {
       return;
     }
 
-    // If email was updated, show pending email
     if (updatePayload.email) {
       const newEmail = data.user?.new_email;
       if (newEmail) {
         toast.success(
           `Check ${newEmail} for a confirmation link to complete the change.`
         );
-        // Update the form to show pending email
         setForm((prev) => ({ ...prev, email: newEmail }));
       }
     } else {
@@ -118,81 +111,86 @@ const Profile = () => {
       toast.success("Password changed successfully!");
       setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
     }
+
+    setIsEditing(false);
   };
 
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="">
-      <div className="container active">
-        <Toaster />
+    <div className="profile-container">
+      <Toaster />
 
-        {/* PROFILE FORM */}
-        <div className="form-box login">
-          <form onSubmit={handleSave} className="login-form">
-            <h1>MY PROFILE</h1>
+      {/* Top Section */}
+      <div className="profile-top">
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className="edit-button"
+        >
+          <span className="material-icons">
+            {isEditing ? "close" : "edit"}
+          </span>
+        </button>
+      </div>
 
-            <div className="input-box">
-              <InputField
-                id="displayName"
-                icon="person"
-                name="displayName"
-                placeholder="Display Name"
-                value={form.displayName}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="input-box">
-              <InputField
-                id="email"
-                icon="email"
-                name="email"
-                placeholder="Email Address"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="input-box">
-              <PasswordInputField
-                id="password"
-                placeholder="New Password"
-                value={form.password}
-                name="password"
-                onChange={handleChange}
-                required={false}
-              />
-            </div>
-
-            <div className="input-box">
-              <PasswordInputField
-                id="confirmPassword"
-                placeholder="Confirm New Password"
-                value={form.confirmPassword}
-                name="confirmPassword"
-                onChange={handleChange}
-                required={false}
-              />
-            </div>
-
-            <div className="btn">
-              <IconButton type="submit" icon="save" label="SAVE CHANGES" />
-            </div>
-          </form>
-        </div>
-
-        {/* SIDE PANEL */}
-        <div className="toggle">
-          <div className="toggle-panel toggle-right">
-            <img src={SignupImage} alt="Quest image" />
-            <h1>Keep Your Info Updated!</h1>
-            <p>Edit your profile details anytime</p>
-          </div>
+      {/* Profile Info */}
+      {!isEditing && (
+      <div className="profile-info">
+        <div className=""></div>
+        <div className="profile-details">
+          <h2>{form.displayName || "User"}</h2>
+          <p>{form.email}</p>
+          <p className="text-sm">Joined: {joinedDate}</p>
         </div>
       </div>
+      )}
+
+      {/* Editable Form */}
+      {isEditing && (
+        <form onSubmit={handleSave} className="p-6 pt-0 space-y-4 border-t border-gray-200">
+          <h1 className="text-2xl font-bold"></h1>
+
+          <InputField
+            id="displayName"
+            icon="person"
+            name="displayName"
+            placeholder="Display Name"
+            value={form.displayName}
+            onChange={handleChange}
+            required
+          />
+
+          <InputField
+            id="email"
+            icon="email"
+            name="email"
+            placeholder="Email Address"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+
+          <PasswordInputField
+            id="password"
+            placeholder="New Password"
+            value={form.password}
+            name="password"
+            onChange={handleChange}
+            required={false}
+          />
+
+          <PasswordInputField
+            id="confirmPassword"
+            placeholder="Confirm New Password"
+            value={form.confirmPassword}
+            name="confirmPassword"
+            onChange={handleChange}
+            required={false}
+          />
+
+          <IconButton type="submit" icon="save" label="SAVE CHANGES" />
+        </form>
+      )}
     </div>
   );
 };

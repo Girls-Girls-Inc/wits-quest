@@ -1,17 +1,6 @@
-/* Ensure the page and parent are not width-capped */
-body,
-#root,
-.App,
-.map-page {
-    width: 70vw;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 .map-header {
     display: flex;
+    align-items: center;
     /* center vertically, not baseline */
     justify-content: flex-start;
     width: 100%;

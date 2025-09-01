@@ -37,23 +37,28 @@
   opacity: 0.7;
   margin-top: 6px;
 }
-
-.map-header {
-  display: flex;
-  align-items: center;
-  /* center vertically, not baseline */
-  justify-content: flex-start;
-  width: 100%;
-  /* take full width of page */
+/* InfoWindow outer container */
+.gm-style-iw {
+  background: #f5f5f5 !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  font-family: "Poppins", sans-serif !important;
+  color: #333 !important;
 }
 
-.map-parent {
-  width: 100%;
+/* Target the close button correctly */
+.gm-style-iw .gm-ui-hover-effect {
+  background: none !important;
+  border: none !important;
+  color: red !important; /* red cross */
+  font-size: 16px !important;
+  cursor: pointer;
+  padding: 0 !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
 }
 
-/* If your layout uses flex/grid, let this child grow */
-.map-parent {
-  flex: 1 1 100%;
-  min-width: 0;
-  /* important inside flex to allow stretching/shrinking */
+/* Optional hover effect */
+.gm-style-iw .gm-ui-hover-effect:hover {
+  color: darkred !important;
 }

@@ -150,6 +150,8 @@ export default function QuestMap() {
         else if (q.locationId != null) needsLookup.push(q);
       }
 
+      const resolveQuestId = (marker) =>
+        marker?.raw?.questId ?? marker?.raw?.id ?? marker?.id ?? null;
       const idSet = [...new Set(needsLookup.map((q) => q.locationId))];
       const idToLoc = new Map();
       await Promise.all(
@@ -209,7 +211,8 @@ export default function QuestMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- Add to My Quests (same behaviour as quests.jsx) ----
+  const resolveQuestId = (marker) =>
+    marker?.raw?.questId ?? marker?.raw?.id ?? marker?.id ?? null;
   const addToMyQuests = async (marker) => {
     const questId = resolveQuestId(marker);
     if (!questId) {
@@ -251,95 +254,76 @@ export default function QuestMap() {
   return (
     <div>
       <Toaster />
-      <div className="map-header">
       <div className="map-container">
-        <h1>Quests Map</h1>
-        {/* <button
-          type="button"
-          onClick={loadQuests}
-          disabled={loading}
-          className="btn"
-          title="Refresh"
-          style={{ padding: "6px 10px", borderRadius: 8 }}
-        >
-          {loading ? "Loading…" : "Refresh"}
-        </button> */}
-        <IconButton
-          type="button"
-          onClick={loadQuests}
-          disabled={loading}
-          className="btn"
-          label="Refresh"
-        />
-      </div>
+        <div className="map-header">
+          <h1>Quests Map</h1>
 
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
-        center={center}
-        zoom={12}
-        options={{
-          restriction: { latLngBounds: bounds, strictBounds: true },
-          disableDefaultUI: false,
-          clickableIcons: true,
-        }}
-        onLoad={(map) => {
-          const b = new window.google.maps.LatLngBounds(
-            { lat: bounds.south, lng: bounds.west },
-            { lat: bounds.north, lng: bounds.east }
-          );
-          map.fitBounds(b);
-        }}
-        onClick={() => setSelected(null)} // click map to close info
-      >
-        {markers.map((m) => (
-          <Marker
-            key={m.id}
-            position={m.position}
-            title={m.title}
-            onClick={() => setSelected(m)}
+          <IconButton
+            type="button"
+            onClick={loadQuests}
+            disabled={loading}
+            className="btn"
+            label="Refresh"
           />
-        ))}
+        </div>
 
-        {selected && (
-          <InfoWindow
-            position={selected.position}
-            onCloseClick={() => setSelected(null)}
-          >
-            <div className="info-window-content">
-              <strong className="info-window-title">{selected.title}</strong>
-              {selected.description && (
-                <div className="info-window-desc">{selected.description}</div>
-              )}
-              {typeof selected.points === "number" && (
-                <div className="info-window-points">
-                  Points: {selected.points}
-                </div>
-              )}
-              <div className="info-window-status">
-                Status: {selected.isActive ? "Active" : "Inactive"}
+        <GoogleMap
+          mapContainerStyle={MAP_CONTAINER_STYLE}
+          center={center}
+          zoom={12}
+          options={{
+            restriction: { latLngBounds: bounds, strictBounds: true },
+            disableDefaultUI: false,
+            clickableIcons: true,
+          }}
+          onLoad={(map) => {
+            const b = new window.google.maps.LatLngBounds(
+              { lat: bounds.south, lng: bounds.west },
+              { lat: bounds.north, lng: bounds.east }
+            );
+            map.fitBounds(b);
+          }}
+          onClick={() => setSelected(null)} // click map to close info
+        >
+          {markers.map((m) => (
+            <Marker
+              key={m.id}
+              position={m.position}
+              title={m.title}
+              onClick={() => setSelected(m)}
+            />
+          ))}
+
+          {selected && (
+            <InfoWindow
+              position={selected.position}
+              onCloseClick={() => setSelected(null)}
+            >
+              <div className="info-window-content">
+                <strong className="info-window-title">{selected.title}</strong>
+                {selected.description && (
+                  <div className="info-window-desc">{selected.description}</div>
+                )}
+                {typeof selected.points === "number" && (
+                  <div className="info-window-points">
+                    Points: {selected.points}
+                  </div>
+                )}
+
+                {selected.overlappedOffset && (
+                  <div className="info-window-overlap"></div>
+                )}
+                <IconButton
+                  type="button"
+                  onClick={() => addToMyQuests(selected)}
+                  disabled={adding}
+                  label="Add to my Quests"
+                />
               </div>
-              {selected.createdAt && (
-                <div className="info-window-created">
-                  Created: {new Date(selected.createdAt).toLocaleString()}
-                </div>
-              )}
-              {selected.raw?.collectibleId && (
-                <div className="info-window-collectible">
-                  Collectible: {selected.raw.collectibleId}
-                </div>
-              )}
-              {selected.raw?.locationId && (
-                <div className="info-window-location">
-                  Location ID: {selected.raw.locationId}
-                </div>
-              )}
-              {selected.overlappedOffset && (
-                <div className="info-window-overlap"></div>
-              )}
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+      </div>
     </div>
   );
 }

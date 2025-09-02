@@ -27,13 +27,12 @@ const Leaderboard = () => {
     setRows([]);
     try {
       abortRef.current?.abort();
-    } catch {}
+    } catch { }
     const ac = new AbortController();
     abortRef.current = ac;
     const loadingToast = toast.loading("Loading leaderboard…");
     try {
       const res = await fetch(makeUrl(key), {
-        headers: { Accept: "application/json" },
         headers: { Accept: "application/json" },
         signal: ac.signal,
       });
@@ -92,9 +91,8 @@ const Leaderboard = () => {
             {Object.keys(BOARDS).map((key) => (
               <li key={key}>
                 <button
-                  className={`dropdown-item ${
-                    boardKey === key ? "active" : ""
-                  }`}
+                  className={`dropdown-item ${boardKey === key ? "active" : ""
+                    }`}
                   onClick={() => {
                     switchBoard(key);
                     document

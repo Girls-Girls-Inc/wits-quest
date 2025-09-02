@@ -10,8 +10,8 @@
     "frontend:build": "npm run build --prefix frontend",
     "start": "node app.js",
     "serve": "npm run build && npm start",
-    "test": "jest --env=jsdom",
-    "test:coverage": "jest --coverage --env=jsdom",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "lint": "eslint \"src/**/*.{js,jsx}\"",
     "backend": "nodemon app.js"
   },

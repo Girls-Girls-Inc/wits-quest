@@ -1,6 +1,6 @@
 # Wits Quest
 
-[![codecov](https://codecov.io/gh/Girls-Girls-Inc/wits-quest/branch/dev/graph/badge.svg)](https://codecov.io/gh/Girls-Girls-Inc/wits-quest)
+[![codecov](https://codecov.io/gh/Girls-Girls-Inc/wits-quest/branch/dev/graph/badge.svg?token=1K4QMG1ZH1)](https://codecov.io/gh/Girls-Girls-Inc/wits-quest)
 
 
 ## Description

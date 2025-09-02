@@ -1,5 +1,6 @@
 # Wits Quest
-[![codecov](https://codecov.io/gh/Girls-Girls-Inc/wits-quest/graph/badge.svg?token=1K4QMG1ZH1)](https://codecov.io/gh/Girls-Girls-Inc/wits-quest)
+
+[![codecov](https://codecov.io/gh/Girls-Girls-Inc/wits-quest/branch/dev/graph/badge.svg?token=1K4QMG1ZH1)](https://codecov.io/gh/Girls-Girls-Inc/wits-quest)
 
 ## Description
 Wits Quest is a location-based game centred around landmarks at the University of the Witwatersrand campus.  
@@ -73,3 +74,6 @@ For more information, please see our [Development Guide](https://github.com/Girl
 
 ## Project Management
 Please find updates about our recent meetings [here](https://github.com/Girls-Girls-Inc/wits-quest/wiki/Project-Management-Methodology).
+
+## Documentation
+Please find all our documentation [here.](https://github.com/Girls-Girls-Inc/wits-quest/wiki)

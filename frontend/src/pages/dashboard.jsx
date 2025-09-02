@@ -30,14 +30,54 @@ const Dashboard = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const leaderboard = [
-    { rank: 1, name: "Person 1" },
-    { rank: 2, name: "Person 2" },
-    { rank: 3, name: "Me" },
-    { rank: 4, name: "Person 3" },
-    { rank: 5, name: "Person 4" },
-    { rank: 6, name: "Person 5" },
-  ];
+  // const leaderboard = [
+  //   { rank: 1, name: "Person 1" },
+  //   { rank: 2, name: "Person 2" },
+  //   { rank: 3, name: "Me" },
+  //   { rank: 4, name: "Person 3" },
+  //   { rank: 5, name: "Person 4" },
+  //   { rank: 6, name: "Person 5" },
+  // ];
+
+  // Leaderboard state
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+
+  // Fetch leaderboard via backend API (like Leaderboard.jsx)
+  const loadLeaderboard = async () => {
+    try 
+    {
+      setLoadingLeaderboard(true);
+
+      // Always fetch yearly (id=12345). Change if you want monthly/weekly.
+      const res = await fetch(`${API_BASE}/leaderboard?id=12345`, {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("API did not return an array");
+
+      // Add rank numbers
+      const rows = data.map((r, i) => ({
+        rank: i + 1,
+        name: r.username,
+        points: r.points,
+      }));
+
+      setLeaderboard(rows);
+    } 
+    catch (e) 
+    {
+      console.error("Leaderboard fetch failed:", e.message);
+      setLeaderboard([]);
+    } 
+    finally 
+    {
+      setLoadingLeaderboard(false);
+    }
+  };
+
 
   // Fetch Supabase session
   useEffect(() => {
@@ -131,14 +171,14 @@ const Dashboard = () => {
         return {
           id: r.id,
           questId: r.questId,
+          userId: r.userId,
           step: r.step ?? "0",
           isComplete: !!r.isComplete,
           completedAt: r.completedAt || null,
           name: j.name ?? `Quest ${r.questId}`,
           points: j.pointsAchievable ?? 0,
           location:
-            j.location?.name ||
-            j.locationName ||
+            j.locations?.name ||
             (typeof j.locationId !== "undefined"
               ? `Location ${j.locationId}`
               : "—"),
@@ -146,12 +186,29 @@ const Dashboard = () => {
       });
 
       setOngoing(rows.filter((q) => !q.isComplete));
+      const completedQuests = rows.filter((q) => q.isComplete);
+      const uniqueLocations = new Set(
+        completedQuests
+          .map((q) => q.location)
+          .filter((loc) => loc && loc !== "—")
+      );
+      const completedRows = rows.filter(
+        (q) => q.isComplete && q.userId === me?.id
+      );
 
-      // Update dashboard stats
+      const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
+      const latestRow = completedRows.sort(
+        (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
+      )[0];
+
+      const latestLocation = latestRow?.location || "—";
+
       setDashboardData((prev) => ({
         ...prev,
-        questsCompleted: rows.filter((q) => q.isComplete).length,
-        locationsVisited: new Set(rows.map((q) => q.location)).size,
+        questsCompleted: completedRows.length,
+        locationsVisited: uniqueLocations.size,
+        points: totalPoints,
+        latestLocation,
       }));
     } catch (e) {
       setOngoing([]);
@@ -165,6 +222,7 @@ const Dashboard = () => {
     if (accessToken) {
       loadBadges();
       loadOngoing();
+      loadLeaderboard();
     }
   }, [accessToken]);
 
@@ -202,66 +260,6 @@ const Dashboard = () => {
           className="dashboard-grid"
           aria-label="User statistics and badges"
         >
-          {/* Badges Card */}
-          <article className="dashboard-card badges-card">
-            <div className="card-header">
-              <h3>Badges Collected</h3>
-              <div className="badge-count">{dashboardData.badgesCollected}</div>
-            </div>
-            <div className="latest-badge">
-              <div
-                className="badge-circle"
-                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
-              >
-                <span>Latest badge</span>
-                <div className="badge-name">{dashboardData.latestBadge}</div>
-              </div>
-            </div>
-
-            <div className="badges-carousel">
-              <div className="carousel-header">
-                <button className="view-badges-btn">View Badges</button>
-                <div className="carousel-controls">
-                  <button onClick={prevSlide}>←</button>
-                  <button onClick={nextSlide}>→</button>
-                </div>
-              </div>
-
-              <div className="carousel-container">
-                {loadingBadges ? (
-                  <div>Loading badges...</div>
-                ) : badges.length === 0 ? (
-                  <div>No badges yet</div>
-                ) : (
-                  <div className="carousel-track">
-                    {getBadgesToShow().map((badge) => (
-                      <div key={badge.id} className="badge-item">
-                        <img
-                          src={badge.imageUrl || placeholder}
-                          alt={badge.name || "badge"}
-                          onError={(e) => (e.currentTarget.src = placeholder)}
-                        />
-                        <span className="badge-item-name">{badge.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </article>
-
-          {/* Locations Card */}
-          <article className="dashboard-card">
-            <h3>Locations Visited</h3>
-            <div className="stat-number">{dashboardData.locationsVisited}</div>
-            <div className="latest-info">
-              <div className="latest-box">
-                <span>Latest Location</span>
-                <div>{dashboardData.latestLocation}</div>
-              </div>
-            </div>
-          </article>
-
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -293,6 +291,7 @@ const Dashboard = () => {
                       <td>{q.isComplete ? "Completed" : "In progress"}</td>
                       <td>
                         <button
+                          className="dash-btn"
                           onClick={() =>
                             navigate(`/quests/${q.questId}?uq=${q.id}`)
                           }
@@ -307,30 +306,110 @@ const Dashboard = () => {
               </tbody>
             </table>
           </article>
+          {/* Locations Card */}
+          <article className="dashboard-card">
+            <h3>Locations Visited</h3>
+            <div className="stat-number">{dashboardData.locationsVisited}</div>
+            <div className="latest-info">
+              <div className="latest-box">
+                <span>Latest Location</span>
+                <div>{dashboardData.latestLocation}</div>
+              </div>
+            </div>
+          </article>
 
+          {/* Badges Card */}
+          <article className="dashboard-card badges-card">
+            <div className="card-header">
+              <h3>Badges Collected</h3>
+              <div className="badge-count">{dashboardData.badgesCollected}</div>
+            </div>
+            <div className="latest-badge">
+              <div
+                className="badge-circle"
+                aria-label={`Latest badge: ${dashboardData.latestBadge}`}
+              >
+                <span>Latest badge</span>
+                <div className="badge-name">{dashboardData.latestBadge}</div>
+              </div>
+            </div>
+
+            <div className="badges-carousel">
+              <div className="carousel-header">
+                <button className="view-badges-btn">View Badges</button>
+                <div className="carousel-controls">
+                  <button className="carousel-btn" onClick={prevSlide}>
+                    ←
+                  </button>
+                  <button className="carousel-btn" onClick={nextSlide}>
+                    →
+                  </button>
+                </div>
+              </div>
+
+              <div className="carousel-container">
+                {loadingBadges ? (
+                  <div>Loading badges...</div>
+                ) : badges.length === 0 ? (
+                  <div>No badges yet</div>
+                ) : (
+                  <div className="carousel-track">
+                    {getBadgesToShow().map((badge) => (
+                      <div key={badge.id} className="badge-item">
+                        <img
+                          src={badge.imageUrl || placeholder}
+                          alt={badge.name || "badge"}
+                          onError={(e) => (e.currentTarget.src = placeholder)}
+                        />
+                        <span className="badge-item-name">{badge.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </article>
           {/* Leaderboard */}
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((person) => (
-                  <tr
-                    key={person.rank}
-                    className={person.name === "Me" ? "me" : ""}
-                  >
-                    <td>{person.rank}</td>
-                    <td>{person.name}</td>
+            <div className="leaderboard-scroll">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Points</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {loadingLeaderboard ? (
+                    <tr>
+                      <td colSpan={3}>Loading leaderboard…</td>
+                    </tr>
+                  ) : leaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>No leaderboard data</td>
+                    </tr>
+                  ) : (
+                    leaderboard.map((person) => (
+                      <tr
+                        key={person.rank}
+                        className={
+                          person.name === me?.user_metadata?.username ? "me" : ""
+                        }
+                      >
+                        <td>{person.rank}</td>
+                        <td>{person.name}</td>
+                        <td>{person.points}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
+
+
 
           {/* Points */}
           <article className="dashboard-card small-card">

@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
 export default function ManageQuests() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
   const [locations, setLocations] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -62,7 +62,8 @@ export default function ManageQuests() {
           ...q,
           id: Number(q.id),
           locationId: q.locationId !== null ? Number(q.locationId) : null,
-          collectibleId: q.collectibleId !== null ? Number(q.collectibleId) : null,
+          collectibleId:
+            q.collectibleId !== null ? Number(q.collectibleId) : null,
           pointsAchievable: q.pointsAchievable ?? 0,
           isActive: q.isActive ?? true,
           imageUrl,
@@ -80,7 +81,9 @@ export default function ManageQuests() {
   // Load locations
   const loadLocations = async () => {
     try {
-      const res = await fetch(`${API_BASE}/locations`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/locations`, {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to fetch locations");
       const data = await res.json();
       setLocations(Array.isArray(data) ? data : []);
@@ -93,7 +96,9 @@ export default function ManageQuests() {
   // Load collectibles
   const loadCollectibles = async () => {
     try {
-      const res = await fetch(`${API_BASE}/collectibles`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/collectibles`, {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to fetch collectibles");
       const data = await res.json();
       setCollectibles(Array.isArray(data) ? data : []);
@@ -178,100 +183,121 @@ export default function ManageQuests() {
       <Toaster />
       <div className="quests-header">
         <h1>Manage Quests</h1>
-        <button onClick={loadQuests}>Refresh</button>
+        {/* <button onClick={loadQuests}>Refresh</button> */}
+        <IconButton icon="refresh" label="Refresh" onClick={loadQuests} />
       </div>
 
-        {editingQuest && (
-        <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-            <div className="input-box">
+      {editingQuest && (
+        <form
+          className="login-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+        >
+          <div className="input-box">
             <InputField
-                type="text"
-                name="name"
-                placeholder="Quest Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+              type="text"
+              name="name"
+              placeholder="Quest Name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
             />
-            </div>
+          </div>
 
-            <div className="input-box">
+          <div className="input-box">
             <InputField
-                type="text"
-                name="description"
-                placeholder="Quest Description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
+              type="text"
+              name="description"
+              placeholder="Quest Description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              required
             />
-            </div>
+          </div>
 
-            <div className="input-box">
+          <div className="input-box">
             <label>Location</label>
             <select
-                name="locationId"
-                value={formData.locationId}
-                onChange={(e) => setFormData({ ...formData, locationId: e.target.value || "" })}
-                required
+              name="locationId"
+              value={formData.locationId}
+              onChange={(e) =>
+                setFormData({ ...formData, locationId: e.target.value || "" })
+              }
+              required
             >
-                <option value="">Select a location</option>
-                {locations.map((loc) => (
+              <option value="">Select a location</option>
+              {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
-                    {loc.name}
+                  {loc.name}
                 </option>
-                ))}
+              ))}
             </select>
-            </div>
+          </div>
 
-            <div className="input-box">
+          <div className="input-box">
             <label>Collectible</label>
             <select
-                name="collectibleId"
-                value={formData.collectibleId}
-                onChange={(e) => setFormData({ ...formData, collectibleId: e.target.value || "" })}
+              name="collectibleId"
+              value={formData.collectibleId}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  collectibleId: e.target.value || "",
+                })
+              }
             >
-                <option value="">Select a collectible</option>
-                {collectibles.map((col) => (
+              <option value="">Select a collectible</option>
+              {collectibles.map((col) => (
                 <option key={col.id} value={col.id}>
-                    {col.name}
+                  {col.name}
                 </option>
-                ))}
+              ))}
             </select>
-            </div>
+          </div>
 
-            <div className="input-box">
+          <div className="input-box">
             <InputField
-                type="number"
-                name="pointsAchievable"
-                placeholder="Points Achievable"
-                value={formData.pointsAchievable}
-                onChange={(e) => setFormData({ ...formData, pointsAchievable: e.target.value })}
+              type="number"
+              name="pointsAchievable"
+              placeholder="Points Achievable"
+              value={formData.pointsAchievable}
+              onChange={(e) =>
+                setFormData({ ...formData, pointsAchievable: e.target.value })
+              }
             />
-            </div>
+          </div>
 
-            <div className="input-box">
+          <div className="input-box">
             <label>
-                <input
+              <input
                 type="checkbox"
                 name="isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                />
-                Active
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
+              />
+              Active
             </label>
-            </div>
+          </div>
 
-            <div className="btn">
+          <div className="btn">
             <IconButton type="submit" icon="save" label="Save Quest" />
             <IconButton
-                type="button"
-                icon="arrow_back"
-                label="Cancel"
-                onClick={() => setEditingQuest(null)}
+              type="button"
+              icon="arrow_back"
+              label="Cancel"
+              onClick={() => setEditingQuest(null)}
             />
-            </div>
+          </div>
         </form>
-        )}
-
+      )}
 
       <div className="quest-list">
         {quests.map((q) => (
@@ -296,26 +322,43 @@ export default function ManageQuests() {
               </p>
               <p>
                 <strong>Collectible:</strong>{" "}
-                {collectibles.find((c) => c.id === q.collectibleId)?.name || "-"}
+                {collectibles.find((c) => c.id === q.collectibleId)?.name ||
+                  "-"}
               </p>
             </div>
             <div className="quest-action flex gap-2">
-              <button onClick={() => handleEditClick(q)} className="text-blue-600">
+              {/* <button
+                onClick={() => handleEditClick(q)}
+                className="text-blue-600"
+              >
                 Edit
               </button>
-              <button onClick={() => handleDelete(q.id)} className="text-red-600">
+              <button
+                onClick={() => handleDelete(q.id)}
+                className="text-red-600"
+              >
                 Delete
-              </button>
+              </button> */}
+              <IconButton
+                onClick={() => handleEditClick(q)}
+                icon="edit"
+                label="Edit"
+              />
+              <IconButton
+                icon="delete"
+                label="Delete"
+                onClick={() => handleDelete(q.id)}
+              />
             </div>
           </div>
         ))}
         <div className="mt-4">
-        <IconButton
+          <IconButton
             type="button"
             icon="arrow_back"
             label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")} // Adjust the path to your admin page
-        />
+            onClick={() => navigate("/adminDashboard")}
+          />
         </div>
       </div>
     </div>

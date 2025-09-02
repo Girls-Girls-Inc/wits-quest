@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
@@ -16,10 +22,34 @@ export default function Quests() {
   const [activeQuest, setActiveQuest] = useState(null);
   const [activeLocation, setActiveLocation] = useState(null);
   const [jwt, setJwt] = useState(null);
+  const [myQuestIds, setMyQuestIds] = useState(null);
+  // guard against double-click / concurrent adds of the same quest
+  const pendingAdds = useRef(new Set());
 
   const [locCache, setLocCache] = useState({});
   const cacheLocation = (loc) =>
     setLocCache((m) => (loc?.id ? { ...m, [loc.id]: loc } : m));
+  const fetchMyQuestIds = useCallback(
+    async (token) => {
+      if (myQuestIds instanceof Set) return myQuestIds;
+
+      const res = await fetch(USER_QUESTS_API, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+
+      const ids = new Set(
+        (Array.isArray(data) ? data : []).map((r) => String(r.questId))
+      );
+      setMyQuestIds(ids);
+      return ids;
+    },
+    [myQuestIds]
+  );
 
   const loadQuests = async () => {
     const t = toast.loading("Loading quests...");
@@ -43,6 +73,12 @@ export default function Quests() {
     if (!error && data?.session?.access_token) {
       setJwt(data.session.access_token);
     }
+  };
+
+  const getStableQuestId = (q) => {
+    const raw = q?.id ?? q?.questId;
+    const n = Number(raw);
+    return Number.isFinite(n) ? String(n) : null; // store as string for Set stability
   };
 
   useEffect(() => {
@@ -87,7 +123,23 @@ export default function Quests() {
     setActiveLocation(null);
   };
 
-  const addToMyQuests = async (questId) => {
+  const addToMyQuests = async (questOrId) => {
+    // derive a single stable id (string)
+    const questIdStr =
+      typeof questOrId === "object"
+        ? getStableQuestId(questOrId)
+        : Number.isFinite(Number(questOrId))
+        ? String(Number(questOrId))
+        : null;
+
+    if (!questIdStr) {
+      toast.error("Could not determine questId for this quest.");
+      return;
+    }
+
+    // prevent concurrent adds of the same quest
+    if (pendingAdds.current.has(questIdStr)) return;
+    pendingAdds.current.add(questIdStr);
     const t = toast.loading("Adding quest…");
     try {
       const {
@@ -96,21 +148,48 @@ export default function Quests() {
       const token = session?.access_token;
       if (!token) throw new Error("Please sign in.");
 
+      const ids = await fetchMyQuestIds(token);
+      if (ids.has(questIdStr)) {
+        toast.success("This quest is already in your list.", { id: t });
+        return;
+      }
+
       const resp = await fetch(USER_QUESTS_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ questId }),
+        body: JSON.stringify({ questId: Number(questIdStr) }),
       });
 
       const json = await resp.json();
-      if (!resp.ok) throw new Error(json.message || "Failed to add quest");
+      if (!resp.ok) {
+        if (resp.status === 409) {
+          // backend says it's already there
+          toast.success("This quest is already in your list.", { id: t });
+          setMyQuestIds((prev) => {
+            const next = new Set(prev || []);
+            next.add(questIdStr);
+            return next;
+          });
+          return;
+        }
+        throw new Error(json.message || "Failed to add quest");
+      }
+
+      // update local cache immediately
+      setMyQuestIds((prev) => {
+        const next = new Set(prev || []);
+        next.add(questIdStr);
+        return next;
+      });
 
       toast.success("Added to your quests!", { id: t });
     } catch (e) {
       toast.error(e.message, { id: t });
+    } finally {
+      pendingAdds.current.delete(questIdStr);
     }
   };
 
@@ -162,6 +241,7 @@ export default function Quests() {
 
             <div className="quest-info">
               <h2>{q.name}</h2>
+
               <p>
                 <strong>Location:</strong> {q.location || "—"}
               </p>
@@ -260,7 +340,7 @@ export default function Quests() {
                   <IconButton
                     icon="add"
                     label="Add to my Quests"
-                    onClick={() => addToMyQuests(activeQuest.questId)}
+                    onClick={() => addToMyQuests(activeQuest)}
                   />
                 </div>
               </div>

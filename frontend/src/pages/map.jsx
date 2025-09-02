@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   GoogleMap,
   Marker,
@@ -49,8 +49,6 @@ const metersToDegrees = (meters, atLatDeg) => {
   return { dLat, dLng };
 };
 
-// Spread overlapping markers around their shared coordinate in a small ring.
-// radiusMeters: base distance; grows a bit if many markers share the spot.
 const spreadOverlaps = (markers, radiusMeters = 15) => {
   // Group by exact coordinate (rounded to 6dp to catch near-identical points)
   const keyOf = (p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
@@ -88,7 +86,6 @@ const spreadOverlaps = (markers, radiusMeters = 15) => {
   return result;
 };
 
-// ---------- component ----------
 export default function QuestMap() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -101,6 +98,25 @@ export default function QuestMap() {
   const [selected, setSelected] = useState(null); // store full marker for InfoWindow
   const [adding, setAdding] = useState(false); // add-to-my-quests button state
 
+
+const [myQuestIds, setMyQuestIds] = useState(null);
+
+ // Cache user's quest IDs; only hits the network once per mount
+ const fetchMyQuestIds = useCallback(async (token) => {
+   if (myQuestIds instanceof Set) return myQuestIds;
+   const res = await fetch(USER_QUESTS_API, {
+     headers: {
+       Accept: "application/json",
+       Authorization: `Bearer ${token}`,
+     },
+   });
+   const data = await res.json();
+   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+   const ids = new Set((Array.isArray(data) ? data : []).map((r) => String(r.questId)));
+   setMyQuestIds(ids);
+   return ids;
+}, [myQuestIds]);
+
   const center = useMemo(() => ({ lat: -26.19, lng: 28.03 }), []);
   const bounds = useMemo(
     () => ({ north: -26.178, south: -26.2055, west: 27.9975, east: 28.0495 }),
@@ -108,12 +124,10 @@ export default function QuestMap() {
   );
 
   const fetchLocationById = async (id, signal) => {
-    // Prefer /locations/:id (single object)
     const r1 = await fetch(`${API_BASE}/locations/${encodeURIComponent(id)}`, {
       signal,
     });
     if (r1.ok) return r1.json();
-    // Fallback: /locations?id=...
     const sep = `${API_BASE}/locations`.includes("?") ? "&" : "?";
     const r2 = await fetch(
       `${API_BASE}/locations${sep}id=${encodeURIComponent(id)}`,
@@ -193,7 +207,6 @@ export default function QuestMap() {
         })
       );
 
-      // Spread overlapping markers slightly
       const built = spreadOverlaps(builtRaw, 15); // ~15 m offset
 
       setMarkers(built);
@@ -214,11 +227,14 @@ export default function QuestMap() {
   const resolveQuestId = (marker) =>
     marker?.raw?.questId ?? marker?.raw?.id ?? marker?.id ?? null;
   const addToMyQuests = async (marker) => {
-    const questId = resolveQuestId(marker);
+    const questIdRaw = resolveQuestId(marker);
+    const questId = questIdRaw != null ? String(questIdRaw) : null;
+
     if (!questId) {
       toast.error("Could not determine questId for this quest.");
       return;
     }
+
     const t = toast.loading("Adding quest…");
     setAdding(true);
     try {
@@ -228,6 +244,16 @@ export default function QuestMap() {
       const token = session?.access_token;
       if (!token) throw new Error("Please sign in.");
 
+      // 1) Load my quest ids (cached)
+      const ids = await fetchMyQuestIds(token);
+
+      // 2) Duplicate check
+      if (ids.has(questId)) {
+        toast.success("This quest is already in your list.", { id: t });
+        return;
+      }
+
+      // 3) Create if not present
       const resp = await fetch(USER_QUESTS_API, {
         method: "POST",
         headers: {
@@ -238,7 +264,27 @@ export default function QuestMap() {
       });
 
       const json = await resp.json();
-      if (!resp.ok) throw new Error(json.message || "Failed to add quest");
+      if (!resp.ok) {
+        // If your API returns 409 for duplicates, surface that nicely.
+        if (resp.status === 409) {
+          toast.success("This quest is already in your list.", { id: t });
+          // also add to cache so we don’t repeat work
+          setMyQuestIds((prev) => {
+            const next = new Set(prev || []);
+            next.add(questId);
+            return next;
+          });
+          return;
+        }
+        throw new Error(json.message || "Failed to add quest");
+      }
+
+      // 4) Update cache immediately so future clicks are fast
+      setMyQuestIds((prev) => {
+        const next = new Set(prev || []);
+        next.add(questId);
+        return next;
+      });
 
       toast.success("Added to your quests!", { id: t });
     } catch (e) {

@@ -17,9 +17,9 @@ jest.mock("react-router-dom", () => {
 });
 
 /* stub CSS & assets */
-jest.mock("../styles/button.css", () => ({}));
-jest.mock("../styles/navbar.css", () => ({}));
-jest.mock("../assets/logo.png", () => "logo.png");
+jest.mock("../../styles/button.css", () => ({}));
+jest.mock("../../styles/navbar.css", () => ({}));
+jest.mock("../../assets/logo.png", () => "logo.png");
 
 /* import component under test (after mocks) */
 const Navbar = require("../../components/NavBar").default;

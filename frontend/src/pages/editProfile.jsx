@@ -4,7 +4,7 @@ import InputField from "../components/InputField";
 import PasswordInputField from "../components/PasswordInputField";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
-import "../index.css";
+import "../styles/profile.css";
 
 const Profile = () => {
   const [form, setForm] = useState({
@@ -12,6 +12,7 @@ const Profile = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    avatarUrl: "",
   });
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -41,6 +42,10 @@ const Profile = () => {
           email: user.email || "",
           password: "",
           confirmPassword: "",
+          avatarUrl:
+            user.user_metadata?.avatar_url ||
+            "https://ui-avatars.com/api/?name=" +
+              (user.user_metadata?.displayName || "User"),
         });
         setJoinedDate(new Date(user.created_at).toLocaleDateString());
       }
@@ -75,9 +80,16 @@ const Profile = () => {
     }
 
     const updatePayload = {};
-    if (form.email && form.email !== user.email) updatePayload.email = form.email;
-    if (form.displayName !== (user.user_metadata?.displayName || "")) {
-      updatePayload.data = { displayName: form.displayName };
+    if (form.email && form.email !== user.email)
+      updatePayload.email = form.email;
+    if (
+      form.displayName !== (user.user_metadata?.displayName || "") ||
+      form.avatarUrl !== (user.user_metadata?.avatar_url || "")
+    ) {
+      updatePayload.data = {
+        displayName: form.displayName,
+        avatar_url: form.avatarUrl,
+      };
     }
     if (form.password) updatePayload.password = form.password;
 
@@ -121,35 +133,30 @@ const Profile = () => {
     <div className="profile-container">
       <Toaster />
 
-      {/* Top Section */}
       <div className="profile-top">
-        <button
+        <IconButton
+          icon={isEditing ? "close" : "edit"}
           onClick={() => setIsEditing(!isEditing)}
           className="edit-button"
-        >
-          <span className="material-icons">
-            {isEditing ? "close" : "edit"}
-          </span>
-        </button>
+          label={isEditing ? "Close" : "Edit"}
+        />
       </div>
 
       {/* Profile Info */}
       {!isEditing && (
-      <div className="profile-info">
-        <div className=""></div>
-        <div className="profile-details">
-          <h2>{form.displayName || "User"}</h2>
-          <p>{form.email}</p>
-          <p className="text-sm">Joined: {joinedDate}</p>
+        <div className="profile-info">
+          <img src={form.avatarUrl} alt="avatar" className="profile-avatar" />
+          <div className="profile-details">
+            <h2>{form.displayName || "User"}</h2>
+            <p>{form.email}</p>
+            <p className="text-sm">Joined: {joinedDate}</p>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Editable Form */}
       {isEditing && (
-        <form onSubmit={handleSave} className="p-6 pt-0 space-y-4 border-t border-gray-200">
-          <h1 className="text-2xl font-bold"></h1>
-
+        <form onSubmit={handleSave} className="profile-form">
           <InputField
             id="displayName"
             icon="person"
@@ -169,6 +176,15 @@ const Profile = () => {
             onChange={handleChange}
             required
           />
+
+          {/* <InputField
+            id="avatarUrl"
+            icon="image"
+            name="avatarUrl"
+            placeholder="Avatar Image URL"
+            value={form.avatarUrl}
+            onChange={handleChange}
+          /> */}
 
           <PasswordInputField
             id="password"

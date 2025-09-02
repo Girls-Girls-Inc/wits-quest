@@ -1,6 +1,6 @@
 // src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
 import "../styles/adminDashboard.css";
@@ -112,7 +112,7 @@ const AdminDashboard = () => {
 
   const handleQuestSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert("You must be logged in");
+    if (!user) return toast.error("You must be logged in");
 
     const questInsert = {
       ...questData,
@@ -133,16 +133,16 @@ const AdminDashboard = () => {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Failed to create quest");
-      alert(`Quest "${result.name}" created successfully!`);
+      toast.success(`Quest created successfully!`);
       handleBack();
     } catch (err) {
-      alert(`Failed to create quest: ${err.message}`);
+      toast.error(`Failed to create quest: ${err.message}`);
     }
   };
 
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return alert("You must be logged in");
+    if (!user) return toast.error("You must be logged in");
 
     const locationInsert = {
       ...locationData,
@@ -161,10 +161,10 @@ const AdminDashboard = () => {
       const result = await res.json();
       if (!res.ok)
         throw new Error(result.message || "Failed to create location");
-      alert(`Location "${result.name}" created successfully!`);
+      toast.success(`Location created successfully!`);
       handleBack();
     } catch (err) {
-      alert(`Failed to create location: ${err.message}`);
+      toast.error(`Failed to create location: ${err.message}`);
     }
   };
 
@@ -190,7 +190,7 @@ const AdminDashboard = () => {
         throw new Error(await res.text());
       }
     } catch (err) {
-      alert(`Failed to update user: ${err.message}`);
+      toast.error(`Failed to update user: ${err.message}`);
     }
   };
 

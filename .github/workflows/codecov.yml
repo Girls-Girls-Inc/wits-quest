@@ -26,22 +26,27 @@ jobs:
           cd ../backend && npm install
           cd ..
 
-      - name: Run all tests with coverage
+      - name: Run tests with coverage (frontend + backend)
         run: |
-          # Run frontend tests
+          # Frontend
           cd frontend
-          npx jest --coverage --coverageDirectory=../coverage
+          npx jest --coverage --coverageDirectory=../coverage/frontend
           cd ..
 
-          # Run backend tests
+          # Backend
           cd backend
-          npx jest --coverage --coverageDirectory=../coverage
+          npx jest --coverage --coverageDirectory=../coverage/backend
           cd ..
+
+      - name: Merge coverage reports
+        run: |
+          npm install -g lcov-result-merger
+          lcov-result-merger 'coverage/**/lcov.info' > coverage/lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}   # Only needed for private repos
+          token: ${{ secrets.CODECOV_TOKEN }}   # Only needed for private repos, safe to keep
+          files: coverage/lcov.info
           flags: unittests
-          files: "coverage/lcov.info"
-
+          fail_ci_if_error: true

@@ -1,15 +1,17 @@
-// src/pages/QuestDetail.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
   GoogleMap,
   Marker,
   Circle,
+  DirectionsService,
+  DirectionsRenderer,
   useLoadScript,
 } from "@react-google-maps/api";
+
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
-import IconButton from "../components/IconButton"; // import your button
+import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -38,8 +40,10 @@ export default function QuestDetail() {
   const [loading, setLoading] = useState(true);
   const [pos, setPos] = useState(null);
   const watchIdRef = useRef(null);
+  // const [directions, setDirections] = useState(null);
 
   const { isLoaded } = useLoadScript({ googleMapsApiKey: GMAPS_KEY || "" });
+
   const mapRef = useRef(null);
 
   const distanceM = useMemo(() => {
@@ -70,12 +74,9 @@ export default function QuestDetail() {
     (async () => {
       try {
         setLoading(true);
-        const resQ = await fetch(
-          `${API_BASE}/quests?id=${encodeURIComponent(questId)}`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
+        const resQ = await fetch(`${API_BASE}/quests?id=${encodeURIComponent(questId)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         const list = await resQ.json();
         const q = Array.isArray(list) ? list[0] : list;
         if (!q) throw new Error(`Quest ${questId} not found`);
@@ -89,9 +90,7 @@ export default function QuestDetail() {
         const raw = await resL.json();
         const lat = Number.isFinite(Number(raw.lat)) ? Number(raw.lat) : 0;
         const lng = Number.isFinite(Number(raw.lng)) ? Number(raw.lng) : 0;
-        const radius = Number.isFinite(Number(raw.radius))
-          ? Number(raw.radius)
-          : 0;
+        const radius = Number.isFinite(Number(raw.radius)) ? Number(raw.radius) : 0;
         setLoc({ ...raw, lat, lng, radius });
       } catch (e) {
         toast.error(e.message || "Failed to load quest");
@@ -118,14 +117,12 @@ export default function QuestDetail() {
     );
     watchIdRef.current = id;
     return () => {
-      if (watchIdRef.current != null)
-        navigator.geolocation.clearWatch(watchIdRef.current);
+      if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
     };
   }, []);
 
   useEffect(() => {
-    if (mapRef.current && pos)
-      mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
+    if (mapRef.current && pos) mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
   }, [pos]);
 
   const onComplete = async () => {
@@ -134,25 +131,50 @@ export default function QuestDetail() {
       toast.error("You must be inside the quest radius to complete.");
       return;
     }
+
     try {
-      const res = await fetch(
-        `${API_BASE}/user-quests/${userQuestId}/complete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            questId: quest.id,
-            points: quest.pointsAchievable,
-          }),
-        }
-      );
+      // 1) Complete the quest (points, status, etc.)
+      const res = await fetch(`${API_BASE}/user-quests/${userQuestId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          questId: quest.id,
+          points: quest.pointsAchievable,
+        }),
+      });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
+
+      // 2) If the quest is linked to a collectible, add it to the user's inventory (idempotent)
+      if (quest.collectibleId != null) {
+        const award = await fetch(
+          `${API_BASE}/users/${encodeURIComponent(me.id)}/collectibles/${encodeURIComponent(
+            quest.collectibleId
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ earnedAt: new Date().toISOString() }),
+          }
+        );
+        const aj = await award.json().catch(() => ({}));
+        if (!award.ok) {
+          // Not fatal for completion, but tell the user
+          console.warn("Award collectible failed:", aj);
+          toast.error(aj?.error || "Quest done, but collectible could not be awarded.");
+        } else {
+          toast.success("Collectible added to your inventory!");
+        }
+      }
+
       toast.success("Quest completed! Points awarded.");
-      navigate("/");
+      navigate("/dashboard");
     } catch (e) {
       toast.error(e.message || "Completion failed");
     }
@@ -183,17 +205,16 @@ export default function QuestDetail() {
 
   const youIcon = isLoaded
     ? {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: "#1E90FF",
-        fillOpacity: 1,
-        strokeColor: "white",
-        strokeWeight: 2,
-        scale: 10,
-      }
+      path: window.google.maps.SymbolPath.CIRCLE,
+      fillColor: "#1E90FF",
+      fillOpacity: 1,
+      strokeColor: "white",
+      strokeWeight: 2,
+      scale: 10,
+    }
     : undefined;
 
-  const hasRadius =
-    Number.isFinite(Number(loc.radius)) && Number(loc.radius) > 0;
+  const hasRadius = Number.isFinite(Number(loc.radius)) && Number(loc.radius) > 0;
 
   return (
     <div className="page quest-detail">
@@ -208,9 +229,7 @@ export default function QuestDetail() {
           <span>
             <strong>Location:</strong> {loc.name ?? "Unknown"}
           </span>
-          <span>
-            <strong>Radius (m):</strong> {Number(loc.radius) || 0}
-          </span>
+
           {distanceM != null && (
             <span>
               <strong>Distance to target:</strong> {distanceM} m
@@ -223,20 +242,15 @@ export default function QuestDetail() {
         {isLoaded ? (
           <GoogleMap
             onLoad={(map) => (mapRef.current = map)}
-            mapContainerStyle={{
-              width: "100%",
-              height: "420px",
-              borderRadius: "12px",
-            }}
+            mapContainerStyle={{ width: "100%", height: "420px", borderRadius: "12px" }}
             center={mapCenter}
             zoom={16}
-            options={{
-              streetViewControl: false,
-              mapTypeControl: false,
-              fullscreenControl: false,
-            }}
+            options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
           >
+            {/* Quest location */}
             <Marker position={mapCenter} title={loc.name || "Quest location"} />
+
+            {/* Radius circle */}
             {hasRadius && (
               <Circle
                 center={mapCenter}
@@ -244,6 +258,8 @@ export default function QuestDetail() {
                 options={{ strokeOpacity: 0.6, fillOpacity: 0.12 }}
               />
             )}
+
+            {/* User marker */}
             {pos && (
               <Marker
                 position={{ lat: pos.lat, lng: pos.lng }}
@@ -251,6 +267,34 @@ export default function QuestDetail() {
                 title="You"
               />
             )}
+
+            {/* Actual road path
+            {pos && !directions && (
+              <DirectionsService
+                options={{
+                  origin: { lat: pos.lat, lng: pos.lng },
+                  destination: { lat: mapCenter.lat, lng: mapCenter.lng },
+                  travelMode: "WALKING",
+                }}
+                callback={(res) => {
+                  if (res !== null && res.status === "OK") {
+                    setDirections(res);
+                  }
+                }}
+              />
+            )}
+            {directions && (
+              <DirectionsRenderer
+                options={{
+                  directions: directions,
+                  suppressMarkers: true,
+                  polylineOptions: {
+                    strokeColor: "#FF0000",
+                    strokeWeight: 4,
+                  },
+                }}
+              />
+            )} */}
           </GoogleMap>
         ) : (
           <div>Loading map…</div>
@@ -258,31 +302,27 @@ export default function QuestDetail() {
       </section>
 
       <section className="actions">
-        <div className={`radius-indicator ${withinRadius ? "ok" : "far"}`}>
+        <div
+          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
+            }`}
+        >
           {withinRadius
             ? "You are inside the radius"
             : "You are outside the radius"}
+          <br />
+          <span>
+            <strong> Radius (m):</strong> {Number(loc.radius) || 0}
+          </span>
         </div>
 
         <div className="action-buttons">
-          <IconButton
-            icon="check_circle"
-            label="Check-in & Complete"
-            onClick={onComplete}
-            disabled={!withinRadius}
-          />
+          <IconButton icon="check_circle" label="Check-in & Complete" onClick={onComplete} disabled={!withinRadius} />
           <IconButton
             icon="my_location"
             label="Center on me"
-            onClick={() =>
-              pos && mapRef.current?.panTo({ lat: pos.lat, lng: pos.lng })
-            }
+            onClick={() => pos && mapRef.current?.panTo({ lat: pos.lat, lng: pos.lng })}
           />
-          <IconButton
-            icon="arrow_back"
-            label="Back"
-            onClick={() => navigate(-1)}
-          />
+          <IconButton icon="arrow_back" label="Back" onClick={() => navigate(-1)} />
         </div>
       </section>
     </div>

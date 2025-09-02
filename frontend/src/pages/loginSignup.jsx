@@ -267,7 +267,11 @@ const Login = () => {
             <div className="line">
               <p>or</p>
             </div>
-            <button className="google-signup-btn" onClick={handleGoogleSignIn}>
+            <button
+              type="button"
+              className="google-signup-btn"
+              onClick={handleGoogleSignIn}
+            >
               <img src={GoogleImage} alt="Google icon" />
               Sign in with Google
             </button>

@@ -7,7 +7,7 @@ import Logo from "../assets/Logo.png";
 
 const Navbar = () => {
   const location = useLocation();
-  const [, force] = React.useReducer(x => x + 1, 0);
+  const [, force] = React.useReducer((x) => x + 1, 0);
 
   React.useEffect(() => {
     const h = () => force();
@@ -18,12 +18,14 @@ const Navbar = () => {
   const isModerator = window.__IS_MODERATOR__ === true;
 
   const navItems = [
-    ...(isModerator ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }] : []),
+    ...(isModerator
+      ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
+      : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
     { route: "/quests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "map", label: "Map" },
     { route: "/leaderboard", icon: "leaderboard", label: "Leaderboard" },
-    { route: "/profile", icon: "profile", label: "Profile" },
+    { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
   return (
@@ -39,8 +41,9 @@ const Navbar = () => {
             label={item.label}
             className={
               location.pathname === item.route ||
-                location.pathname.startsWith(item.route + "/")
-                ? "active" : ""
+              location.pathname.startsWith(item.route + "/")
+                ? "active"
+                : ""
             }
           />
         ))}
@@ -55,8 +58,9 @@ const Navbar = () => {
             label={item.label}
             className={
               location.pathname === item.route ||
-                location.pathname.startsWith(item.route + "/")
-                ? "active" : ""
+              location.pathname.startsWith(item.route + "/")
+                ? "active"
+                : ""
             }
           />
         ))}

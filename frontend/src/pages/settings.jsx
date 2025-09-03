@@ -26,8 +26,6 @@ const Settings = () => {
 
   return (
     <div className="admin-container">
-      <Toaster />
-
       {/* 🔹 Profile is always displayed */}
       <div className="admin-header">
         <h1 className="heading">Profile</h1>

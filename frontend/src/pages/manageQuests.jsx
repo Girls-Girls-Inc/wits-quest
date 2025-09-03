@@ -180,7 +180,6 @@ export default function ManageQuests() {
 
   return (
     <div className="quests-container">
-      <Toaster />
       <div className="quests-header">
         <h1>Manage Quests</h1>
         {/* <button onClick={loadQuests}>Refresh</button> */}

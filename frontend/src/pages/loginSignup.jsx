@@ -230,7 +230,6 @@ const Login = () => {
 
   return (
     <div className={`container${isActive ? " active" : ""}`}>
-      <Toaster />
       {/* LOGIN FORM */}
       <div className="form-box login">
         <form onSubmit={handleLoginSubmit} className="login-form">

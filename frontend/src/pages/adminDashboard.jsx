@@ -196,7 +196,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-container">
-      <Toaster />
       {!selectedTask ? (
         <div className="admin-header">
           <h1 className="heading">Admin Dashboard</h1>

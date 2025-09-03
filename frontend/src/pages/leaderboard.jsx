@@ -27,7 +27,7 @@ const Leaderboard = () => {
     setRows([]);
     try {
       abortRef.current?.abort();
-    } catch { }
+    } catch {}
     const ac = new AbortController();
     abortRef.current = ac;
     const loadingToast = toast.loading("Loading leaderboard…");
@@ -66,7 +66,6 @@ const Leaderboard = () => {
 
   return (
     <div className="leaderboard-container">
-      <Toaster />
       <div className="leaderboard-header">
         <h1>LEADERBOARD</h1>
         <h2>{BOARDS[boardKey].label}</h2>
@@ -91,8 +90,9 @@ const Leaderboard = () => {
             {Object.keys(BOARDS).map((key) => (
               <li key={key}>
                 <button
-                  className={`dropdown-item ${boardKey === key ? "active" : ""
-                    }`}
+                  className={`dropdown-item ${
+                    boardKey === key ? "active" : ""
+                  }`}
                   onClick={() => {
                     switchBoard(key);
                     document

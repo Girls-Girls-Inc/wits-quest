@@ -18,7 +18,42 @@ import Settings from "./pages/settings";
 const App = () => {
   return (
     <>
-      <Toaster />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: "#002d73",
+            color: "#ffb819",
+          },
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+            iconTheme: {
+              primary: "white",
+              secondary: "green",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+            iconTheme: {
+              primary: "white",
+              secondary: "red",
+            },
+          },
+          loading: {
+            style: {
+              background: "#002d73",
+              color: "#ffb819",
+            },
+          },
+        }}
+      />
 
       <Routes>
         <Route path="/" element={<Login />} />

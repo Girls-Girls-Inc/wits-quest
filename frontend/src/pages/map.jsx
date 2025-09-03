@@ -98,24 +98,28 @@ export default function QuestMap() {
   const [selected, setSelected] = useState(null); // store full marker for InfoWindow
   const [adding, setAdding] = useState(false); // add-to-my-quests button state
 
+  const [myQuestIds, setMyQuestIds] = useState(null);
 
-const [myQuestIds, setMyQuestIds] = useState(null);
-
- // Cache user's quest IDs; only hits the network once per mount
- const fetchMyQuestIds = useCallback(async (token) => {
-   if (myQuestIds instanceof Set) return myQuestIds;
-   const res = await fetch(USER_QUESTS_API, {
-     headers: {
-       Accept: "application/json",
-       Authorization: `Bearer ${token}`,
-     },
-   });
-   const data = await res.json();
-   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-   const ids = new Set((Array.isArray(data) ? data : []).map((r) => String(r.questId)));
-   setMyQuestIds(ids);
-   return ids;
-}, [myQuestIds]);
+  // Cache user's quest IDs; only hits the network once per mount
+  const fetchMyQuestIds = useCallback(
+    async (token) => {
+      if (myQuestIds instanceof Set) return myQuestIds;
+      const res = await fetch(USER_QUESTS_API, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+      const ids = new Set(
+        (Array.isArray(data) ? data : []).map((r) => String(r.questId))
+      );
+      setMyQuestIds(ids);
+      return ids;
+    },
+    [myQuestIds]
+  );
 
   const center = useMemo(() => ({ lat: -26.19, lng: 28.03 }), []);
   const bounds = useMemo(
@@ -249,7 +253,9 @@ const [myQuestIds, setMyQuestIds] = useState(null);
 
       // 2) Duplicate check
       if (ids.has(questId)) {
-        toast.success("This quest is already in your list.", { id: t });
+        toast("⚠️ This quest is already in your list.", {
+          id: t,
+        });
         return;
       }
 
@@ -299,7 +305,6 @@ const [myQuestIds, setMyQuestIds] = useState(null);
 
   return (
     <div>
-      <Toaster />
       <div className="map-container">
         <div className="map-header">
           <h1>Quests Map</h1>

@@ -221,7 +221,6 @@ export default function Quests() {
 
   return (
     <div className="quests-container">
-      <Toaster />
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">

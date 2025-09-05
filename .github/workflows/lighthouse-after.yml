@@ -91,29 +91,84 @@ jobs:
         if: always()
         run: |
           node - <<'NODE'
-          const fs = require('fs'), path = require('path');
-          const pct = x => (x*100).toFixed(0);
-          function listJson(dir){
+          const fs = require('fs'), p = require('path');
+      
+          // Pretty percent or em-dash if missing
+          const pct = v => (typeof v === 'number' ? Math.round(v * 100).toString() : '—');
+      
+          // Read all valid Lighthouse JSONs from a directory
+          function readLhrs(dir) {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir)
-              .filter(f => f.endsWith('.json') && f !== 'manifest.json')
-              .map(f => path.join(dir,f));
+              .filter(f => f.endsWith('.json'))
+              .map(f => p.join(dir, f))
+              .map(fp => {
+                try { return JSON.parse(fs.readFileSync(fp, 'utf8')); }
+                catch { return null; }
+              })
+              // Keep only real Lighthouse reports (have finalUrl + categories)
+              .filter(j => j && j.finalUrl && j.categories);
           }
-          function section(title, dir){
-            const files = listJson(dir);
-            if (!files.length) return '';
-            let md = `### ${title}\n\n| URL | Perf | A11y | Best-Practices | SEO |\n|---|---:|---:|---:|---:|\n`;
-            for (const f of files){
-              const lhr = JSON.parse(fs.readFileSync(f,'utf8'));
-              const c = lhr.categories;
-              md += `| ${lhr.finalUrl} | ${pct(c.performance.score)} | ${pct(c.accessibility.score)} | ${pct(c['best-practices'].score)} | ${pct(c.seo.score)} |\n`;
+      
+          // Group multiple runs by URL and average their scores
+          function groupAndAverage(lhrs) {
+            const byUrl = new Map();
+            for (const j of lhrs) {
+              const url = j.finalUrl;
+              const c = j.categories || {};
+              const row = {
+                url,
+                perf: c.performance?.score,
+                a11y: c.accessibility?.score,
+                bp:   c['best-practices']?.score,
+                seo:  c.seo?.score,
+                pwa:  c.pwa?.score, // may be undefined; we won't show it unless you want to
+              };
+              if (!byUrl.has(url)) byUrl.set(url, []);
+              byUrl.get(url).push(row);
+            }
+            // Average per URL
+            const avg = [];
+            for (const [url, rows] of byUrl.entries()) {
+              const mean = k => {
+                const vals = rows.map(r => r[k]).filter(v => typeof v === 'number');
+                if (!vals.length) return undefined;
+                return vals.reduce((a,b)=>a+b,0) / vals.length;
+              };
+              avg.push({
+                url,
+                perf: mean('perf'),
+                a11y: mean('a11y'),
+                bp:   mean('bp'),
+                seo:  mean('seo'),
+                pwa:  mean('pwa'),
+              });
+            }
+            // Stable sort: home first, then lexicographic
+            avg.sort((a,b) => (a.url === b.url ? 0 : a.url.includes('/') - b.url.includes('/')) || a.url.localeCompare(b.url));
+            return avg;
+          }
+      
+          function section(title, dir) {
+            const lhrs = readLhrs(dir);
+            let md = `### ${title}\n\n`;
+            if (!lhrs.length) {
+              md += `_No Lighthouse JSON found in \`${dir}\`._\n\n`;
+              return md;
+            }
+            const rows = groupAndAverage(lhrs);
+            md += `| URL | Perf | A11y | Best-Practices | SEO |\n|---|---:|---:|---:|---:|\n`;
+            for (const r of rows) {
+              md += `| ${r.url} | ${pct(r.perf)} | ${pct(r.a11y)} | ${pct(r.bp)} | ${pct(r.seo)} |\n`;
             }
             md += '\n';
             return md;
           }
-          let md = `## Lighthouse Results\n(HTML reports are attached as artifacts under **lighthouse-reports**.)\n\n`;
+      
+          let md = `## Lighthouse Results\n`;
+          md += `(Full HTML reports are attached as the **lighthouse-reports** artifact.)\n\n`;
           md += section('Desktop', 'lighthouse-reports/desktop');
           md += section('Mobile',  'lighthouse-reports/mobile');
+      
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
           NODE
-

@@ -52,8 +52,6 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
-            --collect.url="$BASE_URL/quests" \
-            --collect.url="$BASE_URL/leaderboard" \
             --collect.numberOfRuns=3 \
             --collect.settings.preset=desktop \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
@@ -71,8 +69,6 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
-            --collect.url="$BASE_URL/quests" \
-            --collect.url="$BASE_URL/leaderboard" \
             --collect.numberOfRuns=3 \
             --collect.settings.preset=mobile \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \

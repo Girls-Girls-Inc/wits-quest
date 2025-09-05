@@ -5,6 +5,7 @@ on:
   workflow_run:
     workflows: ["Build and deploy Node.js app to Azure Web App - witsquest"]
     types: [completed]
+    branches: [production]
 
   # Optional: let you run it manually from the Actions tab
   workflow_dispatch:

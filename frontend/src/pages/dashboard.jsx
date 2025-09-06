@@ -45,8 +45,7 @@ const Dashboard = () => {
 
   // Fetch leaderboard via backend API (like Leaderboard.jsx)
   const loadLeaderboard = async () => {
-    try 
-    {
+    try {
       setLoadingLeaderboard(true);
 
       // Always fetch yearly (id=12345). Change if you want monthly/weekly.
@@ -66,18 +65,13 @@ const Dashboard = () => {
       }));
 
       setLeaderboard(rows);
-    } 
-    catch (e) 
-    {
+    } catch (e) {
       console.error("Leaderboard fetch failed:", e.message);
       setLeaderboard([]);
-    } 
-    finally 
-    {
+    } finally {
       setLoadingLeaderboard(false);
     }
   };
-
 
   // Fetch Supabase session
   useEffect(() => {
@@ -395,7 +389,9 @@ const Dashboard = () => {
                       <tr
                         key={person.rank}
                         className={
-                          person.name === me?.user_metadata?.username ? "me" : ""
+                          person.name === me?.user_metadata?.username
+                            ? "me"
+                            : ""
                         }
                       >
                         <td>{person.rank}</td>
@@ -408,8 +404,6 @@ const Dashboard = () => {
               </table>
             </div>
           </article>
-
-
 
           {/* Points */}
           <article className="dashboard-card small-card">

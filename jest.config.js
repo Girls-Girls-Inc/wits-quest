@@ -21,7 +21,9 @@ module.exports = {
   },
 
   // transpile react-router-dom if necessary; extend if other node_modules need transpiling
-  transformIgnorePatterns: ["node_modules/(?!(react-router|react-router-dom)/)"],
+  transformIgnorePatterns: [
+    "/node_modules/",
+  ],
 
   moduleFileExtensions: ["js", "jsx", "json"],
 

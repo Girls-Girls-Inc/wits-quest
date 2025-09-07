@@ -5,6 +5,7 @@ import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import Logo from "../assets/Logo.png";
+import env from "../lib/env";
 
 const PasswordResetRequest = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const PasswordResetRequest = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: import.meta.env.VITE_WEB_URL + "/reset",
+        redirectTo: (env.VITE_WEB_URL || "") + "/reset",
       });
 
       if (error) {

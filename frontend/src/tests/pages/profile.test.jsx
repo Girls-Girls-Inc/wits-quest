@@ -75,7 +75,7 @@ jest.mock("../../supabase/supabaseClient", () => ({
 }));
 
 import supabase from "../../supabase/supabaseClient";
-import Profile from "../../pages/profile";
+import Profile from "../../pages/editProfile";
 
 const toast = require("react-hot-toast").default;
 

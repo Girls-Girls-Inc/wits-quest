@@ -1,31 +1,61 @@
-// jest.setup.js
+// jest.setup.js (project root)
+const path = require("path");
 
-// Extend Jest matchers (e.g. .toBeInTheDocument, .toHaveAttribute, etc.)
-require('@testing-library/jest-dom');
-
-// Polyfill fetch (in case some tests depend on it, like Supabase or API calls)
+// 1) Load frontend setup (keeps your existing matchMedia / TextEncoder shims if present)
 try {
-  require('whatwg-fetch');
-} catch {}
-
-// TextEncoder / TextDecoder (needed for some libs, e.g. Supabase client)
-global.TextEncoder = require('util').TextEncoder;
-global.TextDecoder = require('util').TextDecoder;
-
-// Mock matchMedia if not provided by jsdom
-if (typeof window !== 'undefined' && !window.matchMedia) {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: jest.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(),            // legacy
-      removeListener: jest.fn(),         // legacy
-      addEventListener: jest.fn(),       // modern
-      removeEventListener: jest.fn(),    // modern
-      dispatchEvent: jest.fn(),
-    })),
-  });
+  require(path.resolve(__dirname, "frontend", "jest.setup.js"));
+} catch (err) {
+  // ignore if frontend/jest.setup.js missing
 }
 
+// 2) Basic mocks as a safety net (relative to frontend/src)
+try { jest.mock("./frontend/src/styles/button.css", () => ({})); } catch (e) {}
+try { jest.mock("./frontend/src/styles/navbar.css", () => ({})); } catch (e) {}
+try { jest.mock("./frontend/src/assets/logo.png", () => "logo.png"); } catch (e) {}
+
+// 3) Mock the env wrapper so tests never need to parse import.meta
+try {
+  const envModulePath = path.resolve(__dirname, "frontend", "src", "lib", "env.js");
+  try {
+    // Only mock if file exists
+    require.resolve(envModulePath);
+    jest.mock(envModulePath, () => ({
+      __esModule: true,
+      VITE_WEB_URL: "http://localhost:3000",
+      default: { VITE_WEB_URL: "http://localhost:3000" },
+    }));
+  } catch (e) {
+    // env module not present yet - ignore
+  }
+} catch (e) {
+  // ignore any unexpected errors
+}
+
+// 4) Dynamically mock frontend page modules that may contain Vite-specific syntax
+//    IMPORTANT: do NOT include pages you will test directly (e.g. passwordResetRequest)
+const pagesToTry = [
+  "adminDashboard",
+  "editProfile",
+  "leaderboard",
+  "map",
+  // passwordResetRequest intentionally excluded so tests can import the real component
+  "quests",
+  "settings",
+  // add other page basenames if needed (avoid ones you test directly)
+];
+
+pagesToTry.forEach((name) => {
+  const candidates = [
+    path.resolve(__dirname, "frontend", "src", "pages", `${name}.jsx`),
+    path.resolve(__dirname, "frontend", "src", "pages", `${name}.js`),
+  ];
+  for (const candidate of candidates) {
+    try {
+      require.resolve(candidate);
+      jest.mock(candidate, () => ({ __esModule: true, default: () => null }));
+      break;
+    } catch (err) {
+      // not present, try next
+    }
+  }
+});

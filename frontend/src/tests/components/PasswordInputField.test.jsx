@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import "@testing-library/jest-dom";
 
-import React, { useState } from "react";
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -26,18 +26,26 @@ jest.mock("../../assets/logo.png", () => "logo.png");
 const PasswordInputField = require("../../components/PasswordInputField").default;
 
 describe("PasswordInputField", () => {
-  function Controlled({ initial = "", passThrough = {} }) {
-    const [pwd, setPwd] = useState(initial);
-    return (
-      <PasswordInputField
-        id="password"
-        placeholder="Password"
-        value={pwd}
-        onChange={(e) => setPwd(e.target.value)}
-        required
-        {...passThrough}
-      />
-    );
+  // Class wrapper avoids hooks in tests
+  class Controlled extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = { pwd: props.initial || "" };
+    }
+
+    render() {
+      const passThrough = this.props.passThrough || {};
+      return (
+        <PasswordInputField
+          id="password"
+          placeholder="Password"
+          value={this.state.pwd}
+          onChange={(e) => this.setState({ pwd: e.target.value })}
+          required
+          {...passThrough}
+        />
+      );
+    }
   }
 
   it("renders a password input", () => {
@@ -48,9 +56,28 @@ describe("PasswordInputField", () => {
     expect(input).toBeRequired();
   });
 
+  it("toggles password visibility when icon is clicked", async () => {
+    render(<Controlled />);
+    const input = screen.getByPlaceholderText(/^password$/i);
+
+    // initially password
+    expect(input).toHaveAttribute("type", "password");
+
+    // click the eye icon (shows 'visibility')
+    const toggle = screen.getByText("visibility");
+    await userEvent.click(toggle);
+    expect(input).toHaveAttribute("type", "text");
+
+    // click to hide (icon text becomes 'visibility_off')
+    const hideToggle = screen.getByText("visibility_off");
+    await userEvent.click(hideToggle);
+    expect(input).toHaveAttribute("type", "password");
+  });
+
   it("accepts text (controlled)", async () => {
     render(<Controlled />);
     const input = screen.getByPlaceholderText(/^password$/i);
+
     await userEvent.type(input, "Secret123!");
     expect(input).toHaveValue("Secret123!");
   });

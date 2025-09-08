@@ -133,7 +133,7 @@ describe("Login/Signup page", () => {
                 email: "alice@test.com",
                 password: "StrongPass1!",
                 options: { data: { displayName: "Alice" } },
-                redirectTo: `${WEB_URL}/profile`,
+                redirectTo: "http://localhost:3000/dashboard",
             });
         });
 

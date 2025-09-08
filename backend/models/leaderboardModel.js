@@ -116,4 +116,5 @@ const LeaderboardModel = {
   },
 };
 
+LeaderboardModel.currentPeriod = currentPeriod;
 module.exports = LeaderboardModel;

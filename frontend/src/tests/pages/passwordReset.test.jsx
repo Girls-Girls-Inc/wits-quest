@@ -1,19 +1,24 @@
-// frontend/src/pages/__tests__/passwordReset.test.jsx
+// frontend/src/tests/pages/passwordReset.test.jsx
+import React from "react";
+//import "@testing-library/jest-dom/extend-expect";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import PasswordReset from "../../pages/passwordReset";
 import supabase from "../../supabase/supabaseClient";
 import toast from "react-hot-toast";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-// Mock supabase client
+// Mock supabase client as an ES module default export (matches `import supabase from ...`)
 jest.mock("../../supabase/supabaseClient", () => ({
-  auth: {
-    getUser: jest.fn(),
-    updateUser: jest.fn(),
+  __esModule: true,
+  default: {
+    auth: {
+      getUser: jest.fn(),
+      updateUser: jest.fn(),
+    },
   },
 }));
 
-// Mock toast
+// Mock react-hot-toast as an ES module with default and Toaster
 jest.mock("react-hot-toast", () => ({
   __esModule: true,
   default: {
@@ -25,24 +30,34 @@ jest.mock("react-hot-toast", () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
 
+// helper to access the mocked default export
+const mockedSupabase = supabase;
+
 describe("PasswordReset", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders loading initially", async () => {
-    supabase.auth.getUser.mockResolvedValue({ data: null, error: null });
+  it("renders loading initially", () => {
+    // Use an auth check that resolves to something valid — but we assert the initial render
+    mockedSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { aud: "authenticated" } },
+      error: null,
+    });
+
     render(
       <MemoryRouter>
         <PasswordReset />
       </MemoryRouter>
     );
+
+    // initial synchronous render should show the loading placeholder before the effect finishes
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
   it("redirects if user is not authenticated", async () => {
-    const mockNavigate = jest.fn();
-    supabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
+    // Return data.user === null (not the same as data: null)
+    mockedSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     render(
       <MemoryRouter>
@@ -50,21 +65,27 @@ describe("PasswordReset", () => {
       </MemoryRouter>
     );
 
+    // component's useEffect will call getUser — ensure it was called
     await waitFor(() => {
-      // We can't test navigate directly without wrapping useNavigate,
-      // but supabase.auth.getUser should be called
-      expect(supabase.auth.getUser).toHaveBeenCalled();
+      expect(mockedSupabase.auth.getUser).toHaveBeenCalled();
     });
   });
 
   it("shows validation toast for weak password", async () => {
-    supabase.auth.getUser.mockResolvedValue({ data: { user: { aud: "authenticated" } }, error: null });
+    // Authenticated user so page renders the form (not the loading screen)
+    mockedSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { aud: "authenticated" } },
+      error: null,
+    });
 
     render(
       <MemoryRouter>
         <PasswordReset />
       </MemoryRouter>
     );
+
+    // wait until loading disappears and form is present
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
     const passwordInput = screen.getByPlaceholderText("New Password");
 
@@ -76,13 +97,19 @@ describe("PasswordReset", () => {
   });
 
   it("enables submit when password is valid", async () => {
-    supabase.auth.getUser.mockResolvedValue({ data: { user: { aud: "authenticated" } }, error: null });
+    mockedSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { aud: "authenticated" } },
+      error: null,
+    });
 
     render(
       <MemoryRouter>
         <PasswordReset />
       </MemoryRouter>
     );
+
+    // wait for form
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
     const passwordInput = screen.getByPlaceholderText("New Password");
     const submitButton = screen.getByRole("button", { name: /reset password/i });
@@ -99,8 +126,11 @@ describe("PasswordReset", () => {
   });
 
   it("resets password successfully", async () => {
-    supabase.auth.getUser.mockResolvedValue({ data: { user: { aud: "authenticated" } }, error: null });
-    supabase.auth.updateUser.mockResolvedValue({ error: null });
+    mockedSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { aud: "authenticated" } },
+      error: null,
+    });
+    mockedSupabase.auth.updateUser.mockResolvedValue({ error: null });
 
     render(
       <MemoryRouter>
@@ -110,6 +140,9 @@ describe("PasswordReset", () => {
       </MemoryRouter>
     );
 
+    // wait for form
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
+
     const passwordInput = screen.getByPlaceholderText("New Password");
     const submitButton = screen.getByRole("button", { name: /reset password/i });
 
@@ -117,20 +150,26 @@ describe("PasswordReset", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: "Str0ngP@ssword" });
+      expect(mockedSupabase.auth.updateUser).toHaveBeenCalledWith({ password: "Str0ngP@ssword" });
       expect(toast.success).toHaveBeenCalledWith("Password has been reset successfully!");
     });
   });
 
   it("shows error if supabase update fails", async () => {
-    supabase.auth.getUser.mockResolvedValue({ data: { user: { aud: "authenticated" } }, error: null });
-    supabase.auth.updateUser.mockResolvedValue({ error: { message: "Update failed" } });
+    mockedSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { aud: "authenticated" } },
+      error: null,
+    });
+    mockedSupabase.auth.updateUser.mockResolvedValue({ error: { message: "Update failed" } });
 
     render(
       <MemoryRouter>
         <PasswordReset />
       </MemoryRouter>
     );
+
+    // wait for form
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
     const passwordInput = screen.getByPlaceholderText("New Password");
     const submitButton = screen.getByRole("button", { name: /reset password/i });

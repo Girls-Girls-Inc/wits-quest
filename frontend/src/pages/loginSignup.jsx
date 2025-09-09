@@ -12,6 +12,7 @@ import "../index.css";
 import Logo from "../assets/Logo.png";
 import SignupImage from "../assets/Signup3.png";
 import { Link } from "react-router-dom";
+import { VITE_WEB_URL } from "../lib/env";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -189,7 +190,7 @@ const Login = () => {
         options: {
           data: { displayName: signupForm.name },
         },
-        redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
+        redirectTo: VITE_WEB_URL + "/dashboard",
       });
 
       if (data.user.user_metadata.email_verified === true) {
@@ -214,7 +215,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
+          redirectTo: VITE_WEB_URL + "/dashboard",
         },
       });
 

@@ -1,8 +1,7 @@
-.dashboard-container {
+.main-content .dashboard-container {
   max-width: 100%;
   overflow: hidden;
   box-sizing: border-box;
-  width: 100%;
   margin: 0 auto;
   padding: 0;
   background-color: #131f24;
@@ -101,7 +100,7 @@
 }
 
 .dashboard-card {
-  /* max-width: 1000px; */
+  max-width: 100%;
   background: #131f24;
   border-radius: 1rem;
   padding: 1.5rem;
@@ -145,6 +144,7 @@
   width: 120px;
   height: 120px;
   border: 2px solid #333;
+  background-color: var(--wits-yellow);
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -156,7 +156,7 @@
 
 .badge-circle span {
   font-size: 0.75rem;
-  color: #aaa;
+  color: #ffffff;
   margin-bottom: 0.25rem;
 }
 
@@ -273,7 +273,8 @@
 }
 
 .latest-box {
-  border: 1px solid #333;
+  border: 1px solid #555;
+  background-color: var(--wits-blue);
   border-radius: 0.5rem;
   padding: 1rem;
   text-align: center;
@@ -359,10 +360,9 @@
 }
 
 .leaderboard-scroll {
-  max-height: 300px; 
-  overflow-y: auto;    
+  max-height: 300px;
+  overflow-y: auto;
 }
-
 
 .rank {
   font-weight: 600;
@@ -390,4 +390,14 @@
 
 .small-card .stat-number {
   margin: 0;
+}
+.table-container {
+  width: 50%;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
 }

@@ -366,7 +366,7 @@ const Dashboard = () => {
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">
-              <table className="leaderboard-table">
+              <table className="leaderboard-table ">
                 <thead>
                   <tr>
                     <th>#</th>

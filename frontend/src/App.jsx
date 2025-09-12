@@ -66,7 +66,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/quests" element={<Quests />} />
           <Route path="/map" element={<QuestMap />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/display-leaderboard" element={<Leaderboard />} />
           <Route path="/adminDashboard" element={<Admin />} />
           <Route path="/quests/:questId" element={<QuestDetail />} />
           <Route path="/manage-quests" element={<ManageQuests />} />

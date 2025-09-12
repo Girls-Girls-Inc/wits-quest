@@ -21,6 +21,11 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState(null);
 
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token;
+  };
+
   const [questData, setQuestData] = useState({
     name: "",
     description: "",
@@ -68,13 +73,15 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
       try {
+        const token = await getToken();
         const res = await fetch(`${API_BASE}/users`, {
-          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
+        if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        setUsers(Array.isArray(data) ? data : []);
+        setUsers(data);
       } catch (err) {
-        console.error(err);
+        toast.error(`Failed to load users: ${err.message}`);
       }
     };
 
@@ -170,27 +177,26 @@ const AdminDashboard = () => {
 
   const handleToggleModerator = async (userId, newStatus) => {
     try {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.userId === userId ? { ...u, isModerator: newStatus } : u
-        )
-      );
+      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, isModerator: newStatus } : u));
+
+      const token = await getToken();
       const res = await fetch(`${API_BASE}/users/${userId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ isModerator: newStatus }),
       });
+
       if (!res.ok) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.userId === userId ? { ...u, isModerator: !newStatus } : u
-          )
-        );
+        setUsers(prev => prev.map(u => u.userId === userId ? { ...u, isModerator: !newStatus } : u));
         throw new Error(await res.text());
       }
+      toast.success("User updated!");
     } catch (err) {
       toast.error(`Failed to update user: ${err.message}`);
+      console.error("DEBUG PATCH error:", err);
     }
   };
 
@@ -382,23 +388,15 @@ const AdminDashboard = () => {
           {selectedTask === "Admin Privilege" && (
             <div className="quest-list">
               <h2>Manage Admin Privileges</h2>
-              {users.map((u) => (
-                <div
-                  key={u.userId}
-                  className="quest-card flex items-center justify-between p-2 mb-2 border rounded"
-                >
+              {users.map(u => (
+                <div key={u.userId} className="quest-card flex items-center justify-between p-2 mb-2 border rounded">
                   <div>
-                    <strong>{u.email}</strong> (
-                    {u.isModerator ? "Moderator" : "User"})
+                    <strong>{u.email}</strong> ({u.isModerator ? "Moderator" : "User"})
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() =>
-                        handleToggleModerator(u.userId, !u.isModerator)
-                      }
-                      className={`px-2 py-1 rounded text-white ${
-                        u.isModerator ? "bg-red-500" : "bg-green-500"
-                      }`}
+                      onClick={() => handleToggleModerator(u.userId, !u.isModerator)}
+                      className={`px-2 py-1 rounded text-white ${u.isModerator ? "bg-red-500" : "bg-green-500"}`}
                     >
                       {u.isModerator ? "Remove Moderator" : "Make Moderator"}
                     </button>

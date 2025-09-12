@@ -33,6 +33,9 @@ app.use("/locations", locationRoutes);
 const userRoutes = require('./backend/routes/userRoutes');
 app.use("", userRoutes);
 
+const huntRoutes = require('./backend/routes/huntRoutes');
+app.use("", huntRoutes);
+
 
 // Catch-all to serve index.html for SPA routes
 app.get(/.*/, (req, res) => {

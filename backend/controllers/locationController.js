@@ -9,13 +9,54 @@ function toNum(v) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// prefer-first helper, returns first finite number or undefined
 function firstFinite(...vals) {
   for (const v of vals) {
     const n = toNum(v);
     if (Number.isFinite(n)) return n;
   }
   return undefined;
+}
+
+function buildLocationPayload(body) {
+  const name = body.name ?? body.title ?? '';
+  const latitude  = firstFinite(body.lat, body.latitude);
+  const longitude = firstFinite(body.lng, body.longitude, body.lon);
+  const radius    = firstFinite(body.radius, body.radiusMeters, body.range, body.distance);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(radius)) {
+    return { error: 'Invalid latitude/longitude/radius' };
+  }
+  return { name, latitude, longitude, radius };
+}
+
+function buildLocationUpdates(body) {
+  const updates = {};
+
+  if ('name' in body || 'title' in body) {
+    const name = (body.name ?? body.title ?? '').toString().trim();
+    if (!name) throw new Error('Invalid name');
+    updates.name = name;
+  }
+
+  if ('lat' in body || 'latitude' in body) {
+    const latitude = firstFinite(body.lat, body.latitude);
+    if (!Number.isFinite(latitude)) throw new Error('Invalid latitude');
+    updates.latitude = latitude;
+  }
+
+  if ('lng' in body || 'longitude' in body || 'lon' in body) {
+    const longitude = firstFinite(body.lng, body.longitude, body.lon);
+    if (!Number.isFinite(longitude)) throw new Error('Invalid longitude');
+    updates.longitude = longitude;
+  }
+
+  if ('radius' in body || 'radiusMeters' in body || 'range' in body || 'distance' in body) {
+    const radius = firstFinite(body.radius, body.radiusMeters, body.range, body.distance);
+    if (!Number.isFinite(radius)) throw new Error('Invalid radius');
+    updates.radius = radius;
+  }
+
+  return updates;
 }
 
 const LocationController = {
@@ -72,27 +113,54 @@ const LocationController = {
 
   createLocation: async (req, res) => {
     try {
-      const data = await LocationModel.createLocation(req.body);
+      const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+      if (!token) return res.status(401).json({ error: 'Missing Authorization Bearer token' });
+
+      const payload = buildLocationPayload(req.body);
+      if (payload.error) return res.status(400).json({ error: payload.error });
+
+      const data = await LocationModel.createLocation(payload, { token }); // <- pass token
       res.status(201).json(Array.isArray(data) ? data[0] : data);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   },
 
-  updateLocation: async (req, res) => {
+ updateLocation: async (req, res) => {
     try {
-      const { id } = req.params;
-      const data = await LocationModel.updateLocation(id, req.body);
+      const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+      if (!token) return res.status(401).json({ error: 'Missing Authorization Bearer token' });
+
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid id' });
+
+      const updates = buildLocationUpdates(req.body);
+      if (!Object.keys(updates).length) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+
+      const data = await LocationModel.updateLocation(id, updates, { token });
+      // model should use .maybeSingle() and 404 if not found
       res.json(Array.isArray(data) ? data[0] : data);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      const msg = String(err.message || '');
+      if (msg.toLowerCase().includes('row-level security')) {
+        return res.status(403).json({ error: err.message });
+      }
+      if (err.status === 404) {
+        return res.status(404).json({ error: 'Location not found' });
+      }
+      res.status(400).json({ error: err.message });
     }
   },
 
   deleteLocation: async (req, res) => {
     try {
+      const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+      if (!token) return res.status(401).json({ error: 'Missing Authorization Bearer token' });
+
       const { id } = req.params;
-      const { error } = await LocationModel.deleteLocation(id);
+      const { error } = await LocationModel.deleteLocation(id, { token }); // <- pass token
       if (error) return res.status(400).json({ error: error.message });
       res.status(204).send();
     } catch (err) {

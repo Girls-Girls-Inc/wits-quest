@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState(null);
+  const [hunts, setHunts] = useState([]);
 
   const getToken = async () => {
     const {
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
     description: "",
     collectibleId: "",
     locationId: "",
+    huntId: "",
     pointsAchievable: "",
     isActive: true,
   });
@@ -42,6 +44,14 @@ const AdminDashboard = () => {
     latitude: "",
     longitude: "",
     radius: "",
+  });
+
+  const [huntData, setHuntData] = useState({
+    name: "",
+    description: "",
+    question: "",
+    answer: "",
+    timeLimit: "",
   });
 
   // Signed-in Supabase user
@@ -56,18 +66,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [collectRes, locRes] = await Promise.all([
+        const [collectRes, locRes, huntRes] = await Promise.all([
           fetch(`${API_BASE}/collectibles`, { credentials: "include" }),
           fetch(`${API_BASE}/locations`, { credentials: "include" }),
+          fetch(`${API_BASE}/hunts`, { credentials: "include" }),
         ]);
-        const [collectiblesData, locationsData] = await Promise.all([
+        const [collectiblesData, locationsData, huntsData] = await Promise.all([
           collectRes.json(),
           locRes.json(),
+          huntRes.json(),
         ]);
         setCollectibles(
           Array.isArray(collectiblesData) ? collectiblesData : []
         );
         setLocations(Array.isArray(locationsData) ? locationsData : []);
+        setHunts(Array.isArray(huntsData) ? huntsData : []);
       } catch (err) {
         console.error(err);
       }
@@ -98,6 +111,7 @@ const AdminDashboard = () => {
       description: "",
       collectibleId: "",
       locationId: "",
+      huntId: "",
       pointsAchievable: "",
       isActive: true,
     });
@@ -131,6 +145,7 @@ const AdminDashboard = () => {
       collectibleId: questData.collectibleId
         ? Number(questData.collectibleId)
         : null,
+      huntId: questData.huntId ? Number(questData.huntId) : null,
     };
 
     try {
@@ -210,6 +225,36 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleHuntChange = (e) => {
+    const { name, value } = e.target;
+    setHuntData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleHuntSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return toast.error("You must be logged in");
+
+    const huntInsert = {
+      ...huntData,
+      timeLimit: huntData.timeLimit ? Number(huntData.timeLimit) : null,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/hunts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(huntInsert),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to create hunt");
+      toast.success(`Hunt created successfully!`);
+      handleBack();
+    } catch (err) {
+      toast.error(`Failed to create hunt: ${err.message}`);
+    }
+  };
+
   return (
     <div className="admin-container">
       {!selectedTask ? (
@@ -220,6 +265,11 @@ const AdminDashboard = () => {
               icon="task"
               label="Create Quest"
               onClick={() => setSelectedTask("Quest Creation")}
+            />
+            <IconButton
+              icon="task"
+              label="Create Hunt"
+              onClick={() => setSelectedTask("Hunt Creation")}
             />
             <IconButton
               icon="place"
@@ -239,7 +289,12 @@ const AdminDashboard = () => {
             <IconButton
               icon="list_alt"
               label="Manage Quests"
-              onClick={() => navigate("/manage-quests")}
+              onClick={() => navigate("/manageQuests")}
+            />
+            <IconButton
+              icon="list_alt"
+              label="Manage Hunts"
+              onClick={() => navigate("/manageHunts")}
             />
           </div>
         </div>
@@ -302,6 +357,22 @@ const AdminDashboard = () => {
                 </select>
               </div>
               <div className="input-box">
+                <label>Hunt</label>
+                <select
+                  name="huntId"
+                  value={questData.huntId}
+                  onChange={handleQuestChange}
+                >
+                  <option value="">Select a hunt</option>
+                  {hunts.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-box">
                 <InputField
                   type="number"
                   name="pointsAchievable"
@@ -328,6 +399,74 @@ const AdminDashboard = () => {
               </div>
               <div className="flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Quest" />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back"
+                  onClick={handleBack}
+                />
+              </div>
+            </form>
+          )}
+
+          {selectedTask === "Hunt Creation" && (
+            <form className="login-form" onSubmit={handleHuntSubmit}>
+              <div className="input-box">
+                <InputField
+                  icon="flag"
+                  type="text"
+                  name="name"
+                  placeholder="Hunt Name"
+                  value={huntData.name}
+                  onChange={handleHuntChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  icon="description"
+                  type="text"
+                  name="description"
+                  placeholder="Hunt Description"
+                  value={huntData.description}
+                  onChange={handleHuntChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  icon="help"
+                  type="text"
+                  name="question"
+                  placeholder="Hunt Question"
+                  value={huntData.question}
+                  onChange={handleHuntChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  icon="check"
+                  type="text"
+                  name="answer"
+                  placeholder="Correct Answer"
+                  value={huntData.answer}
+                  onChange={handleHuntChange}
+                  required
+                />
+              </div>
+              <div className="input-box">
+                <InputField
+                  icon="timer"
+                  type="number"
+                  name="timeLimit"
+                  placeholder="Time Limit (seconds, optional)"
+                  value={huntData.timeLimit}
+                  onChange={handleHuntChange}
+                />
+              </div>
+              <div className="flex gap-2">
+                <IconButton type="submit" icon="save" label="Create Hunt" />
                 <IconButton
                   type="button"
                   icon="arrow_back"
@@ -405,7 +544,7 @@ const AdminDashboard = () => {
                 >
                   <div>
                     <strong>{u.email}</strong> (
-                    {u.isModerator ? "Moderator" : "User"})
+                    {u.isModerator ? "Admin" : "User"})
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -416,7 +555,7 @@ const AdminDashboard = () => {
                         u.isModerator ? "bg-red-500" : "bg-green-500"
                       }`}
                     >
-                      {u.isModerator ? "Remove Moderator" : "Make Moderator"}
+                      {u.isModerator ? "Remove Admin" : "Make Admin"}
                     </button>
                   </div>
                 </div>

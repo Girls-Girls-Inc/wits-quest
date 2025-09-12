@@ -16,6 +16,7 @@ export default function ManageQuests() {
   const [quests, setQuests] = useState([]);
   const [locations, setLocations] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
+  const [hunts, setHunts] = useState([]); 
   const [editingQuest, setEditingQuest] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -23,6 +24,7 @@ export default function ManageQuests() {
     locationId: "",
     pointsAchievable: "",
     collectibleId: "",
+    huntId: "",
     isActive: true,
   });
 
@@ -64,6 +66,7 @@ export default function ManageQuests() {
           locationId: q.locationId !== null ? Number(q.locationId) : null,
           collectibleId:
             q.collectibleId !== null ? Number(q.collectibleId) : null,
+          huntId: q.huntId !== null ? Number(q.huntId) : null,
           pointsAchievable: q.pointsAchievable ?? 0,
           isActive: q.isActive ?? true,
           imageUrl,
@@ -108,10 +111,21 @@ export default function ManageQuests() {
     }
   };
 
+  const loadHunts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/hunts`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch hunts");
+      setHunts(await res.json());
+    } catch {
+      setHunts([]);
+    }
+  };
+
   useEffect(() => {
     loadQuests();
     loadLocations();
     loadCollectibles();
+    loadHunts();
   }, []);
 
   const handleEditClick = (quest) => {
@@ -123,6 +137,7 @@ export default function ManageQuests() {
       locationId: quest.locationId || "",
       pointsAchievable: quest.pointsAchievable || "",
       collectibleId: quest.collectibleId || "",
+      huntId: quest.huntId || "",
       isActive: quest.isActive ?? true,
     });
   };
@@ -137,6 +152,7 @@ export default function ManageQuests() {
         locationId: formData.locationId || null,
         pointsAchievable: formData.pointsAchievable || 0,
         collectibleId: formData.collectibleId || null,
+        huntId: formData.huntId || null,
         isActive: formData.isActive ?? true,
       };
       const questId = Number(editingQuest.id);
@@ -259,6 +275,24 @@ export default function ManageQuests() {
               ))}
             </select>
           </div>
+          <div className="input-box">
+            <label>Hunt</label>
+            <select
+              name="huntId"
+              value={formData.huntId}
+              onChange={(e) =>
+                setFormData({ ...formData, huntId: e.target.value || "" })
+              }
+            >
+              <option value="">Select a hunt</option>
+              {hunts.map((hunt) => (
+                <option key={hunt.id} value={hunt.id}>
+                  {hunt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
 
           <div className="input-box">
             <InputField
@@ -324,6 +358,7 @@ export default function ManageQuests() {
                 {collectibles.find((c) => c.id === q.collectibleId)?.name ||
                   "-"}
               </p>
+              <p><strong>Hunt:</strong> {hunts.find((h) => h.id === q.huntId)?.name || "-"}</p>
             </div>
             <div className="quest-action flex gap-2">
               {/* <button

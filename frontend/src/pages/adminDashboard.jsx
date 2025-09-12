@@ -1,4 +1,3 @@
-// src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import "../styles/layout.css";
@@ -272,7 +271,7 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Hunt Creation")}
             />
             <IconButton
-              icon="place"
+              icon="edit_location"
               label="Add Location"
               onClick={() => setSelectedTask("Location Creation")}
             />
@@ -282,17 +281,17 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Admin Privilege")}
             />
             <IconButton
-              icon="badge"
+              icon="award_star"
               label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
             />
             <IconButton
-              icon="list_alt"
+              icon="star"
               label="Manage Quests"
               onClick={() => navigate("/manageQuests")}
             />
             <IconButton
-              icon="list_alt"
+              icon="stars"
               label="Manage Hunts"
               onClick={() => navigate("/manageHunts")}
             />
@@ -486,6 +485,7 @@ const AdminDashboard = () => {
                   placeholder="Location Name"
                   value={locationData.name}
                   onChange={handleLocationChange}
+                  icon="globe"
                   required
                 />
               </div>
@@ -497,6 +497,7 @@ const AdminDashboard = () => {
                   placeholder="Latitude"
                   value={locationData.latitude}
                   onChange={handleLocationChange}
+                  icon="globe_location_pin"
                   required
                 />
               </div>
@@ -508,6 +509,7 @@ const AdminDashboard = () => {
                   placeholder="Longitude"
                   value={locationData.longitude}
                   onChange={handleLocationChange}
+                  icon="globe_location_pin"
                   required
                 />
               </div>
@@ -519,6 +521,7 @@ const AdminDashboard = () => {
                   placeholder="Radius"
                   value={locationData.radius}
                   onChange={handleLocationChange}
+                  icon="lens_blur"
                   required
                 />
               </div>
@@ -552,7 +555,7 @@ const AdminDashboard = () => {
                         handleToggleModerator(u.userId, !u.isModerator)
                       }
                       className={`px-2 py-1 rounded text-white ${
-                        u.isModerator ? "bg-red-500" : "bg-green-500"
+                        u.isModerator ? "btn-red" : "btn-green"
                       }`}
                     >
                       {u.isModerator ? "Remove Admin" : "Make Admin"}

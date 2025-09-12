@@ -256,48 +256,50 @@ const Dashboard = () => {
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th>Quest</th>
-                  <th>Points</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingOngoing ? (
+            <div className="table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
                   <tr>
-                    <td colSpan={5}>Loading quests…</td>
+                    <th>Quest</th>
+                    <th>Points</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                ) : ongoing.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No ongoing quests</td>
-                  </tr>
-                ) : (
-                  ongoing.map((q) => (
-                    <tr key={q.id}>
-                      <td>{q.name}</td>
-                      <td>{q.points}</td>
-                      <td>{q.location}</td>
-                      <td>{q.isComplete ? "Completed" : "In progress"}</td>
-                      <td>
-                        <button
-                          className="dash-btn"
-                          onClick={() =>
-                            navigate(`/quests/${q.questId}?uq=${q.id}`)
-                          }
-                          disabled={!q.questId}
-                        >
-                          View
-                        </button>
-                      </td>
+                </thead>
+                <tbody>
+                  {loadingOngoing ? (
+                    <tr>
+                      <td colSpan={5}>Loading quests…</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : ongoing.length === 0 ? (
+                    <tr>
+                      <td colSpan={5}>No ongoing quests</td>
+                    </tr>
+                  ) : (
+                    ongoing.map((q) => (
+                      <tr key={q.id}>
+                        <td>
+                          <button
+                            className="dash-btn"
+                            onClick={() =>
+                              navigate(`/quests/${q.questId}?uq=${q.id}`)
+                            }
+                            disabled={!q.questId}
+                          >
+                            View
+                          </button>
+                        </td>
+                        <td>{q.name}</td>
+                        <td>{q.points}</td>
+                        <td>{q.location}</td>
+                        <td>{q.isComplete ? "Completed" : "In progress"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
           {/* Locations Card */}
           <article className="dashboard-card">

@@ -1,5 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100..900&display=swap");
 
+.btn-green {
+  background-color: green;
+}
+.btn-red {
+  background-color: red;
+}
 .admin-container {
   display: flex;
   flex-direction: column;
@@ -108,7 +114,7 @@
 }
 
 .input-box select option {
-  background: #1f2a33;
+  background-color: #1f2a33 !important;
   color: #eee;
 }
 

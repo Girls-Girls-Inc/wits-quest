@@ -15,6 +15,11 @@
   gap: 10px;
 }
 
+.quest-buttons {
+  display: flex;
+  flex-direction: row;
+}
+
 .quest-list {
   display: flex;
   flex-direction: column;

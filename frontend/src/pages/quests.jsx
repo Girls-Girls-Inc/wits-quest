@@ -224,6 +224,7 @@ export default function Quests() {
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">
+          <IconButton icon="map" onClick={() => navigate(`/map`)} label="Map" />
           <IconButton icon="refresh" onClick={loadQuests} label="Refresh" />
         </div>
       </div>

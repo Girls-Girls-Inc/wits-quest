@@ -5,30 +5,9 @@ const UserController = {
   // GET /users?userId=...&email=...&isModerator=true&createdBefore=...&createdAfter=...
   getAllUsers: async (req, res) => {
     try {
-      const { userId, email, isModerator, createdBefore, createdAfter } = req.query;
-
-      // Cast isModerator query param to boolean if provided
-      let modFlag;
-      if (typeof isModerator !== 'undefined') {
-        const v = String(isModerator).toLowerCase().trim();
-        if (['true', '1', 't', 'yes', 'y'].includes(v)) modFlag = true;
-        else if (['false', '0', 'f', 'no', 'n'].includes(v)) modFlag = false;
-        else modFlag = undefined; // ignore if malformed
-      }
-
-      // Validate dates
-      const cb = createdBefore && !isNaN(Date.parse(createdBefore)) ? new Date(createdBefore).toISOString() : undefined;
-      const ca = createdAfter && !isNaN(Date.parse(createdAfter)) ? new Date(createdAfter).toISOString() : undefined;
-
-      const users = await UserModel.getAllUsers({
-        userId,
-        email,
-        isModerator: modFlag,
-        createdBefore: cb,
-        createdAfter: ca,
-      });
-
-      res.json(users); // always array
+      const token = req.headers.authorization?.split(' ')[1];
+      const users = await UserModel.getAllUsers(token);
+      res.json(users);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -46,12 +25,14 @@ const UserController = {
     }
   },
 
-  // OPTIONAL: PATCH /users/:id (move logic here instead of inline in route)
   patchUser: async (req, res) => {
     try {
       const { id } = req.params;
       const { isModerator } = req.body;
-      const updated = await UserModel.updateById(id, { isModerator });
+      const token = req.headers.authorization?.split(' ')[1];
+
+      const updated = await UserModel.updateById(id, { isModerator }, token);
+
       res.json(updated || { userId: id, isModerator });
     } catch (err) {
       res.status(500).json({ message: err.message });

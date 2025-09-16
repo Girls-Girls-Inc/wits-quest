@@ -8,8 +8,7 @@ const admin = createClient(
   { auth: { persistSession: false } }
 );
 
-// Prefer the passed sb (per-request client) when you need RLS;
-// fall back to admin when you don't.
+
 const pick = (sb) => sb || admin;
 
 const QuestModel = {

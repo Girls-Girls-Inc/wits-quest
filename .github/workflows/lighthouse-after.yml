@@ -53,6 +53,16 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/reset-request" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/quests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/display-leaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manage-quests" \
             --collect.numberOfRuns=3 \
             --collect.settings.preset=desktop \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
@@ -70,6 +80,16 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/reset-request" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/quests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/display-leaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manage-quests" \
             --collect.numberOfRuns=3 \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
             --collect.settings.chromeFlags="--no-sandbox" \

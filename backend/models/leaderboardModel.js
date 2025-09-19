@@ -1,10 +1,8 @@
 // backend/models/leaderboardModel.js
 const { createClient } = require("@supabase/supabase-js");
 
-// Read client (anon) – matches your current code
 const readClient = require("../supabase/supabaseClient");
 
-// Admin client for trusted writes / RPC (bypasses RLS)
 const admin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,

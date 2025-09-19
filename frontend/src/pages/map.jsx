@@ -10,7 +10,7 @@ import "../styles/map.css";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
 
-const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
+const API_BASE = import.meta.env.VITE_WEB_URL;
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "75vw", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
@@ -42,7 +42,6 @@ const asLatLng = (obj) => {
 const questInlinePos = (q) =>
   asLatLng(q) || asLatLng(q.location) || asLatLng(q.geo) || null;
 
-// meters → degrees at given latitude (approx)
 const metersToDegrees = (meters, atLatDeg) => {
   const dLat = meters / 111_320; // ~ meters per degree latitude
   const dLng = meters / (111_320 * Math.cos((atLatDeg * Math.PI) / 180));
@@ -225,7 +224,6 @@ export default function QuestMap() {
 
   useEffect(() => {
     loadQuests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resolveQuestId = (marker) =>

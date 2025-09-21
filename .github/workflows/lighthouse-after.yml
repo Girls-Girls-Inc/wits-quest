@@ -58,7 +58,7 @@ jobs:
             --collect.url="$BASE_URL/profile" \
             --collect.url="$BASE_URL/settings" \
             --collect.url="$BASE_URL/dashboard" \
-            --collect.url="$BASE_URL/quests" \
+            --collect.url="$BASE_URL/display-quests" \
             --collect.url="$BASE_URL/map" \
             --collect.url="$BASE_URL/display-leaderboard" \
             --collect.url="$BASE_URL/adminDashboard" \
@@ -85,7 +85,7 @@ jobs:
             --collect.url="$BASE_URL/profile" \
             --collect.url="$BASE_URL/settings" \
             --collect.url="$BASE_URL/dashboard" \
-            --collect.url="$BASE_URL/quests" \
+            --collect.url="$BASE_URL/display-quests" \
             --collect.url="$BASE_URL/map" \
             --collect.url="$BASE_URL/display-leaderboard" \
             --collect.url="$BASE_URL/adminDashboard" \

@@ -286,7 +286,7 @@ const Dashboard = () => {
                         <button
                           className="dash-btn"
                           onClick={() =>
-                            navigate(`/quests/${q.questId}?uq=${q.id}`)
+                            navigate(`/display-quests/${q.questId}?uq=${q.id}`)
                           }
                           disabled={!q.questId}
                         >
@@ -422,3 +422,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

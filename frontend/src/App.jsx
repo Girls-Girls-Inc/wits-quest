@@ -66,11 +66,11 @@ const App = () => {
           <Route path="/profile" element={<RequireSession><Profile /></RequireSession>} />
           <Route path="/settings" element={<RequireSession><Settings /></RequireSession>} />
           <Route path="/dashboard" element={<RequireSession><Dashboard /></RequireSession>} />
-          <Route path="/quests" element={<Quests />} />
+          <Route path="/display-quests" element={<Quests />} />
           <Route path="/map" element={<QuestMap />} />
           <Route path="/display-leaderboard" element={<Leaderboard />} />
           <Route path="/adminDashboard" element={<RequireSession><Admin /></RequireSession>} />
-          <Route path="/quests/:questId" element={<RequireSession><QuestDetail /></RequireSession>} />
+          <Route path="/display-quests/:questId" element={<RequireSession><QuestDetail /></RequireSession>} />
           <Route path="/manage-quests" element={<RequireSession><ManageQuests /></RequireSession>} />
         </Route>
       </Routes>
@@ -79,3 +79,4 @@ const App = () => {
 };
 
 export default App;
+

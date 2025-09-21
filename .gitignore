@@ -8,3 +8,5 @@ coverage/
 ./frontend/.env
 ./backend/.env
 
+.vscode
+

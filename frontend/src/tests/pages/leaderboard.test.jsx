@@ -17,7 +17,14 @@ const jsonResponse = (body, status = 200) => ({
   text: async () => (typeof body === "string" ? body : JSON.stringify(body)),
 });
 
+process.env.VITE_WEB_URL = process.env.VITE_WEB_URL || "http://localhost:3000";
+
 /* ========================= Mocks ========================= */
+
+// Override global Jest setup that auto-mocks the page module
+jest.mock("../../pages/leaderboard.jsx", () =>
+  jest.requireActual("../../pages/leaderboard.jsx")
+);
 
 // Minimal IconButton mock
 jest.mock("../../components/IconButton", () => (props) => (
@@ -96,7 +103,7 @@ describe("Leaderboard page", () => {
     global.fetch = jest.fn();
   });
 
-  it.skip("loads Yearly on mount, renders rows, and shows success toast", async () => {
+  it("loads Yearly on mount, renders rows, and shows success toast", async () => {
     installDefaultLeaderboardFetch();
     const toast = (await import("react-hot-toast")).default;
 
@@ -120,7 +127,8 @@ describe("Leaderboard page", () => {
     });
 
     // Table rows rendered; verify order, names, points, and trophies for top 3
-    const body = screen.getByRole("rowgroup", { name: "" }) || screen.getAllByRole("rowgroup")[1];
+    const rowgroups = screen.getAllByRole("rowgroup");
+    const body = rowgroups[rowgroups.length - 1];
     const rows = within(body).getAllByRole("row");
     // Expect 4 data rows
     expect(rows).toHaveLength(4);
@@ -149,7 +157,7 @@ describe("Leaderboard page", () => {
     expect(within(rows[3]).queryByText("emoji_events")).not.toBeInTheDocument();
   });
 
-  it.skip("switches to Monthly via dropdown and updates header + rows", async () => {
+  it("switches to Monthly via dropdown and updates header + rows", async () => {
     installDefaultLeaderboardFetch();
 
     render(<Leaderboard />);
@@ -157,7 +165,7 @@ describe("Leaderboard page", () => {
     expect(await screen.findByRole("heading", { name: /yearly/i })).toBeInTheDocument();
 
     // Open dropdown then click Monthly
-    await userEvent.click(screen.getByRole("button", { name: /yearly/i }));
+    await userEvent.click(screen.getAllByRole("button", { name: /yearly/i })[0]);
     await userEvent.click(screen.getByRole("button", { name: /monthly/i }));
 
     // Header updates

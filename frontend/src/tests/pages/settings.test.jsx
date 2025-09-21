@@ -54,7 +54,11 @@ jest.mock("../../supabase/supabaseClient", () => ({
   },
 }));
 
-import Settings from "../../pages/settings";
+const path = require("path");
+const settingsAbsPath = path.resolve(__dirname, "../../pages/settings.jsx");
+jest.unmock(settingsAbsPath);
+const Settings = require(settingsAbsPath).default;
+
 import toast from "react-hot-toast";
 
 /* ========================= Helpers ========================= */

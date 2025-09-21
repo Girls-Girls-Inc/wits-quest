@@ -25,7 +25,16 @@ const jsonResponse = (body, status = 200) => ({
 
 /* ========================= Mocks ========================= */
 
-// react-hot-toast — mirror your other tests
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => {
+  const React = require("react");
+  return {
+    useNavigate: () => mockNavigate,
+    Link: ({ to, children }) => React.createElement("a", { href: to }, children),
+  };
+});
+
+// react-hot-toast -- mirror your other tests
 jest.mock("react-hot-toast", () => {
   const mockToast = {
     success: jest.fn(),
@@ -218,6 +227,13 @@ function mockHappyFetch() {
 }
 
 
+// Style imports noop for CSS modules
+jest.mock("../../styles/map.css", () => ({}));
+// Simple IconButton mock so labels render as text
+jest.mock("../../components/IconButton", () => (props) => (
+  <button {...props}>{props.label || "Button"}</button>
+));
+
 // Mock supabase client to avoid env requirements and network
 jest.mock("../../supabase/supabaseClient", () => ({
   __esModule: true,
@@ -239,7 +255,7 @@ describe("QuestMap page", () => {
     mockHappyFetch();
 
     render(<QuestMap />);
-    expect(screen.getByText(/Loading map…/i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading map/i)).toBeInTheDocument();
 
     // restore for other tests
     setMapLoadState({ isLoaded: true, loadError: null });
@@ -285,7 +301,7 @@ describe("QuestMap page", () => {
     expect(within(info).getByText(/Main ceremony area/i)).toBeInTheDocument();
     expect(within(info).getByText(/Points:\s*100/i)).toBeInTheDocument();
 
-    // Click another marker — should show inactive status and location id
+    // Click another marker -- should show inactive status and location id
     await userEvent.click(m2);
     const info2 = await screen.findByRole("dialog", { name: /info-window/i });
     expect(within(info2).getByText(/Library/i)).toBeInTheDocument();

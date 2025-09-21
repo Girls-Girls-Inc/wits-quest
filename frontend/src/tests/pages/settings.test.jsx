@@ -1,4 +1,3 @@
-
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -10,8 +9,9 @@ if (!global.TextDecoder) global.TextDecoder = TextDecoder;
 
 /* ========================= Mocks ========================= */
 
-// Router: only useNavigate needed for this page
 const mockNavigate = jest.fn();
+const mockSignOut = jest.fn();
+
 jest.mock("react-router-dom", () => {
   const React = require("react");
   return {
@@ -35,7 +35,6 @@ jest.mock("react-hot-toast", () => {
   };
 });
 
-// Minimal stubs
 jest.mock("../../components/IconButton", () => (props) => (
   <button {...props}>{props.label || "Button"}</button>
 ));
@@ -46,7 +45,16 @@ jest.mock("../../styles/login-signup.css", () => ({}));
 jest.mock("../../styles/adminDashboard.css", () => ({}));
 jest.mock("../../styles/button.css", () => ({}));
 
-import Settings from "../../pages/Settings";
+jest.mock("../../supabase/supabaseClient", () => ({
+  __esModule: true,
+  default: {
+    auth: {
+      signOut: mockSignOut,
+    },
+  },
+}));
+
+import Settings from "../../pages/settings";
 import toast from "react-hot-toast";
 
 /* ========================= Helpers ========================= */
@@ -54,6 +62,8 @@ import toast from "react-hot-toast";
 beforeEach(() => {
   jest.clearAllMocks();
   mockNavigate.mockReset();
+  mockSignOut.mockReset();
+  mockSignOut.mockResolvedValue({ error: null });
   window.open = jest.fn();
 });
 
@@ -84,20 +94,6 @@ describe("Settings page", () => {
     expect(toast.success).not.toHaveBeenCalledWith("Loading your submitted feedback...");
   });
 
-//   it("selecting 'Logout' shows confirm/cancel and triggers a toast", async () => {
-//     render(<Settings />);
-
-//     await userEvent.click(screen.getByRole("button", { name: /logout/i }));
-
-//     await waitFor(() => {
-//       expect(toast.error).toHaveBeenCalledWith("Ready to log out?");
-//     });
-
-//     // Confirm + Cancel should appear
-//     expect(screen.getByRole("button", { name: /confirm logout/i })).toBeInTheDocument();
-//     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
-//   });
-
   it("canceling logout hides confirm/cancel actions", async () => {
     render(<Settings />);
 
@@ -113,7 +109,7 @@ describe("Settings page", () => {
     });
   });
 
-  it("confirming logout shows success toast and navigates home", async () => {
+  it("confirming logout revokes the session, shows success toast, and navigates to login", async () => {
     render(<Settings />);
 
     await userEvent.click(screen.getByRole("button", { name: /logout/i }));
@@ -124,7 +120,15 @@ describe("Settings page", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /confirm logout/i }));
 
-    expect(toast.success).toHaveBeenCalledWith("Logged out!");
-    expect(mockNavigate).toHaveBeenCalledWith("/");
+    await waitFor(() => {
+      expect(mockSignOut).toHaveBeenCalledWith({ scope: "global" });
+      expect(toast.success).toHaveBeenCalledWith("Logged out!");
+      expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /confirm logout/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    });
   });
 });

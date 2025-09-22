@@ -6,7 +6,7 @@
     "dev": "concurrently \"npm run backend --prefix ..\" \"vite\"",
     "install-all": "npm install --prefix frontend && npm install --prefix backend && npm install cors",
     "prebuild": "npm run install-all",
-    "build": "npm run frontend:build",
+    "build": "npm run frontend:build && npm audit",
     "frontend:build": "npm run build --prefix frontend",
     "start": "node app.js",
     "serve": "npm run build && npm start",

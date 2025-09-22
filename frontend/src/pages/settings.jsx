@@ -7,6 +7,7 @@ import "../styles/button.css";
 import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
 import Profile from "./editProfile";
+import supabase from "../supabase/supabaseClient";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -14,6 +15,19 @@ const Settings = () => {
 
   const handleBack = () => {
     setSelectedTask(null);
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut({ scope: "global" });
+
+    if (error) {
+      toast.error("Failed to log out. Please try again.");
+      return;
+    }
+
+    toast.success("Logged out!");
+    setSelectedTask(null);
+    navigate("/login", { replace: true });
   };
 
   useEffect(() => {
@@ -26,7 +40,7 @@ const Settings = () => {
 
   return (
     <div className="admin-container">
-      {/* 🔹 Profile is always displayed */}
+      {/* Profile is always displayed */}
       <div className="admin-header">
         <h1 className="heading">Profile</h1>
         <Profile />
@@ -50,7 +64,7 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* 🔹 Conditional sections */}
+      {/* Conditional sections */}
       {selectedTask === "Give Feedback" && (
         <div className="quest-list">
           <div className="btn flex gap-2 mt-2">
@@ -71,10 +85,7 @@ const Settings = () => {
               type="button"
               icon="check"
               label="Confirm Logout"
-              onClick={() => {
-                toast.success("Logged out!");
-                navigate("/");
-              }}
+              onClick={handleLogout}
             />
             <IconButton
               type="button"
@@ -90,3 +101,5 @@ const Settings = () => {
 };
 
 export default Settings;
+
+

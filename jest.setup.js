@@ -1,14 +1,14 @@
-// jest.setup.js (project root)
 const path = require("path");
 
-// 1) Load frontend setup (keeps your existing matchMedia / TextEncoder shims if present)
 try {
   require(path.resolve(__dirname, "frontend", "jest.setup.js"));
 } catch (err) {
-  // ignore if frontend/jest.setup.js missing
 }
 
-// 2) Basic mocks as a safety net (relative to frontend/src)
+try {
+  require('dotenv').config({ path: path.resolve(__dirname, 'backend', '.env') });
+} catch {}
+
 try { jest.mock("./frontend/src/styles/button.css", () => ({})); } catch (e) {}
 try { jest.mock("./frontend/src/styles/navbar.css", () => ({})); } catch (e) {}
 try { jest.mock("./frontend/src/assets/logo.png", () => "logo.png"); } catch (e) {}

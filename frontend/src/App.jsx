@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Layout from "./pages/Layout";
 import Login from "./pages/loginSignup";
 import Profile from "./pages/editProfile";
@@ -15,6 +15,7 @@ import QuestDetail from "./pages/questDetail";
 import ManageQuests from "./pages/manageQuests";
 import ManageHunts from "./pages/manageHunts";
 import Settings from "./pages/settings";
+import RequireSession from "./components/RequireSession";
 
 const App = () => {
   return (
@@ -57,21 +58,70 @@ const App = () => {
       />
 
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/reset" element={<PasswordReset />} />
         <Route path="/reset-request" element={<PasswordResetRequest />} />
 
         <Route element={<Layout />}>
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/quests" element={<Quests />} />
+          <Route
+            path="/"
+            element={
+              <RequireSession>
+                <Dashboard />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireSession>
+                <Profile />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RequireSession>
+                <Settings />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireSession>
+                <Dashboard />
+              </RequireSession>
+            }
+          />
+          <Route path="/display-quests" element={<Quests />} />
           <Route path="/map" element={<QuestMap />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/adminDashboard" element={<Admin />} />
-          <Route path="/quests/:questId" element={<QuestDetail />} />
-          <Route path="/manageQuests" element={<ManageQuests />} />
-          <Route path="/manageHunts" element={<ManageHunts />} />
+          <Route path="/display-leaderboard" element={<Leaderboard />} />
+          <Route
+            path="/adminDashboard"
+            element={
+              <RequireSession>
+                <Admin />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/display-quests/:questId"
+            element={
+              <RequireSession>
+                <QuestDetail />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/manage-quests"
+            element={
+              <RequireSession>
+                <ManageQuests />
+              </RequireSession>
+            }
+          />
         </Route>
       </Routes>
     </>

@@ -23,6 +23,7 @@ export default function Quests() {
   const [activeLocation, setActiveLocation] = useState(null);
   const [jwt, setJwt] = useState(null);
   const [myQuestIds, setMyQuestIds] = useState(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   // guard against double-click / concurrent adds of the same quest
   const pendingAdds = useRef(new Set());
 
@@ -123,6 +124,16 @@ export default function Quests() {
     setActiveLocation(null);
   };
 
+  const handlePromptLogin = () => {
+    setShowLoginPrompt(false);
+    closeModal();
+    navigate("/login");
+  };
+
+  const handlePromptDismiss = () => {
+    setShowLoginPrompt(false);
+  };
+
   const addToMyQuests = async (questOrId) => {
     // derive a single stable id (string)
     const questIdStr =
@@ -146,7 +157,11 @@ export default function Quests() {
         data: { session },
       } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) throw new Error("Please sign in.");
+      if (!token) {
+        toast.dismiss(t);
+        setShowLoginPrompt(true);
+        return;
+      }
 
       const ids = await fetchMyQuestIds(token);
       if (ids.has(questIdStr)) {
@@ -343,6 +358,34 @@ export default function Quests() {
                     onClick={() => addToMyQuests(activeQuest)}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLoginPrompt && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="login-required-title"
+          onClick={handlePromptDismiss}
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="login-required-title">Login Required</h2>
+              <p>You need an account to save quests. Would you like to sign in now?</p>
+              <div className="modal-actions">
+                <IconButton
+                  icon="login"
+                  label="Go to Login"
+                  onClick={handlePromptLogin}
+                />
+                <IconButton
+                  icon="close"
+                  label="Continue Browsing"
+                  onClick={handlePromptDismiss}
+                />
               </div>
             </div>
           </div>

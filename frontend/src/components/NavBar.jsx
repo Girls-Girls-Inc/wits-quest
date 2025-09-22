@@ -3,7 +3,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import NavButton from "./NavButton";
 import "../styles/navbar.css";
-import Logo from "../assets/logo.png";
+import Logo from "../assets/Logo.png";
 
 const Navbar = () => {
   const location = useLocation();
@@ -23,9 +23,9 @@ const Navbar = () => {
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/quests", icon: "logo", label: "Quests" },
+    { route: "/display-quests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "map", label: "Map" },
-    { route: "/leaderboard", icon: "leaderboard", label: "Leaderboard" },
+    { route: "/display-leaderboard", icon: "leaderboard", label: "Leaderboard" },
     { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
@@ -35,8 +35,8 @@ const Navbar = () => {
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/quests", icon: "logo", label: "Quests" },
-    { route: "/leaderboard", icon: "leaderboard", label: "Board" },
+    { route: "/display-quests", icon: "logo", label: "Quests" },
+    { route: "/display-leaderboard", icon: "leaderboard", label: "Board" },
     { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
@@ -81,3 +81,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

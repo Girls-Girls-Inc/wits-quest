@@ -1,4 +1,3 @@
-// controllers/collectiblesController.js
 const { createClient } = require('@supabase/supabase-js');
 const CollectiblesModel = require('../models/collectiblesModel');
 

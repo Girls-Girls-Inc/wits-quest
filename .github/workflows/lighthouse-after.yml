@@ -1,0 +1,194 @@
+name: Lighthouse
+
+on:
+  # Run automatically after your deploy workflow completes
+  workflow_run:
+    workflows: ["Build and deploy Node.js app to Azure Web App - witsquest"]
+    types: [completed]
+    branches: [production]
+
+  # Optional: let you run it manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    # Run if the deploy succeeded, or if manually dispatched
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    env:
+      BASE_URL: https://witsquest-hjggaxgwfgbeh0gk.brazilsouth-01.azurewebsites.net
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Install Chrome reliably for Lighthouse
+      - name: Setup Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Wait for site to be live (warm-up)
+        run: |
+          for i in {1..30}; do
+            code=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE_URL")
+            echo "Attempt $i: $code"
+            if [ "$code" = "200" ] || [ "$code" = "301" ] || [ "$code" = "302" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+      - name: Install Lighthouse CI
+        run: npm i -g @lhci/cli@0.13.x
+
+      # ----- Desktop run -----
+      - name: Run Lighthouse (desktop)
+        run: |
+          lhci autorun \
+            --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/reset-request" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/display-quests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/display-leaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manage-quests" \
+            --collect.numberOfRuns=3 \
+            --collect.settings.preset=desktop \
+            --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
+            --collect.settings.chromeFlags="--no-sandbox" \
+            --upload.target=temporary-public-storage
+      - name: Save desktop reports
+        if: always()
+        run: |
+          mkdir -p lighthouse-reports/desktop
+          cp -r .lighthouseci/* lighthouse-reports/desktop/ || true
+          rm -rf .lighthouseci/* || true
+
+      # ----- Mobile run -----
+      - name: Run Lighthouse (mobile)
+        run: |
+          lhci autorun \
+            --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/reset-request" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/display-quests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/display-leaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manage-quests" \
+            --collect.numberOfRuns=3 \
+            --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
+            --collect.settings.chromeFlags="--no-sandbox" \
+            --upload.target=temporary-public-storage
+      - name: Save mobile reports
+        if: always()
+        run: |
+          mkdir -p lighthouse-reports/mobile
+          cp -r .lighthouseci/* lighthouse-reports/mobile/ || true
+
+      - name: Upload artifact (desktop + mobile)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports
+
+      - name: Post Lighthouse results to GitHub Summary
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs = require('fs'), p = require('path');
+      
+          // Pretty percent or em-dash if missing
+          const pct = v => (typeof v === 'number' ? Math.round(v * 100).toString() : '—');
+      
+          // Read all valid Lighthouse JSONs from a directory
+          function readLhrs(dir) {
+            if (!fs.existsSync(dir)) return [];
+            return fs.readdirSync(dir)
+              .filter(f => f.endsWith('.json'))
+              .map(f => p.join(dir, f))
+              .map(fp => {
+                try { return JSON.parse(fs.readFileSync(fp, 'utf8')); }
+                catch { return null; }
+              })
+              // Keep only real Lighthouse reports (have finalUrl + categories)
+              .filter(j => j && j.finalUrl && j.categories);
+          }
+      
+          // Group multiple runs by URL and average their scores
+          function groupAndAverage(lhrs) {
+            const byUrl = new Map();
+            for (const j of lhrs) {
+              const url = j.finalUrl;
+              const c = j.categories || {};
+              const row = {
+                url,
+                perf: c.performance?.score,
+                a11y: c.accessibility?.score,
+                bp:   c['best-practices']?.score,
+                seo:  c.seo?.score,
+                pwa:  c.pwa?.score, // may be undefined; we won't show it unless you want to
+              };
+              if (!byUrl.has(url)) byUrl.set(url, []);
+              byUrl.get(url).push(row);
+            }
+            // Average per URL
+            const avg = [];
+            for (const [url, rows] of byUrl.entries()) {
+              const mean = k => {
+                const vals = rows.map(r => r[k]).filter(v => typeof v === 'number');
+                if (!vals.length) return undefined;
+                return vals.reduce((a,b)=>a+b,0) / vals.length;
+              };
+              avg.push({
+                url,
+                perf: mean('perf'),
+                a11y: mean('a11y'),
+                bp:   mean('bp'),
+                seo:  mean('seo'),
+                pwa:  mean('pwa'),
+              });
+            }
+            // Stable sort: home first, then lexicographic
+            avg.sort((a,b) => (a.url === b.url ? 0 : a.url.includes('/') - b.url.includes('/')) || a.url.localeCompare(b.url));
+            return avg;
+          }
+      
+          function section(title, dir) {
+            const lhrs = readLhrs(dir);
+            let md = `### ${title}\n\n`;
+            if (!lhrs.length) {
+              md += `_No Lighthouse JSON found in \`${dir}\`._\n\n`;
+              return md;
+            }
+            const rows = groupAndAverage(lhrs);
+            md += `| URL | Perf | A11y | Best-Practices | SEO |\n|---|---:|---:|---:|---:|\n`;
+            for (const r of rows) {
+              md += `| ${r.url} | ${pct(r.perf)} | ${pct(r.a11y)} | ${pct(r.bp)} | ${pct(r.seo)} |\n`;
+            }
+            md += '\n';
+            return md;
+          }
+      
+          let md = `## Lighthouse Results\n`;
+          md += `(Full HTML reports are attached as the **lighthouse-reports** artifact.)\n\n`;
+          md += section('Desktop', 'lighthouse-reports/desktop');
+          md += section('Mobile',  'lighthouse-reports/mobile');
+      
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+          NODE

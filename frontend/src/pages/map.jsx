@@ -399,10 +399,15 @@ export default function QuestMap() {
             aria-labelledby="map-login-required"
             onClick={handlePromptDismiss}
           >
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="modal login-required"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-body">
                 <h2 id="map-login-required">Login Required</h2>
-                <p>You need to sign in before you can add quests to your list.</p>
+                <p>
+                  You need to sign in before you can add quests to your list.
+                </p>
                 <div className="modal-actions">
                   <IconButton
                     icon="login"

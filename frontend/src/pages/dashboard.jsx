@@ -281,6 +281,7 @@ const Dashboard = () => {
                       <tr key={q.id}>
                         <td>
                           <button
+                            aria-label="Quests feature"
                             className="dash-btn"
                             onClick={() =>
                               navigate(`/quests/${q.questId}?uq=${q.id}`)
@@ -331,12 +332,22 @@ const Dashboard = () => {
 
             <div className="badges-carousel">
               <div className="carousel-header">
-                <button className="view-badges-btn">View Badges</button>
+                <button className="view-badges-btn" aria-label="View badges">
+                  View Badges
+                </button>
                 <div className="carousel-controls">
-                  <button className="carousel-btn" onClick={prevSlide}>
+                  <button
+                    aria-label="Scroll left on badges"
+                    className="carousel-btn"
+                    onClick={prevSlide}
+                  >
                     ←
                   </button>
-                  <button className="carousel-btn" onClick={nextSlide}>
+                  <button
+                    aria-label="Scroll right on badges"
+                    className="carousel-btn"
+                    onClick={nextSlide}
+                  >
                     →
                   </button>
                 </div>

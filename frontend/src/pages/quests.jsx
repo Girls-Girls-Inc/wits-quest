@@ -225,7 +225,6 @@ export default function Quests() {
     )}&hl=en&z=15&output=embed`;
   }, [activeLocation, activeQuest]);
 
-  // ESC closes modal
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") closeModal();
@@ -371,10 +370,16 @@ export default function Quests() {
           aria-labelledby="login-required-title"
           onClick={handlePromptDismiss}
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-body">
               <h2 id="login-required-title">Login Required</h2>
-              <p>You need an account to save quests. Would you like to sign in now?</p>
+              <p>
+                You need an account to save quests. Would you like to sign in
+                now?
+              </p>
               <div className="modal-actions">
                 <IconButton
                   icon="login"

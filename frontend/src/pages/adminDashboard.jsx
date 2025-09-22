@@ -259,31 +259,36 @@ const AdminDashboard = () => {
       {!selectedTask ? (
         <div className="admin-header">
           <h1 className="heading">Admin Dashboard</h1>
-          <div className="admin-buttons flex flex-wrap gap-2 mt-4">
+          <div className="admin-buttons">
             <IconButton
               icon="task"
               label="Create Quest"
               onClick={() => setSelectedTask("Quest Creation")}
+              className="tile-button"
             />
             <IconButton
               icon="task"
               label="Create Hunt"
               onClick={() => setSelectedTask("Hunt Creation")}
+              className="tile-button"
             />
             <IconButton
               icon="edit_location"
               label="Add Location"
               onClick={() => setSelectedTask("Location Creation")}
+              className="tile-button"
             />
             <IconButton
               icon="admin_panel_settings"
               label="Adjust Admins"
               onClick={() => setSelectedTask("Admin Privilege")}
+              className="tile-button"
             />
             <IconButton
               icon="award_star"
               label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
+              className="tile-button"
             />
             <IconButton
               icon="star"

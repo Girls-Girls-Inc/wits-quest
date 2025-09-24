@@ -109,7 +109,7 @@ const QuestController = {
       if (updErr) return res.status(400).json({ message: updErr.message });
       if (!upd) return res.status(409).json({ message: 'Nothing to update' });
 
-      await LeaderboardModel.addPointsAtomic({ userId, points: earned });
+      await LeaderboardModel.addPointsAtomic({ userId, points, at: new Date().toISOString() });
 
 
       return res.json({ ok: true, userQuest: upd, awarded: points });

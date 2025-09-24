@@ -9,6 +9,28 @@ const admin = createClient(
   { auth: { persistSession: false } }
 );
 
+const BOARD_ID_TO_TYPE = { "123": "Weekly", "1234": "Monthly", "12345": "Yearly" };
+
+function boundsExclusive(kind, at = new Date()) {
+  const d = new Date(at);
+  const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+  if (kind === "Weekly") {
+    const ref = new Date(Date.UTC(y, m, day));
+    const monOffset = (ref.getUTCDay() + 6) % 7;
+    const start = new Date(ref); start.setUTCDate(ref.getUTCDate() - monOffset); start.setUTCHours(0,0,0,0);
+    const end   = new Date(start); end.setUTCDate(start.getUTCDate() + 7); end.setUTCHours(0,0,0,0);
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
+  if (kind === "Monthly") {
+    const start = new Date(Date.UTC(y, m, 1, 0,0,0,0));
+    const end   = new Date(Date.UTC(y, m+1, 1, 0,0,0,0));
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
+  const start = new Date(Date.UTC(y, 0, 1, 0,0,0,0));
+  const end   = new Date(Date.UTC(y+1, 0, 1, 0,0,0,0));
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 /**
  * Current-period helper (UTC):
  * - "overall"   → single row per user: periodStart/end NULL
@@ -56,85 +78,83 @@ function currentPeriod(periodType = "overall") {
 const LeaderboardModel = {
   // ───────────── READ (unchanged) ─────────────
   async getLeaderboard(periodType, start, end, userId, id) {
-    let query = readClient
-      .from("leaderboard_with_users")
-      .select("*")
-      // sort by points descending, highest first
-      .order("points", { ascending: false, nullsFirst: false });
+  let t = periodType || (id && BOARD_ID_TO_TYPE[id.trim()]);            // map 123 → Weekly
+  t = t ? t[0].toUpperCase() + t.slice(1).toLowerCase() : "Weekly";     // normalize casing
 
-    if (periodType) query = query.ilike("periodType", periodType);
-    if (id) query = query.eq("id", id.trim());
-    if (userId) query = query.eq("userId", userId.trim());
-    if (start) query = query.gte("periodStart", new Date(start).toISOString());
-    if (end) query = query.lte("periodEnd", new Date(end).toISOString());
+  let s = start, e = end;
+  if (!s || !e) ({ start: s, end: e } = boundsExclusive(t));            // current window
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  },
+  let q = readClient.from("leaderboard_with_users").select("*")
+    .eq("periodType", t).eq("periodStart", s).eq("periodEnd", e)
+    .order("points", { ascending: false }).order("username", { ascending: true });
 
-  /**
-   * Atomic points award.
-   * - periodType: "overall" | "weekly" | "monthly"
-   *   If omitted, defaults to "overall".
-   * - Uses an RPC `lb_add_points` (defined below) for true atomicity.
-   *   Falls back to upsert+update if the function is missing.
-   */
-// backend/models/leaderboardModel.js
+  if (userId) q = q.eq("userId", userId.trim());
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+},
+
+
+// helper: compute current UTC bounds with EXCLUSIVE end
+
 
 async addPointsAtomic({ userId, points, at = new Date().toISOString() }) {
+  if (!userId) throw new Error("userId is required");
   const delta = Math.max(0, Number.isFinite(+points) ? Math.trunc(+points) : 0);
 
-  // 1) Preferred: DB-side atomic fan-out (weekly + monthly + overall)
+  // 1) Preferred: atomic RPC that writes Weekly/Monthly/Yearly into the ONE leaderboard table
+  // Make sure you've created the lb_add_points() function we built earlier.
   const { error: rpcErr } = await admin.rpc("lb_add_points", {
     in_user_id: userId,
     in_points: delta,
-    in_when: at, // optional; remove if your function uses now()
+    in_when: at,
   });
   if (!rpcErr) return { ok: true, method: "rpc" };
 
-  // 2) Fallback (non-atomic): ensure rows exist, then read-modify-write each bucket
-  // Only fall back if the function is missing; otherwise bubble the real error.
-  if (!/lb_add_points/i.test(rpcErr?.message || "")) throw rpcErr;
+  // 2) Fallback (non-atomic) — writes the SAME windows with EXCLUSIVE ends
+  console.warn("lb_add_points RPC failed, using JS fallback:", rpcErr?.message);
 
+  const y = boundsExclusive("Yearly",  new Date(at));
+  const w = boundsExclusive("Weekly",  new Date(at));
+  const m = boundsExclusive("Monthly", new Date(at));
   const periods = [
-    { periodType: "overall", periodStart: null, periodEnd: null },
-    LeaderboardModel.currentPeriod("weekly"),
-    LeaderboardModel.currentPeriod("monthly"),
+    { periodType: "Yearly",  periodStart: y.start, periodEnd: y.end },
+    { periodType: "Weekly",  periodStart: w.start, periodEnd: w.end },
+    { periodType: "Monthly", periodStart: m.start, periodEnd: m.end },
   ];
 
   for (const p of periods) {
-    // Ensure the row exists (0 points) for this user & period window
+    // upsert a zero row so update always has something to hit
     const { error: upsertErr } = await admin
       .from("leaderboard")
       .upsert(
         {
-          // NOTE: use your real column names (camelCase vs snake_case)
-          userId,                         // or user_id
-          periodType: p.periodType,       // or period_type
-          periodStart: p.periodStart,     // or period_start
-          periodEnd: p.periodEnd,         // or period_end
+          userId,
+          periodType: p.periodType,                  // MUST match casing in DB
+          periodStart: p.periodStart,
+          periodEnd: p.periodEnd,
           points: 0,
         },
-        { onConflict: "userId,periodType,periodStart,periodEnd", ignoreDuplicates: false }
+        { onConflict: '"userId","periodType","periodStart","periodEnd"' }
       );
     if (upsertErr) throw upsertErr;
 
-    // Read current points
+    // fetch id+points for that exact window
     const { data: row, error: selErr } = await admin
       .from("leaderboard")
       .select("id, points")
-      .eq("userId", userId)                 // or .eq("user_id", userId)
-      .eq("periodType", p.periodType)       // or .eq("period_type", p.periodType)
-      .is("periodStart", p.periodStart)     // .is handles NULL; use .eq if not null
-      .is("periodEnd", p.periodEnd)
-      .single();
+      .eq("userId", userId)
+      .eq("periodType", p.periodType)
+      .eq("periodStart", p.periodStart)
+      .eq("periodEnd", p.periodEnd)
+      .maybeSingle();
     if (selErr) throw selErr;
+    if (!row) throw new Error("Invariant: upserted row not found for leaderboard period");
 
-    const newPts = (Number(row?.points) || 0) + delta;
     const { error: updErr } = await admin
       .from("leaderboard")
-      .update({ points: newPts })
+      .update({ points: (row.points ?? 0) + delta })
       .eq("id", row.id);
     if (updErr) throw updErr;
   }

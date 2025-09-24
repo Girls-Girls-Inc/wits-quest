@@ -60,7 +60,7 @@ const App = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/reset" element={<PasswordReset />} />
-        <Route path="/reset-request" element={<PasswordResetRequest />} />
+        <Route path="/resetRequest" element={<PasswordResetRequest />} />
 
         <Route element={<Layout />}>
           <Route
@@ -95,9 +95,9 @@ const App = () => {
               </RequireSession>
             }
           />
-          <Route path="/display-quests" element={<Quests />} />
+          <Route path="/displayQuests" element={<Quests />} />
           <Route path="/map" element={<QuestMap />} />
-          <Route path="/display-leaderboard" element={<Leaderboard />} />
+          <Route path="/displayLeaderboard" element={<Leaderboard />} />
           <Route
             path="/adminDashboard"
             element={
@@ -107,7 +107,7 @@ const App = () => {
             }
           />
           <Route
-            path="/display-quests/:questId"
+            path="/displayQuests/:questId"
             element={
               <RequireSession>
                 <QuestDetail />
@@ -115,10 +115,18 @@ const App = () => {
             }
           />
           <Route
-            path="/manage-quests"
+            path="/manageQuests"
             element={
               <RequireSession>
                 <ManageQuests />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/manageHunts"
+            element={
+              <RequireSession>
+                <ManageHunts />
               </RequireSession>
             }
           />
@@ -129,3 +137,4 @@ const App = () => {
 };
 
 export default App;
+

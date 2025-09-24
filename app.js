@@ -36,6 +36,9 @@ app.use("", userRoutes);
 const huntRoutes = require("./backend/routes/huntRoutes");
 app.use("", huntRoutes);
 
+const privateLeaderboardRoutes = require('./backend/routes/privateLeaderboardRoutes');
+app.use("", privateLeaderboardRoutes);
+
 // Catch-all to serve index.html for SPA routes
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));

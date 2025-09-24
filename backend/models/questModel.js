@@ -84,7 +84,7 @@ const QuestModel = {
       .from("userQuests")
       .select("id, userId, questId, step, isComplete, completedAt")
       .eq("id", userQuestId)
-      .single();
+      .maybeSingle()
     return { data, error };
   },
 
@@ -96,7 +96,7 @@ const QuestModel = {
       .eq("id", userQuestId)
       .eq("isComplete", false)
       .select()
-      .single();
+      .maybeSingle()
     return { data, error };
   },
 
@@ -106,7 +106,7 @@ const QuestModel = {
       .from("quests")
       .select("*")
       .eq("id", questId)
-      .single();
+      .maybeSingle()
     return { data, error };
   },
 
@@ -116,7 +116,7 @@ const QuestModel = {
       .from("quests")
       .update(questData)
       .eq("id", questId)
-      .select();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -126,7 +126,7 @@ const QuestModel = {
       .from("quests")
       .delete()
       .eq("id", questId)
-      .select();
+      .maybeSingle();
     return { data, error };
   },
 };

@@ -18,7 +18,6 @@ const QuestController = {
   // POST /quests
   createQuest: async (req, res) => {
     try {
-      // 1) Require an authenticated user (RLS)
       const sb = sbFromReq(req);
       if (!sb) return res.status(401).json({ message: 'Missing bearer token' });
 
@@ -36,7 +35,7 @@ const QuestController = {
       questData.pointsAchievable = parseInt(questData.pointsAchievable, 10) || 0;
       questData.isActive = questData.isActive ?? true;
       questData.createdAt = new Date().toISOString();
-      questData.createdBy = userId; // <- important for policies that check createdBy
+      questData.createdBy = userId;
 
       const { data, error } = await QuestModel.createQuest(questData, sb);
       if (error) return res.status(500).json({ message: error.message });
@@ -59,7 +58,6 @@ const QuestController = {
     }
   },
 
-  // POST /user-quests  { questId }
   add: async (req, res) => {
       try { const sb = sbFromReq(req); 
         if (!sb) return res.status(401).json({ message: 'Missing bearer token' }); 
@@ -111,12 +109,8 @@ const QuestController = {
       if (updErr) return res.status(400).json({ message: updErr.message });
       if (!upd) return res.status(409).json({ message: 'Nothing to update' });
 
-      // Award leaderboard points (trusted write, single place to mutate leaderboard)
-      // Implemented in LeaderboardModel below.
-      await LeaderboardModel.addPointsAtomic({
-        userId,
-        points,
-      });
+      await LeaderboardModel.addPointsAtomic({ userId, points, at: new Date().toISOString() });
+
 
       return res.json({ ok: true, userQuest: upd, awarded: points });
     } catch (err) {

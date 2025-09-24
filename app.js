@@ -18,20 +18,23 @@ app.use(express.static(frontendPath));
 //const userRoutes = require("./backend/routes/user-routes");
 //app.use("", userRoutes.routes);
 
-const leaderboardRoutes = require('./backend/routes/leaderboardRoutes');
+const leaderboardRoutes = require("./backend/routes/leaderboardRoutes");
 app.use("", leaderboardRoutes);
 
-const collectiblesRoutes = require('./backend/routes/collectiblesRoutes');
+const collectiblesRoutes = require("./backend/routes/collectiblesRoutes");
 app.use("", collectiblesRoutes);
 
-const questRoutes = require('./backend/routes/questRoutes');
+const questRoutes = require("./backend/routes/questRoutes");
 app.use("", questRoutes);
 
-const locationRoutes = require('./backend/routes/locationRoutes');
+const locationRoutes = require("./backend/routes/locationRoutes");
 app.use("/locations", locationRoutes);
 
-const userRoutes = require('./backend/routes/userRoutes');
+const userRoutes = require("./backend/routes/userRoutes");
 app.use("", userRoutes);
+
+const huntRoutes = require("./backend/routes/huntRoutes");
+app.use("", huntRoutes);
 
 const privateLeaderboardRoutes = require('./backend/routes/privateLeaderboardRoutes');
 app.use("", privateLeaderboardRoutes);
@@ -40,7 +43,6 @@ app.use("", privateLeaderboardRoutes);
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
-
 
 // Start server
 app.listen(PORT, () => {

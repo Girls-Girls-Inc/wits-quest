@@ -257,7 +257,7 @@ const Login = () => {
           </div>
 
           <div className="forgot-pass">
-            <Link to="/reset-request">Forgot Password?</Link>
+            <Link to="/resetRequest">Forgot Password?</Link>
           </div>
           <div className="btn">
             <IconButton type="submit" icon="login" label="LOGIN" />
@@ -368,3 +368,4 @@ const Login = () => {
 };
 
 export default Login;
+

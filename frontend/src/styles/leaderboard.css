@@ -43,7 +43,6 @@
   min-width: 300px;
   border-collapse: collapse;
   border-radius: 12px;
-  overflow: hidden;
 }
 
 .leaderboard-table thead {

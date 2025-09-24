@@ -23,9 +23,9 @@ const Navbar = () => {
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/display-quests", icon: "logo", label: "Quests" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "map", label: "Map" },
-    { route: "/display-leaderboard", icon: "leaderboard", label: "Leaderboard" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Leaderboard" },
     { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
@@ -35,8 +35,8 @@ const Navbar = () => {
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/display-quests", icon: "logo", label: "Quests" },
-    { route: "/display-leaderboard", icon: "leaderboard", label: "Board" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Board" },
     { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
@@ -81,4 +81,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 

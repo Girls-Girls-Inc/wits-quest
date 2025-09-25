@@ -10,10 +10,18 @@ function supaUser(token) {
   });
 }
 
+function normalizeQuestName(s) {
+  return String(s || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
 const THRIFT_API_BASE = process.env.THRIFT_API_BASE
 const CREATED_BY = process.env.SYSTEM_USER_ID
 
-const DEFAULT_COLLECTIBLE = 1;
+const DEFAULT_COLLECTIBLE = 17;
 const DEFAULT_POINTS = 75;
 const DEFAULT_HUNT_ID = 1;
 const DEFAULT_RADIUS = 50;
@@ -23,6 +31,18 @@ const FETCH_TIMEOUT_MS = 1000000000;
 let lastThriftSync = 0;
 let thriftSyncInflight = false;
 const THRIFT_TTL_MS = 5 * 60 * 1000;
+
+const WITS_CENTER = { lat: -26.190166589669577, lng: 28.03017233015316 };
+
+const WITS_CORNERS = [
+  { lat: -26.192698725510365, lng: 28.033047983178893 },
+  { lat: -26.185717818407834, lng: 28.025855875387368 },
+  { lat: -26.193148021697453, lng: 28.02120408797069  },
+  { lat: -26.186262950582634, lng: 28.03084150500144  },
+];
+
+const WITS_RADIUS_M =
+  Math.max(...WITS_CORNERS.map(c => metersBetween(WITS_CENTER, c))) + 5;
 
 function toRad(x) { return (x * Math.PI) / 180; }
 function metersBetween(a, b) {
@@ -44,6 +64,17 @@ async function fetchThriftStores({ signal } = {}) {
   return res.json();
 }
 
+function isInWits(store, radiusM = WITS_RADIUS_M) {
+  const lat = Number(store?.location?.lat);
+  const lng = Number(store?.location?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  const d = metersBetween(WITS_CENTER, { lat, lng });
+  return d <= radiusM;
+
+
+}
+
 function toLocationRowFromThrift(store, radius = DEFAULT_RADIUS) {
   const lat = Number(store?.location?.lat);
   const lng = Number(store?.location?.lng);
@@ -58,34 +89,61 @@ function toLocationRowFromThrift(store, radius = DEFAULT_RADIUS) {
 }
 
 async function ensureQuestForLocation(supabase, { locationId, name, description }) {
-  const { data: existing, error: selErr } = await supabase
+  const questName = normalizeQuestName(name);
+
+  // 1) Look for an existing quest with same (locationId, name) — case-insensitive
+  const { data: existingRows, error: selErr } = await supabase
     .from('quests')
     .select('id')
-    .eq('location_id', locationId)
-    .maybeSingle();
+    .eq('locationId', locationId)
+    .ilike('name', questName)     // ILIKE w/o % acts like case-insensitive equals
+    .order('id', { ascending: false })
+    .limit(1);
 
   if (selErr) throw selErr;
-  if (existing) return { id: existing.id, created: false };
 
+  if (existingRows && existingRows.length) {
+    return { id: existingRows[0].id, created: false };
+  }
+
+  // 2) Not found — insert one
   const row = {
-    created_at: new Date().toISOString(),
-    name,
+    locationId,
+    name: questName,
     description,
-    collectible: DEFAULT_COLLECTIBLE,
-    created_by: CREATED_BY,
-    location_id: locationId,
-    points: DEFAULT_POINTS,
-    is_active: true,
-    hunt_id: DEFAULT_HUNT_ID,
+    collectibleId: DEFAULT_COLLECTIBLE,
+    createdBy: CREATED_BY,
+    pointsAchievable: DEFAULT_POINTS,
+    isActive: true,
+    huntId: DEFAULT_HUNT_ID,
+    createdAt: new Date().toISOString(),
   };
+
   const { data, error } = await supabase
     .from('quests')
     .insert([row])
     .select('id')
     .single();
-  if (error) throw error;
+
+  if (error) {
+    // Optional: tiny race-condition guard — re-check once if insert failed unexpectedly
+    const { data: retryRows } = await supabase
+      .from('quests')
+      .select('id')
+      .eq('locationId', locationId)
+      .ilike('name', questName)
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (retryRows && retryRows.length) {
+      return { id: retryRows[0].id, created: false };
+    }
+    throw error;
+  }
+
   return { id: data.id, created: true };
 }
+
 
 async function findExistingLocation(supabase, name, lat, lng) {
   const { data, error } = await supabase
@@ -104,26 +162,6 @@ async function findExistingLocation(supabase, name, lat, lng) {
   return null;
 }
 
-async function createQuestForLocation(supabase, { locationId, name, description }) {
-  const row = {
-    createdAt: new Date().toISOString(),
-    name,
-    description,
-    collectibleId: DEFAULT_COLLECTIBLE,
-    createdBy: CREATED_BY,
-    locationId: locationId,
-    pointsAchievable: DEFAULT_POINTS,
-    isActive: true,
-    huntId: DEFAULT_HUNT_ID,
-  };
-  const { data, error } = await supabase
-    .from('quests')
-    .insert([row])
-    .select('id')
-    .single();
-  if (error) throw error;
-  return data;
-}
 
 
 function toNum(v) {
@@ -216,9 +254,11 @@ const LocationController = {
     try {
       let stores = await withTimeout(
        fetchThriftStores({ signal: controller.signal }),
+
        FETCH_TIMEOUT_MS,
        controller
      );
+    stores = stores.filter(s => isInWits(s));
 
       const needle = (req.query.name || req.query.q || '').toLowerCase();
       if (needle) {
@@ -230,7 +270,7 @@ const LocationController = {
       }
 
       if (dryRun) {
-       const preview = stores.slice(0, 5).map(s => toLocationRowFromThrift(s, defaultRadius));
+       const preview = stores.map(s => toLocationRowFromThrift(s, defaultRadius));
        return res.json({ ok: true, dryRun: true, storesProcessed: stores.length, sampleLocations: preview });
      }
 
@@ -260,12 +300,7 @@ const LocationController = {
           if (s.description) lines.push(s.description);
           if (s.address) lines.push(s.address);
           const questDesc = lines.join(' — ') || 'Explore this thrift location!';
-          await createQuestForLocation(supabaseUser, {
-            locationId,
-            name: questName,
-            description: questDesc,
-          });
-          questsCreated += 1;
+
           const { created } = await ensureQuestForLocation(supabaseUser, {
           locationId,
           name: questName,

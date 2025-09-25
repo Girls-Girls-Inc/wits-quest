@@ -136,6 +136,13 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!user) return toast.error("You must be logged in");
 
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      toast.error("Your session expired. Please sign in again.");
+      return;
+    }
+
     const questInsert = {
       ...questData,
       createdBy: user.id,
@@ -150,7 +157,10 @@ const AdminDashboard = () => {
     try {
       const res = await fetch(`${API_BASE}/quests`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
         credentials: "include",
         body: JSON.stringify(questInsert),
       });
@@ -163,7 +173,16 @@ const AdminDashboard = () => {
     }
   };
 
+  
+
   const handleLocationSubmit = async (e) => {
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      toast.error("Your session expired. Please sign in again.");
+      return;
+    }
     e.preventDefault();
     if (!user) return toast.error("You must be logged in");
 
@@ -177,15 +196,21 @@ const AdminDashboard = () => {
     try {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
         credentials: "include",
         body: JSON.stringify(locationInsert),
       });
       const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.message || "Failed to create location");
-      toast.success(`Location created successfully!`);
-      handleBack();
+
+      if (!res.ok) {
+      const msg = result?.error || result?.message || "Failed to create location";
+      throw new Error(msg);
+    }
+    toast.success(`Location created successfully!`);
+    handleBack();
     } catch (err) {
       toast.error(`Failed to create location: ${err.message}`);
     }

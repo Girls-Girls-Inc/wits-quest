@@ -298,6 +298,12 @@ const AdminDashboard = () => {
               className="tile-button"
             />
             <IconButton
+              icon="quiz"
+              label="Create Quiz"
+              onClick={() => navigate("/addQuiz")}
+              className="tile-button"
+            />
+            <IconButton
               icon="edit_location"
               label="Add Location"
               onClick={() => setSelectedTask("Location Creation")}
@@ -319,6 +325,11 @@ const AdminDashboard = () => {
               icon="star"
               label="Manage Quests"
               onClick={() => navigate("/manageQuests")}
+            />
+            <IconButton
+              icon="quiz"
+              label="Manage Quizzes"
+              onClick={() => navigate("/manageQuizzes")}
             />
             <IconButton
               icon="stars"
@@ -624,3 +635,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+

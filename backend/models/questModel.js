@@ -116,6 +116,7 @@ const QuestModel = {
       .from("quests")
       .update(questData)
       .eq("id", questId)
+      .select()
       .maybeSingle();
     return { data, error };
   },
@@ -126,9 +127,13 @@ const QuestModel = {
       .from("quests")
       .delete()
       .eq("id", questId)
+      .select()
       .maybeSingle();
     return { data, error };
   },
+
 };
 
 module.exports = QuestModel;
+
+

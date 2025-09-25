@@ -16,6 +16,39 @@ import IconButton from "../components/IconButton";
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+function normalizeQuizPayload(raw) {
+  if (!raw) return null;
+  const quiz = { ...raw };
+  if (typeof quiz.options === "string") {
+    const trimmed = quiz.options.trim();
+    if (trimmed) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          quiz.options = parsed;
+        } else if (parsed && Array.isArray(parsed.options)) {
+          quiz.options = parsed.options;
+        } else {
+          quiz.options = trimmed
+            .split(/\r?\n/)
+            .map((opt) => opt.trim())
+            .filter(Boolean);
+        }
+      } catch {
+        quiz.options = trimmed
+          .split(/\r?\n/)
+          .map((opt) => opt.trim())
+          .filter(Boolean);
+      }
+    } else {
+      quiz.options = [];
+    }
+  } else if (!Array.isArray(quiz.options)) {
+    quiz.options = quiz.options ? [quiz.options] : [];
+  }
+  return quiz;
+}
+
 function haversineMeters(aLat, aLng, bLat, bLng) {
   const toRad = (d) => (d * Math.PI) / 180;
   const R = 6371000;
@@ -37,6 +70,8 @@ export default function QuestDetail() {
   const [me, setMe] = useState(null);
   const [quest, setQuest] = useState(null);
   const [loc, setLoc] = useState(null);
+  const [quiz, setQuiz] = useState(null);
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(true);
   const [pos, setPos] = useState(null);
   const watchIdRef = useRef(null);
@@ -45,6 +80,15 @@ export default function QuestDetail() {
   const { isLoaded } = useLoadScript({ googleMapsApiKey: GMAPS_KEY || "" });
 
   const mapRef = useRef(null);
+
+  const quizType = useMemo(
+    () => (quiz?.questionType || "").toLowerCase(),
+    [quiz]
+  );
+  const quizOptions = useMemo(
+    () => (Array.isArray(quiz?.options) ? quiz.options : []),
+    [quiz]
+  );
 
   const distanceM = useMemo(() => {
     if (!pos || !loc) return null;
@@ -97,7 +141,29 @@ export default function QuestDetail() {
           ? Number(raw.radius)
           : 0;
         setLoc({ ...raw, lat, lng, radius });
+
+        if (q.quizId) {
+          try {
+            const resQuiz = await fetch(`${API_BASE}/quiz/${q.quizId}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (!resQuiz.ok) {
+              const errText = await resQuiz.text().catch(() => "");
+              throw new Error(errText || "Failed to load quiz");
+            }
+            const quizPayload = await resQuiz.json();
+            setQuiz(normalizeQuizPayload(quizPayload));
+          } catch (quizErr) {
+            setQuiz(null);
+            toast.error(quizErr?.message || "Failed to load quiz");
+          }
+        } else {
+          setQuiz(null);
+        }
+        setAnswer("");
       } catch (e) {
+        setQuiz(null);
+        setAnswer("");
         toast.error(e.message || "Failed to load quest");
       } finally {
         setLoading(false);
@@ -137,6 +203,26 @@ export default function QuestDetail() {
     if (!withinRadius) {
       toast.error("You must be inside the quest radius to complete.");
       return;
+    }
+    if (quiz) {
+      if (!answer) {
+        toast.error("Please answer the question to complete this quest.");
+        return;
+      }
+
+      const normalizedAnswer = answer.trim();
+      const normalizedCorrect = quiz.correctAnswer?.trim() || "";
+      if (quizType === "text") {
+        if (!normalizedCorrect || normalizedAnswer.toLowerCase() !== normalizedCorrect.toLowerCase()) {
+          toast.error("Incorrect answer. Try again!");
+          return;
+        }
+      } else if (quizType === "mcq") {
+        if (normalizedAnswer !== normalizedCorrect) {
+          toast.error("Incorrect answer. Try again!");
+          return;
+        }
+      }
     }
 
     try {
@@ -246,6 +332,39 @@ export default function QuestDetail() {
           )}
         </div>
       </header>
+
+      {quiz && (
+        <section className="quiz-section">
+          <h3>Quiz</h3>
+          <p>{quiz.questionText}</p>
+
+          {quizType === "mcq" && quizOptions.length > 0 && (
+            <div className="quiz-options">
+              {quizOptions.map((opt, i) => (
+                <label key={i} style={{ display: "block" }}>
+                  <input
+                    type="radio"
+                    name="quiz"
+                    value={opt}
+                    checked={answer === opt}
+                    onChange={() => setAnswer(opt)}
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
+          )}
+
+          {quizType === "text" && (
+            <input
+              type="text"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Your answer"
+            />
+          )}
+        </section>
+      )}
 
       <section className="map-wrap">
         {isLoaded ? (

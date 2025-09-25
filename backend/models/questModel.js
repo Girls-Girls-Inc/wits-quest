@@ -1,6 +1,39 @@
 // backend/models/questModel.js
 const { createClient } = require("@supabase/supabase-js");
 
+function normalizeQuizRow(row) {
+  if (!row) return row;
+  const normalized = { ...row };
+  if (typeof normalized.options === "string") {
+    const trimmed = normalized.options.trim();
+    if (trimmed) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          normalized.options = parsed;
+        } else if (parsed && Array.isArray(parsed.options)) {
+          normalized.options = parsed.options;
+        } else {
+          normalized.options = trimmed
+            .split(/\r?\n/)
+            .map((opt) => opt.trim())
+            .filter(Boolean);
+        }
+      } catch (err) {
+        normalized.options = trimmed
+          .split(/\r?\n/)
+          .map((opt) => opt.trim())
+          .filter(Boolean);
+      }
+    } else {
+      normalized.options = [];
+    }
+  } else if (!Array.isArray(normalized.options)) {
+    normalized.options = normalized.options ? [normalized.options] : [];
+  }
+  return normalized;
+}
+
 // Admin client (trusted writes, bypasses RLS). Use sparingly.
 const admin = createClient(
   process.env.SUPABASE_URL,
@@ -128,6 +161,20 @@ const QuestModel = {
       .eq("id", questId)
       .select();
     return { data, error };
+  },
+
+  async getQuizById(quizId, sb) {
+    const supabase = pick(sb);
+    const raw = typeof quizId === "string" ? quizId.trim() : quizId;
+    const idValue = /^\d+$/.test(`${raw}`) ? Number(raw) : raw;
+    const { data, error } = await supabase
+      .from("quizzes")
+      .select("*")
+      .eq("id", idValue)
+      .single();
+
+    if (error) return { data: null, error };
+    return { data: normalizeQuizRow(data), error: null };
   },
 };
 

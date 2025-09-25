@@ -3,7 +3,6 @@ const { createClient } = require('@supabase/supabase-js');
 const QuestModel = require('../models/questModel');
 const LeaderboardModel = require('../models/leaderboardModel'); // we'll call a helper below
 
-
 function sbFromReq(req) {
   const token = req.headers.authorization?.replace(/^Bearer\s+/i, '') || null;
   if (!token) return null;
@@ -38,6 +37,12 @@ const QuestController = {
       questData.createdAt = new Date().toISOString();
       questData.createdBy = userId; // <- important for policies that check createdBy
 
+      if (questData.quizId === '' || questData.quizId == null) {
+        questData.quizId = null;
+      } else if (/^\d+$/.test(`${questData.quizId}`)) {
+        questData.quizId = Number(questData.quizId);
+      }
+
       const { data, error } = await QuestModel.createQuest(questData, sb);
       if (error) return res.status(500).json({ message: error.message });
 
@@ -53,6 +58,25 @@ const QuestController = {
       const filter = req.query || {};
       const { data, error } = await QuestModel.getQuests(filter);
       if (error) return res.status(500).json({ message: error.message });
+      return res.json(data);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
+  getQuiz: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: 'Missing bearer token' });
+
+      const raw = req.params.id;
+      if (!raw) return res.status(400).json({ message: 'Quiz id is required' });
+      const quizId = /^\d+$/.test(raw) ? Number(raw) : raw;
+
+      const { data, error } = await QuestModel.getQuizById(quizId, sb);
+      if (error) return res.status(500).json({ message: error.message });
+      if (!data) return res.status(404).json({ message: 'Quiz not found' });
+
       return res.json(data);
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -169,6 +193,14 @@ updateQuest: async (req, res) => {
     } else {
       const pts = Number(questData.pointsAchievable);
       questData.pointsAchievable = Number.isFinite(pts) ? pts : 0;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(questData, 'quizId')) {
+      if (questData.quizId === '' || questData.quizId == null) {
+        questData.quizId = null;
+      } else if (/^\d+$/.test(`${questData.quizId}`)) {
+        questData.quizId = Number(questData.quizId);
+      }
     }
 
     const { data, error } = await QuestModel.updateQuest(questId, questData, sb);

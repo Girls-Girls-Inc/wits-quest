@@ -24,12 +24,10 @@ const QuestController = {
       const userId = who.data?.user?.id;
       if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
 
-      // 2) Validate input
       const questData = { ...req.body };
       if (!questData.name || !questData.collectibleId || !questData.locationId) {
         return res.status(400).json({ message: 'Missing required fields' });
       }
-
 
       questData.pointsAchievable = parseInt(questData.pointsAchievable, 10) || 0;
       questData.isActive = questData.isActive ?? true;
@@ -63,25 +61,6 @@ const QuestController = {
     }
   },
 
-  getQuiz: async (req, res) => {
-    try {
-      const sb = sbFromReq(req);
-      if (!sb) return res.status(401).json({ message: 'Missing bearer token' });
-
-      const raw = req.params.id;
-      if (!raw) return res.status(400).json({ message: 'Quiz id is required' });
-      const quizId = /^\d+$/.test(raw) ? Number(raw) : raw;
-
-      const { data, error } = await QuestModel.getQuizById(quizId, sb);
-      if (error) return res.status(500).json({ message: error.message });
-      if (!data) return res.status(404).json({ message: 'Quiz not found' });
-
-      return res.json(data);
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
-    }
-  },
-
   // POST /user-quests  { questId }
   add: async (req, res) => {
     try {
@@ -92,12 +71,11 @@ const QuestController = {
       if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
       const { questId } = req.body || {};
       if (!questId) return res.status(400).json({ message: 'questId is required' });
-      const payload = { userId, questId, step: "0", isComplete: false, };
+      const payload = { userId, questId, step: '0', isComplete: false };
       const { data, error } = await QuestModel.addForUser(payload, sb);
       if (error) return res.status(400).json({ message: error.message });
       return res.status(201).json(data[0]);
-    }
-    catch (err) {
+    } catch (err) {
       return res.status(500).json({ message: err.message });
     }
   },
@@ -137,13 +115,13 @@ const QuestController = {
 
       await LeaderboardModel.addPointsAtomic({ userId, points, at: new Date().toISOString() });
 
-
       return res.json({ ok: true, userQuest: upd, awarded: points });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }
   },
-  // GET /user-quests (list mine) 
+
+  // GET /user-quests (list mine)
   mine: async (req, res) => {
     try {
       const sb = sbFromReq(req);
@@ -154,8 +132,7 @@ const QuestController = {
       const { data, error } = await QuestModel.listForUser(userId, sb);
       if (error) return res.status(400).json({ message: error.message });
       return res.json(data);
-    }
-    catch (err) {
+    } catch (err) {
       return res.status(500).json({ message: err.message });
     }
   },
@@ -202,7 +179,6 @@ const QuestController = {
       const { data, error } = await QuestModel.updateQuest(questId, questData, sb);
       if (error) return res.status(500).json({ message: error.message });
 
-      // IMPORTANT: treat "no row" as not found
       if (!data) return res.status(404).json({ message: 'Quest not found' });
 
       return res.json({ message: 'Quest updated successfully', quest: data });
@@ -235,6 +211,6 @@ const QuestController = {
       return res.status(500).json({ message: err.message });
     }
   },
-}
+};
 
 module.exports = QuestController;

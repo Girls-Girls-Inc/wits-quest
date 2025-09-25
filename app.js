@@ -27,6 +27,9 @@ app.use("", collectiblesRoutes);
 const questRoutes = require("./backend/routes/questRoutes");
 app.use("", questRoutes);
 
+const quizRoutes = require("./backend/routes/quizRoutes");
+app.use("", quizRoutes);
+
 const locationRoutes = require("./backend/routes/locationRoutes");
 app.use("/locations", locationRoutes);
 
@@ -45,3 +48,4 @@ app.get(/.*/, (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server Listening on PORT: ${PORT}`);
 });
+

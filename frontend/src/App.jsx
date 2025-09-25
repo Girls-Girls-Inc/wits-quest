@@ -14,6 +14,8 @@ import Admin from "./pages/adminDashboard";
 import QuestDetail from "./pages/questDetail";
 import ManageQuests from "./pages/manageQuests";
 import ManageHunts from "./pages/manageHunts";
+import ManageQuizzes from "./pages/manageQuizzes";
+import AddQuiz from "./pages/addQuiz";
 import Settings from "./pages/settings";
 import RequireSession from "./components/RequireSession";
 
@@ -107,6 +109,22 @@ const App = () => {
             }
           />
           <Route
+            path="/addQuiz"
+            element={
+              <RequireSession>
+                <AddQuiz />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/manageQuizzes"
+            element={
+              <RequireSession>
+                <ManageQuizzes />
+              </RequireSession>
+            }
+          />
+          <Route
             path="/displayQuests/:questId"
             element={
               <RequireSession>
@@ -137,4 +155,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
 

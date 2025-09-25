@@ -16,6 +16,7 @@ const BOARDS = {
 const Leaderboard = () => {
   const [boardKey, setBoardKey] = useState("year");
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
   const latestReqId = useRef(0);
   const abortRef = useRef(null);
 
@@ -24,13 +25,13 @@ const Leaderboard = () => {
 
   const loadBoard = async (key = boardKey) => {
     const reqId = ++latestReqId.current;
+    setLoading(true);
     setRows([]);
     try {
       abortRef.current?.abort();
     } catch {}
     const ac = new AbortController();
     abortRef.current = ac;
-    const loadingToast = toast.loading("Loading leaderboard…");
     try {
       const res = await fetch(makeUrl(key), {
         headers: { Accept: "application/json" },
@@ -40,18 +41,18 @@ const Leaderboard = () => {
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("API did not return an array");
 
-      setRows(data);
       if (reqId !== latestReqId.current) return;
       setRows(data);
-      toast.success("Leaderboard loaded!", { id: loadingToast });
     } catch (e) {
       if (e?.name === "AbortError") {
         return;
       }
       setRows([]);
-      toast.error(e.message || "Failed to load leaderboard", {
-        id: loadingToast,
-      });
+      toast.error(e.message || "Failed to load leaderboard");
+    } finally {
+      if (reqId === latestReqId.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -64,8 +65,18 @@ const Leaderboard = () => {
     await loadBoard(key);
   };
 
+  if (loading) {
+    return (
+      <div className="leaderboard-loading">
+        <Toaster />
+        <div>Loading leaderboard...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="leaderboard-container">
+      <Toaster />
       <div className="leaderboard-header">
         <h1>LEADERBOARD</h1>
         <h2>{BOARDS[boardKey].label}</h2>
@@ -90,9 +101,8 @@ const Leaderboard = () => {
             {Object.keys(BOARDS).map((key) => (
               <li key={key}>
                 <button
-                  className={`dropdown-item ${
-                    boardKey === key ? "active" : ""
-                  }`}
+                  className={`dropdown-item ${boardKey === key ? "active" : ""
+                    }`}
                   onClick={() => {
                     switchBoard(key);
                     document

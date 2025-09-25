@@ -89,7 +89,6 @@ export default function QuestDetail() {
     () => (Array.isArray(quiz?.options) ? quiz.options : []),
     [quiz]
   );
-
   const distanceM = useMemo(() => {
     if (!pos || !loc) return null;
     return Math.round(haversineMeters(pos.lat, pos.lng, loc.lat, loc.lng));
@@ -101,6 +100,18 @@ export default function QuestDetail() {
     if (!Number.isFinite(r) || r <= 0) return false;
     return haversineMeters(pos.lat, pos.lng, loc.lat, loc.lng) <= r;
   }, [pos, loc]);
+
+  const quizAnswerProvided = useMemo(() => {
+    if (!quiz) return true;
+    if (quizType === "text") return answer.trim().length > 0;
+    if (quizType === "mcq") return Boolean(answer);
+    return Boolean(answer?.toString().trim());
+  }, [answer, quiz, quizType]);
+
+  const requiresQuizAnswer = Boolean(quiz);
+
+  const canCompleteQuest =
+    withinRadius && (!requiresQuizAnswer || quizAnswerProvided);
 
   useEffect(() => {
     (async () => {
@@ -204,12 +215,11 @@ export default function QuestDetail() {
       toast.error("You must be inside the quest radius to complete.");
       return;
     }
-    if (quiz) {
-      if (!answer) {
-        toast.error("Please answer the question to complete this quest.");
-        return;
-      }
-
+    if (requiresQuizAnswer && !quizAnswerProvided) {
+      toast.error("Please answer the question to complete this quest.");
+      return;
+    }
+    if (requiresQuizAnswer) {
       const normalizedAnswer = answer.trim();
       const normalizedCorrect = quiz.correctAnswer?.trim() || "";
       if (quizType === "text") {
@@ -457,7 +467,7 @@ export default function QuestDetail() {
             icon="check_circle"
             label="Check-in & Complete"
             onClick={onComplete}
-            disabled={!withinRadius}
+            disabled={!canCompleteQuest}
           />
           <IconButton
             icon="my_location"

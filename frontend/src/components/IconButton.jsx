@@ -12,6 +12,14 @@ const IconButton = ({
   disabled = false,
   className = "",
 }) => {
+  const computedClassName = [
+    "icon-button",
+    className,
+    disabled ? "icon-button--disabled" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const buttonContent = (
     <>
       {icon && <i className="material-symbols-outlined">{icon}</i>}
@@ -22,7 +30,7 @@ const IconButton = ({
   if (onClick || type === "submit") {
     return (
       <button
-        className={`icon-button ${className}`}
+        className={computedClassName}
         onClick={onClick}
         type={type}
         disabled={disabled}
@@ -36,11 +44,12 @@ const IconButton = ({
   return (
     <Link
       to={route}
-      className={`icon-button ${className}`}
+      className={computedClassName}
       target={target}
       aria-disabled={disabled ? "true" : "false"}
       tabIndex={disabled ? -1 : 0}
       onClick={disabled ? (e) => e.preventDefault() : undefined}
+      style={disabled ? { pointerEvents: "none" } : undefined}
     >
       {buttonContent}
     </Link>

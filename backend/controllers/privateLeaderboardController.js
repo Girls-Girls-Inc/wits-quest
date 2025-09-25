@@ -25,13 +25,17 @@ const PrivateLeaderboardController = {
 
       if (error) return res.status(400).json({ error: error.message || error });
 
-      // Add owner as a member (role: 'owner')
-      const { error: memberError } = await PrivateLeaderboardModel.addMember({
+      // Add owner as a member (role: 'owner') — idempotent in the model now
+      const { data: memberData, error: memberError } = await PrivateLeaderboardModel.addMember({
         leaderboardId: data.id,
         userId: ownerId,
         role: 'owner'
       });
-      if (memberError) return res.status(400).json({ error: memberError.message || memberError });
+
+      if (memberError) {
+        // Non-fatal: log and continue. With model idempotency this should rarely happen.
+        console.warn('addMember non-fatal error:', memberError);
+      }
 
       return res.status(201).json(data);
     } catch (err) {
@@ -44,10 +48,11 @@ const PrivateLeaderboardController = {
   list: async (req, res) => {
     try {
       const userId = req.user?.id;
-      const { id } = req.query;
+      // support both ?id=... and /:id
+      const id = (req.query && req.query.id) || (req.params && req.params.id);
 
       if (id) {
-        const leaderboardId = id?.trim();
+        const leaderboardId = String(id).trim();
         const { data, error } = await PrivateLeaderboardModel.findById(leaderboardId);
         if (error) return res.status(400).json({ error: error.message || error });
         if (!data) return res.status(404).json({ error: 'Not found' });
@@ -102,7 +107,6 @@ const PrivateLeaderboardController = {
 
       const { data, error } = await PrivateLeaderboardModel.addMemberByInviteCode({ inviteCode: code, userId });
       if (error) return res.status(400).json({ error: error.message || error });
-
       return res.json({ message: 'Joined', member: data });
     } catch (err) {
       console.error('Error joining leaderboard:', err);
@@ -145,7 +149,6 @@ const PrivateLeaderboardController = {
 
       const { data, error } = await PrivateLeaderboardModel.listMembers(leaderboardId);
       if (error) return res.status(400).json({ error: error.message || error });
-
       return res.json(data || []);
     } catch (err) {
       console.error('Error listing members:', err);
@@ -210,7 +213,6 @@ const PrivateLeaderboardController = {
 
       const { error } = await PrivateLeaderboardModel.deleteById(leaderboardId);
       if (error) return res.status(400).json({ error: error.message || error });
-
       return res.status(204).send();
     } catch (err) {
       console.error('Error deleting leaderboard:', err);

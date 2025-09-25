@@ -53,7 +53,6 @@ export default function Quests() {
   );
 
   const loadQuests = async () => {
-    const t = toast.loading("Loading quests...");
     try {
       const { data, error } = await supabase
         .from("quest_with_badges")
@@ -62,7 +61,7 @@ export default function Quests() {
 
       if (error) throw error;
       setQuests(data || []);
-      toast.success("Quests loaded", { id: t });
+
     } catch (err) {
       toast.error(err.message || "Failed to load quests", { id: t });
       setQuests([]);
@@ -140,8 +139,8 @@ export default function Quests() {
       typeof questOrId === "object"
         ? getStableQuestId(questOrId)
         : Number.isFinite(Number(questOrId))
-        ? String(Number(questOrId))
-        : null;
+          ? String(Number(questOrId))
+          : null;
 
     if (!questIdStr) {
       toast.error("Could not determine questId for this quest.");

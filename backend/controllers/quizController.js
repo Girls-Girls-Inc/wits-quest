@@ -229,4 +229,7 @@ const QuizController = {
 };
 
 module.exports = QuizController;
+module.exports.__isModerator = isModerator;
+module.exports.__sbFromReq = sbFromReq; // optional if you want to test this too
+
 

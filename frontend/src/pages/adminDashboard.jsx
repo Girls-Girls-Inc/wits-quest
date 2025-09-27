@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [user, setUser] = useState(null);
   const [hunts, setHunts] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
 
   const getToken = async () => {
     const {
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
     collectibleId: "",
     locationId: "",
     huntId: "",
+    quizId: "",
     pointsAchievable: "",
     isActive: true,
   });
@@ -65,21 +67,55 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
+        const token = await getToken();
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const authedOptions = {
+          credentials: "include",
+          ...(authHeaders ? { headers: authHeaders } : {}),
+        };
+
         const [collectRes, locRes, huntRes] = await Promise.all([
           fetch(`${API_BASE}/collectibles`, { credentials: "include" }),
           fetch(`${API_BASE}/locations`, { credentials: "include" }),
-          fetch(`${API_BASE}/hunts`, { credentials: "include" }),
+          fetch(`${API_BASE}/hunts`, authedOptions),
         ]);
+
+        const quizzesRes = token
+          ? await fetch(`${API_BASE}/quizzes`, authedOptions)
+          : null;
+
+        const safeJson = async (res, label) => {
+          if (!res) return [];
+          try {
+            const bodyText = await res.text();
+            if (!res.ok) {
+              console.error(`${label}: ${bodyText || res.status}`);
+              return [];
+            }
+            if (!bodyText) return [];
+            return JSON.parse(bodyText);
+          } catch (parseErr) {
+            console.error(`${label}:`, parseErr);
+            return [];
+          }
+        };
+
         const [collectiblesData, locationsData, huntsData] = await Promise.all([
-          collectRes.json(),
-          locRes.json(),
-          huntRes.json(),
+          safeJson(collectRes, "Failed to fetch collectibles"),
+          safeJson(locRes, "Failed to fetch locations"),
+          safeJson(huntRes, "Failed to fetch hunts"),
         ]);
+
+        const quizzesData = quizzesRes
+          ? await safeJson(quizzesRes, "Failed to fetch quizzes")
+          : [];
+
         setCollectibles(
           Array.isArray(collectiblesData) ? collectiblesData : []
         );
         setLocations(Array.isArray(locationsData) ? locationsData : []);
         setHunts(Array.isArray(huntsData) ? huntsData : []);
+        setQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
       } catch (err) {
         console.error(err);
       }
@@ -111,6 +147,7 @@ const AdminDashboard = () => {
       collectibleId: "",
       locationId: "",
       huntId: "",
+      quizId: "",
       pointsAchievable: "",
       isActive: true,
     });
@@ -152,6 +189,7 @@ const AdminDashboard = () => {
         ? Number(questData.collectibleId)
         : null,
       huntId: questData.huntId ? Number(questData.huntId) : null,
+      quizId: questData.quizId ? Number(questData.quizId) : null,
     };
 
     try {
@@ -298,6 +336,12 @@ const AdminDashboard = () => {
               className="tile-button"
             />
             <IconButton
+              icon="quiz"
+              label="Create Quiz"
+              onClick={() => navigate("/addQuiz")}
+              className="tile-button"
+            />
+            <IconButton
               icon="edit_location"
               label="Add Location"
               onClick={() => setSelectedTask("Location Creation")}
@@ -319,6 +363,11 @@ const AdminDashboard = () => {
               icon="star"
               label="Manage Quests"
               onClick={() => navigate("/manageQuests")}
+            />
+            <IconButton
+              icon="quiz"
+              label="Manage Quizzes"
+              onClick={() => navigate("/manageQuizzes")}
             />
             <IconButton
               icon="stars"
@@ -396,6 +445,21 @@ const AdminDashboard = () => {
                   {hunts.map((h) => (
                     <option key={h.id} value={h.id}>
                       {h.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-box">
+                <label>Quiz</label>
+                <select
+                  name="quizId"
+                  value={questData.quizId}
+                  onChange={handleQuestChange}
+                >
+                  <option value="">Select a quiz</option>
+                  {quizzes.map((quiz) => (
+                    <option key={quiz.id} value={quiz.id}>
+                      {quiz.questionText || `Quiz ${quiz.id}`}
                     </option>
                   ))}
                 </select>
@@ -624,3 +688,6 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+

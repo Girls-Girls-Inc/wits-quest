@@ -284,7 +284,7 @@ const Dashboard = () => {
                             aria-label="Quests feature"
                             className="dash-btn"
                             onClick={() =>
-                              navigate(`/quests/${q.questId}?uq=${q.id}`)
+                              navigate(`/displayQuests/${q.questId}?uq=${q.id}`)
                             }
                             disabled={!q.questId}
                           >

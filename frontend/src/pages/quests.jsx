@@ -18,6 +18,7 @@ const USER_QUESTS_API = `${API_BASE}/user-quests`;
 export default function Quests() {
   const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [activeQuest, setActiveQuest] = useState(null);
   const [activeLocation, setActiveLocation] = useState(null);
@@ -53,7 +54,7 @@ export default function Quests() {
   );
 
   const loadQuests = async () => {
-    const t = toast.loading("Loading quests...");
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("quest_with_badges")
@@ -62,10 +63,11 @@ export default function Quests() {
 
       if (error) throw error;
       setQuests(data || []);
-      toast.success("Quests loaded", { id: t });
     } catch (err) {
-      toast.error(err.message || "Failed to load quests", { id: t });
+      toast.error(err.message || "Failed to load quests");
       setQuests([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,8 +142,8 @@ export default function Quests() {
       typeof questOrId === "object"
         ? getStableQuestId(questOrId)
         : Number.isFinite(Number(questOrId))
-        ? String(Number(questOrId))
-        : null;
+          ? String(Number(questOrId))
+          : null;
 
     if (!questIdStr) {
       toast.error("Could not determine questId for this quest.");
@@ -233,8 +235,18 @@ export default function Quests() {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open]);
 
+  if (loading) {
+    return (
+      <div className="quests-loading">
+        <Toaster />
+        <div>Loading quests...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="quests-container">
+      <Toaster />
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">

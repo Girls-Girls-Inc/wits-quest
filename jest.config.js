@@ -32,7 +32,8 @@ module.exports = {
     "backend/**/*.js",
     "frontend/src/**/*.{js,jsx}",
     "!backend/tests/**",
-    "!frontend/src/**/*.test.{js,jsx}"
+    "!frontend/src/**/*.test.{js,jsx}",
+    "!frontend/src/tests/testUtils.js"
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov"],

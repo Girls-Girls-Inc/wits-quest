@@ -104,7 +104,9 @@ const setupHappyLoad = async (quests = [QUEST_A]) => {
   render(<Quests />);
 
   // Wait for initial render to finish (header always present)
-  expect(await screen.findByRole("heading", { name: /quest/i })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { level: 1, name: /quest/i })
+  ).toBeInTheDocument();
 };
 
 /* ========================= Tests ========================= */
@@ -119,7 +121,9 @@ describe("Quests page", () => {
     await setupHappyLoad([QUEST_A]);
 
     // Card content rendered
-    expect(await screen.findByRole("heading", { name: /quest alpha/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /quest alpha/i })
+    ).toBeInTheDocument();
 
     // First location fetch when opening modal
     global.fetch.mockResolvedValueOnce({
@@ -127,17 +131,18 @@ describe("Quests page", () => {
       json: async () => ({ id: "loc-1", name: "Library", address: "1 University Rd" }),
     });
 
-    await screen.findByRole("heading", { name: /quest alpha/i });
-    await screen.findByRole("heading", { name: /quest alpha/i });
-    await screen.findByRole("heading", { name: /quest alpha/i });
     await userEvent.click(screen.getByRole("button", { name: /view details/i }));
 
     // Modal shows quest title and location block (after fetch resolves)
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: /quest alpha/i })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("heading", { level: 2, name: /quest alpha/i })
+    ).toBeInTheDocument();
     expect(within(dialog).getByText(/Location/i)).toBeInTheDocument();
     // Add button visible inside modal
-    expect(within(dialog).getByRole("button", { name: /add to my quests/i })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: /add to my quests/i })
+    ).toBeInTheDocument();
   });
 
   it("adds a quest to My Quests via API calls", async () => {
@@ -173,12 +178,16 @@ describe("Quests page", () => {
     global.fetch = jest.fn();
 
     render(<Quests />);
-    expect(await screen.findByRole("heading", { name: /quest alpha/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /quest alpha/i })
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /refresh/i }));
 
     // After refresh, Beta should appear
-    expect(await screen.findByRole("heading", { name: /quest beta/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /quest beta/i })
+    ).toBeInTheDocument();
   });
 
   it("shows a toast error when Supabase query fails", async () => {

@@ -1,4 +1,3 @@
-// backend/models/quizModel.js
 const { createClient } = require("@supabase/supabase-js");
 
 function normalizeQuizRow(row) {

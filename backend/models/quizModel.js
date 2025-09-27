@@ -145,4 +145,9 @@ const QuizModel = {
   },
 };
 
-module.exports = QuizModel;
+module.exports = {
+  normalizeQuizRow,
+  prepareWritePayload,
+  ...QuizModel,
+};
+

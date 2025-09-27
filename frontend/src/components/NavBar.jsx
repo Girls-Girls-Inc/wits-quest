@@ -3,7 +3,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import NavButton from "./NavButton";
 import "../styles/navbar.css";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Logo.webp";
 
 const Navbar = () => {
   const location = useLocation();

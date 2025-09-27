@@ -100,47 +100,4 @@
   transition: all 0.3s ease;
 }
 
-.admin-menu {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 30px;
-  height: 100%;
-}
 
-.admin-menu h1 {
-  color: white;
-  font-size: 2rem;
-  margin-bottom: 20px;
-}
-
-.admin-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  width: 60%;
-  margin-left: 108px;
-}
-
-.admin-buttons button {
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 1rem;
-  color: white;
-  background: linear-gradient(90deg, #1e3c72, #2a5298);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.admin-buttons button:hover {
-  background: linear-gradient(90deg, #2a5298, #1e3c72);
-  transform: scale(1.05);
-}
-
-.admin-buttons button:focus {
-  outline: 2px solid #ffd700;
-}

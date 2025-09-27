@@ -3,13 +3,13 @@ import { useRef } from "react";
 import IconButton from "../components/IconButton";
 import PasswordInputField from "../components/PasswordInputField";
 import InputField from "../components/InputField";
-import GoogleImage from "../assets/google-icon.png";
+import GoogleImage from "../assets/google-icon.webp";
 import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Logo.webp";
 import SignupImage from "../assets/Signup3.png";
 import { Link } from "react-router-dom";
 import { VITE_WEB_URL } from "../lib/env";
@@ -333,7 +333,7 @@ const Login = () => {
       </div>
       <div className="toggle">
         <div className="toggle-panel toggle-left">
-          <img src={Logo} alt="Compass shaped Logo" />
+          <img src={Logo} alt="Compass shaped Logo" fetchPriority="high" decoding="async" />
           <h1>Welcome back!</h1>
           <p>Not yet a Witizen ?</p>
           <div className="btn signup-btn" onClick={() => setIsActive(true)}>
@@ -368,4 +368,5 @@ const Login = () => {
 };
 
 export default Login;
+
 

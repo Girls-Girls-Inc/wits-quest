@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Block internal tools and authentication redirects
+Disallow: /adminDashboard
+Disallow: /manageQuests
+Disallow: /manageHunts
+Disallow: /manageQuizzes
+Disallow: /addQuiz
+
+Sitemap: https://witsquest-hjggaxgwfgbeh0gk.brazilsouth-01.azurewebsites.net/sitemap.xml

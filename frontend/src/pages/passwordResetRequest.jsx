@@ -4,7 +4,7 @@ import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Logo.webp";
 import env from "../lib/env";
 
 const PasswordResetRequest = () => {
@@ -73,3 +73,4 @@ const PasswordResetRequest = () => {
 };
 
 export default PasswordResetRequest;
+

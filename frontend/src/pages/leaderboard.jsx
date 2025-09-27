@@ -174,7 +174,7 @@ const Leaderboard = () => {
     setRows([]);
     try {
       abortRef.current?.abort();
-    } catch {}
+    } catch { }
     const ac = new AbortController();
     abortRef.current = ac;
 
@@ -183,7 +183,6 @@ const Leaderboard = () => {
       return;
     }
 
-    const loadingToast = toast.loading("Loading leaderboard…");
     try {
       const url = makePublicUrl(key);
       const data = await safeFetchJson(url, {
@@ -196,7 +195,6 @@ const Leaderboard = () => {
       if (reqId !== latestReqId.current) return;
       if (!Array.isArray(data)) throw new Error("Public leaderboard API returned a non-array");
       setRows(data);
-      toast.success("Leaderboard loaded!", { id: loadingToast });
     } catch (e) {
       if (e?.name === "AbortError") return;
       setRows([]);
@@ -228,7 +226,7 @@ const Leaderboard = () => {
       setSelectedPrivateId(null); // leave detail if open? here we close it to return to public
       await loadBoard(boardKey, "public");
     } else {
-      try { abortRef.current?.abort(); } catch {}
+      try { abortRef.current?.abort(); } catch { }
       setRows([]);
       await loadPrivateLeaderboards();
     }
@@ -481,7 +479,7 @@ const Leaderboard = () => {
             {Object.keys(BOARDS).map((key) => (
               <li key={key}>
                 <button
-                  className={`dropdown-item ${ (selectedPrivateId ? detailPeriodKey : boardKey) === key ? "active" : "" }`}
+                  className={`dropdown-item ${(selectedPrivateId ? detailPeriodKey : boardKey) === key ? "active" : ""}`}
                   onClick={async () => {
                     // If detail open, change detailPeriodKey & reload private standings
                     if (selectedPrivateId) {

@@ -10,10 +10,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static frontend
-const frontendPath = path.join(__dirname, "frontend", "dist");
-app.use(express.static(frontendPath));
-
 // Your API routes here (if any)
 //const userRoutes = require("./backend/routes/user-routes");
 //app.use("", userRoutes.routes);
@@ -38,6 +34,13 @@ app.use("", userRoutes);
 
 const huntRoutes = require("./backend/routes/huntRoutes");
 app.use("", huntRoutes);
+
+const privateLeaderboardRoutes = require('./backend/routes/privateLeaderboardRoutes');
+app.use("", privateLeaderboardRoutes);
+
+// Serve static frontend
+const frontendPath = path.join(__dirname, "frontend", "dist");
+app.use(express.static(frontendPath));
 
 // Catch-all to serve index.html for SPA routes
 app.get(/.*/, (req, res) => {

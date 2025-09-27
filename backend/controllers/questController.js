@@ -79,7 +79,6 @@ add: async (req, res) => {
       step: "0",
       isComplete: false,
     };
-
     const { data: uq, error: uqErr } = await QuestModel.addForUser(questPayload, sb);
     if (uqErr) return res.status(400).json({ message: uqErr.message });
 
@@ -88,10 +87,16 @@ add: async (req, res) => {
     if (qErr) return res.status(400).json({ message: qErr.message });
 
     if (questRow && questRow.huntId) {
+      // fetch hunt to get timeLimit
+      const { data: huntRow, error: hErr } = await QuestModel.getHuntById(questRow.huntId, sb);
+      if (hErr) return res.status(400).json({ message: hErr.message });
+
+      const now = new Date().toISOString();
       const userHuntPayload = {
         userId,
         huntId: questRow.huntId,
-        isActive: false, // 👈 requirement
+        isActive: false, // still inactive
+        timeLimit: huntRow?.timeLimit || null,
       };
       await HuntModel.addForUser(userHuntPayload, sb);
     }

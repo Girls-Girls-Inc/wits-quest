@@ -111,6 +111,16 @@ const QuestModel = {
     return { data, error };
   },
 
+  async getHuntById(huntId, sb) {
+    const supabase = pick(sb);
+    const { data, error } = await supabase
+      .from("hunts")  // check your table name
+      .select("*")
+      .eq("id", huntId)
+      .single();
+    return { data, error };
+  },
+
   async updateQuest(questId, questData, sb) {
     const supabase = pick(sb);
     const { data, error } = await supabase

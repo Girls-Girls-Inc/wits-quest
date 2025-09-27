@@ -158,19 +158,43 @@ const onComplete = async () => {
     const j = await res.json();
     if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
-    // 2) Activate the hunt linked to this quest
-    const { error: updateError } = await supabase
-      .from("userHunts")
-      .update({ isActive: true })
-      .eq("userId", me.id)            // ensure it's for this user
-      .eq("huntId", quest.huntId);   // only the hunt linked to this quest
+  // 2) Activate the hunt linked to this quest
+  // fetch the hunt linked to this quest
+  const { data: huntData, error: huntError } = await supabase
+    .from("hunts")
+    .select("*")
+    .eq("id", quest.huntId)
+    .single();
 
-    if (updateError) {
-      console.error("Error activating hunt:", updateError);
-      toast.error("Quest completed, but hunt could not be activated.");
-    } else {
-      toast.success("Hunt activated!");
-    }
+  if (huntError || !huntData) {
+    console.error("Could not fetch hunt:", huntError);
+    toast.error("Quest completed, but hunt could not be activated.");
+    return;
+  }
+
+  const now = new Date();
+  const timeLimitMinutes = huntData.timeLimit || 0;
+
+  const closingAt = new Date(now.getTime() + timeLimitMinutes * 60 * 1000).toISOString();
+
+  const { error: updateError } = await supabase
+    .from("userHunts")
+    .update({
+      isActive: true,
+      startedAt: now.toISOString(),
+      closingAt,
+    })
+    .eq("userId", me.id)
+    .eq("huntId", quest.huntId);
+
+  if (updateError) {
+    console.error("Error activating hunt:", updateError);
+    toast.error("Quest completed, but hunt could not be activated.");
+  } else {
+    toast.success("Hunt activated!");
+  }
+
+
 
     // 3) Award collectible (if any)
     if (quest.collectibleId != null) {

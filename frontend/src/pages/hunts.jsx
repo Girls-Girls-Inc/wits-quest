@@ -13,7 +13,7 @@ const Hunts = () => {
   const [hunts, setHunts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Watch for session changes (same as Dashboard.jsx)
+  // Watch for session changes
   useEffect(() => {
     let mounted = true;
 
@@ -34,7 +34,7 @@ const Hunts = () => {
     return () => sub?.subscription?.unsubscribe?.();
   }, []);
 
-  // Load hunts assigned to the logged-in user
+  // Load user hunts
   const loadUserHunts = async () => {
     if (!accessToken) {
       setHunts([]);
@@ -54,18 +54,11 @@ const Hunts = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
 
-      const rows = (Array.isArray(json) ? json : []).map((uh) => {
-        const h = uh.hunts || {};
-        return {
-          id: uh.id,
-          userId: uh.userId,
-          huntId: uh.huntId,
-          isActive: !!uh.isActive,
-          name: h.name ?? `Hunt ${uh.huntId}`,
-          description: h.description ?? "—",
-          question: h.question ?? "—",
-        };
-      });
+      // Add remainingTime tracking
+      const rows = (Array.isArray(json) ? json : []).map((uh) => ({
+        ...uh,
+        remainingTime: uh.remainingTime || "N/A",
+      }));
 
       setHunts(rows);
     } catch (e) {
@@ -82,9 +75,33 @@ const Hunts = () => {
     }
   }, [accessToken]);
 
-  if (loading) {
-    return <p>Loading your hunts...</p>;
-  }
+  // Live countdown updater
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHunts((prev) =>
+        prev.map((h) => {
+          if (!h.closingAt) return h;
+          const now = new Date();
+          const closing = new Date(h.closingAt);
+          const diff = closing - now;
+
+          if (diff <= 0 && h.isActive) {
+            // mark as inactive locally
+            return { ...h, isActive: false, remainingTime: "Expired" };
+          } else if (diff > 0) {
+            const minutes = Math.floor(diff / 1000 / 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+            return { ...h, remainingTime: `${minutes}m ${seconds}s` };
+          }
+          return h;
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return <p>Loading your hunts...</p>;
 
   return (
     <div className="hunts-page">
@@ -100,6 +117,7 @@ const Hunts = () => {
               <th>Description</th>
               <th>Question</th>
               <th>Status</th>
+              <th>Time Remaining</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -107,15 +125,16 @@ const Hunts = () => {
             {hunts.map((h) => (
               <tr key={h.id}>
                 <td>{h.huntId}</td>
-                <td>{h.name}</td>
-                <td>{h.description}</td>
-                <td>{h.question}</td>
+                <td>{h.hunts?.name ?? `Hunt ${h.huntId}`}</td>
+                <td>{h.hunts?.description ?? "—"}</td>
+                <td>{h.hunts?.question ?? "—"}</td>
                 <td>{h.isActive ? "Active" : "Inactive"}</td>
+                <td>{h.remainingTime}</td>
                 <td>
                   <button
                     className="dash-btn"
                     onClick={() => navigate(`/hunts/${h.huntId}?uh=${h.id}`)}
-                    disabled={!h.huntId}
+                    disabled={!h.huntId || !h.isActive}
                   >
                     View
                   </button>

@@ -49,5 +49,7 @@ router.get("/user-hunts/:id", async (req, res) => {
   }
 });
 
+// POST to check answer
+router.post("/user-hunts/:id/check", HuntController.checkAnswer);
 
 module.exports = router;

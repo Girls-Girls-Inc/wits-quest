@@ -12,8 +12,10 @@ import QuestMap from "./pages/map";
 import Leaderboard from "./pages/leaderboard";
 import Admin from "./pages/adminDashboard";
 import QuestDetail from "./pages/questDetail";
+import HuntDetail from "./pages/huntDetail";
 import ManageQuests from "./pages/manageQuests";
 import ManageHunts from "./pages/manageHunts";
+import Hunts from "./pages/hunts";
 import Settings from "./pages/settings";
 
 const App = () => {
@@ -70,8 +72,10 @@ const App = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/adminDashboard" element={<Admin />} />
           <Route path="/quests/:questId" element={<QuestDetail />} />
+          <Route path="/hunts/:huntId" element={<HuntDetail />} />
           <Route path="/manageQuests" element={<ManageQuests />} />
           <Route path="/manageHunts" element={<ManageHunts />} />
+          <Route path="/hunts" element={<Hunts />} />
         </Route>
       </Routes>
     </>

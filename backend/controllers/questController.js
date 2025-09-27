@@ -2,6 +2,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const QuestModel = require('../models/questModel');
 const LeaderboardModel = require('../models/leaderboardModel'); // we'll call a helper below
+const HuntModel = require("../models/huntModel");
 
 // Build a per-request client that forwards the user's JWT.
 // IMPORTANT: use the ANON key so RLS applies.
@@ -58,33 +59,49 @@ const QuestController = {
   },
 
   // POST /user-quests  { questId }
-  add: async (req, res) => {
-    try {
-      const sb = sbFromReq(req);
-      if (!sb) return res.status(401).json({ message: 'Missing bearer token' });
+// POST /user-quests  { questId }
+add: async (req, res) => {
+  try {
+    const sb = sbFromReq(req);
+    if (!sb) return res.status(401).json({ message: "Missing bearer token" });
 
-      const who = await sb.auth.getUser();
-      const userId = who.data?.user?.id;
-      if (!userId) return res.status(401).json({ message: 'Unauthenticated' });
+    const who = await sb.auth.getUser();
+    const userId = who.data?.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthenticated" });
 
-      const { questId } = req.body || {};
-      if (!questId) return res.status(400).json({ message: 'questId is required' });
+    const { questId } = req.body || {};
+    if (!questId) return res.status(400).json({ message: "questId is required" });
 
-      const payload = {
+    // --- Step 1: add quest to userQuests
+    const questPayload = {
+      userId,
+      questId,
+      step: "0",
+      isComplete: false,
+    };
+
+    const { data: uq, error: uqErr } = await QuestModel.addForUser(questPayload, sb);
+    if (uqErr) return res.status(400).json({ message: uqErr.message });
+
+    // --- Step 2: lookup quest → huntId
+    const { data: questRow, error: qErr } = await QuestModel.getQuestById(questId, sb);
+    if (qErr) return res.status(400).json({ message: qErr.message });
+
+    if (questRow && questRow.huntId) {
+      const userHuntPayload = {
         userId,
-        questId,
-        step: "0",
-        isComplete: false,
+        huntId: questRow.huntId,
+        isActive: false, // 👈 requirement
       };
-
-      const { data, error } = await QuestModel.addForUser(payload, sb);
-      if (error) return res.status(400).json({ message: error.message });
-
-      return res.status(201).json(data[0]);
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
+      await HuntModel.addForUser(userHuntPayload, sb);
     }
-  },
+
+    return res.status(201).json(uq[0]);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+},
+
 
   // GET /user-quests (list mine)
   mine: async (req, res) => {

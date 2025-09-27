@@ -26,6 +26,7 @@ const Navbar = () => {
     { route: "/map", icon: "map", label: "Map" },
     { route: "/leaderboard", icon: "leaderboard", label: "Leaderboard" },
     { route: "/settings", icon: "profile", label: "Profile" },
+    { route: "/hunts", icon: "profile", label: "Hunts" },
   ];
 
   return (

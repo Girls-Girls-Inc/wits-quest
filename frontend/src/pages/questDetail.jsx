@@ -132,65 +132,75 @@ export default function QuestDetail() {
       mapRef.current.panTo({ lat: pos.lat, lng: pos.lng });
   }, [pos]);
 
-  const onComplete = async () => {
-    if (!accessToken || !me || !quest || !userQuestId) return;
-    if (!withinRadius) {
-      toast.error("You must be inside the quest radius to complete.");
-      return;
+const onComplete = async () => {
+  if (!accessToken || !me || !quest || !userQuestId) return;
+  if (!withinRadius) {
+    toast.error("You must be inside the quest radius to complete.");
+    return;
+  }
+
+  try {
+    // 1) Complete the quest
+    const res = await fetch(
+      `${API_BASE}/user-quests/${userQuestId}/complete`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          questId: quest.id,
+          points: quest.pointsAchievable,
+        }),
+      }
+    );
+    const j = await res.json();
+    if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
+
+    // 2) Activate the hunt linked to this quest
+    const { error: updateError } = await supabase
+      .from("userHunts")
+      .update({ isActive: true })
+      .eq("userId", me.id)            // ensure it's for this user
+      .eq("huntId", quest.huntId);   // only the hunt linked to this quest
+
+    if (updateError) {
+      console.error("Error activating hunt:", updateError);
+      toast.error("Quest completed, but hunt could not be activated.");
+    } else {
+      toast.success("Hunt activated!");
     }
 
-    try {
-      // 1) Complete the quest (points, status, etc.)
-      const res = await fetch(
-        `${API_BASE}/user-quests/${userQuestId}/complete`,
+    // 3) Award collectible (if any)
+    if (quest.collectibleId != null) {
+      const award = await fetch(
+        `${API_BASE}/users/${encodeURIComponent(me.id)}/collectibles/${encodeURIComponent(quest.collectibleId)}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            questId: quest.id,
-            points: quest.pointsAchievable,
-          }),
+          body: JSON.stringify({ earnedAt: new Date().toISOString() }),
         }
       );
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
-
-      // 2) If the quest is linked to a collectible, add it to the user's inventory (idempotent)
-      if (quest.collectibleId != null) {
-        const award = await fetch(
-          `${API_BASE}/users/${encodeURIComponent(
-            me.id
-          )}/collectibles/${encodeURIComponent(quest.collectibleId)}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({ earnedAt: new Date().toISOString() }),
-          }
-        );
-        const aj = await award.json().catch(() => ({}));
-        if (!award.ok) {
-          // Not fatal for completion, but tell the user
-          console.warn("Award collectible failed:", aj);
-          toast.error(
-            aj?.error || "Quest done, but collectible could not be awarded."
-          );
-        } else {
-          toast.success("Collectible added to your inventory!");
-        }
+      const aj = await award.json().catch(() => ({}));
+      if (!award.ok) {
+        console.warn("Award collectible failed:", aj);
+        toast.error("Quest done, but collectible could not be awarded.");
+      } else {
+        toast.success("Collectible added to your inventory!");
       }
-
-      toast.success("Quest completed! Points awarded.");
-      navigate("/dashboard");
-    } catch (e) {
-      toast.error(e.message || "Completion failed");
     }
-  };
+
+    toast.success("Quest completed! Points awarded.");
+    navigate("/dashboard");
+  } catch (e) {
+    toast.error(e.message || "Completion failed");
+  }
+};
+
 
   const mapCenter = useMemo(() => {
     if (loc?.lat && loc?.lng) return { lat: loc.lat, lng: loc.lng };

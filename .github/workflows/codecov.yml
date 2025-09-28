@@ -1,20 +1,3 @@
-
-The CI environment is generating different coverage data
-Codecov is failing to parse your coverage file correctly
-There's a path/encoding issue in the upload
-After you update and push:
-Check the GitHub Action logs for the debugging output
-Compare the CI-generated lcov.info with your local one
-Look at the Codecov upload logs for any parsing errors
-The debugging step will show us exactly what the CI environment is generating vs. what you see locally. If the CI shows the same good coverage data, then the issue is in how Codecov is processing it.
-
-My prediction: The CI environment will show the same good coverage data as your local, but Codecov is having trouble parsing or processing it correctly.
-
-
-
-
-
-
 name: Run Tests and Upload Coverage
 
 on:
@@ -49,22 +32,33 @@ jobs:
           cd ../backend && npm install
 
       - name: Run tests with coverage
-        run: npx jest --coverage
+        run: |
+          echo "Starting tests with coverage..."
+          npx jest --coverage --verbose --forceExit --detectOpenHandles
+          echo "Tests completed"
         continue-on-error: true
 
       - name: List coverage files (debug)
         run: |
           echo "Coverage directory contents:"
           ls -la coverage/ || echo "No coverage directory found"
-          echo "Looking for lcov files:"
-          find . -name "*.info" -o -name "lcov.info" || echo "No lcov files found"
+          echo "=== First 50 lines of lcov.info ==="
+          head -50 coverage/lcov.info || echo "No lcov.info found"
+          echo "=== Checking components coverage ==="
+          grep -A 10 -B 2 "frontend/src/components" coverage/lcov.info || echo "components not found"
+          echo "=== Checking pages coverage ==="
+          grep -A 10 -B 2 "frontend/src/pages" coverage/lcov.info || echo "pages not found"
+          echo "=== Total lines in lcov.info ==="
+          wc -l coverage/lcov.info || echo "Could not count lines"
 
       - name: Upload coverage reports to Codecov
         if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          directory: ./coverage
           flags: unittests
           verbose: true
           fail_ci_if_error: false
+          override_branch: dev
+          override_commit: ${{ github.sha }}
+          override_pr: ${{ github.event.number }}

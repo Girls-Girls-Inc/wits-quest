@@ -1,3 +1,22 @@
+# Simple ignore configuration that should work
+ignore:
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.sass"
+  - "**/*.less"
+  - "**/*.json"
+  - "**/node_modules/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/*.config.js"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/*.test.js"
+  - "**/*.test.jsx"
+  - "frontend/src/main.jsx"
+  - "frontend/src/lib/env.js"
+  - "frontend/src/supabase/supabaseClient.js"
+
 coverage:
   status:
     project:
@@ -8,49 +27,5 @@ coverage:
       default:
         target: auto
         threshold: 1%
-  
-  ignore:
-    # Ignore non-executable files
-    - "**/*.css"
-    - "**/*.scss"
-    - "**/*.sass"
-    - "**/*.less"
-    - "**/*.json"
-    
-    # Ignore build and dependency directories
-    - "**/node_modules/**"
-    - "**/build/**"
-    - "**/dist/**"
-    - "**/coverage/**"
-    
-    # Ignore config files
-    - "**/*.config.js"
-    - "**/*.config.json"
-    
-    # Ignore test files and directories
-    - "**/tests/**"
-    - "**/__tests__/**"
-    - "**/*.test.js"
-    - "**/*.test.jsx"
-    - "**/*.spec.js"
-    - "**/*.spec.jsx"
-    - "frontend/src/tests/**"
-    - "backend/tests/**"
-    
-    # Ignore specific files that show 0% coverage
-    - "frontend/src/main.jsx"
-    - "frontend/src/lib/env.js"
-    - "frontend/src/supabase/supabaseClient.js"
-    
-    # Ignore mock files
-    - "**/__mocks__/**"
-    - "**/*.mock.js"
-    - "**/*.mock.jsx"
 
-  round: down
-  precision: 2
-
-comment:
-  layout: "reach, diff, flags, files"
-  behavior: default
-  require_changes: false
+comment: false

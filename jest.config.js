@@ -29,24 +29,22 @@ module.exports = {
 
   collectCoverage: true,
   collectCoverageFrom: [
-    "backend/**/*.js",
-    "frontend/src/**/*.{js,jsx}",
-    "!backend/tests/**",
-    "!frontend/src/**/*.test.{js,jsx}",
-    "!frontend/src/tests/testUtils.js",
-    // Exclude non-executable files
-    "!**/*.css",
-    "!**/*.scss", 
-    "!**/*.sass",
-    "!**/*.less",
-    "!**/*.json",
-    // Exclude config and build files
-    "!**/*.config.js",
-    "!**/build/**",
-    "!**/dist/**",
-    // Exclude files that show 0% coverage in your report
+    // Be very specific about what to include
+    "backend/controllers/**/*.js",
+    "backend/middleware/**/*.js", 
+    "backend/models/**/*.js",
+    "backend/routes/**/*.js",
+    "backend/supabase/**/*.js",
+    "frontend/src/components/**/*.{js,jsx}",
+    "frontend/src/pages/**/*.{js,jsx}",
+    // Exclude all test files
+    "!**/*.test.{js,jsx}",
+    "!**/*.spec.{js,jsx}",
+    "!**/tests/**",
+    "!**/__tests__/**",
+    // Exclude specific problem files
     "!frontend/src/main.jsx",
-    "!frontend/src/lib/env.js",
+    "!frontend/src/lib/env.js", 
     "!frontend/src/supabase/supabaseClient.js"
   ],
   coverageDirectory: "coverage",

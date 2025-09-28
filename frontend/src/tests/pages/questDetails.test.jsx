@@ -203,4 +203,147 @@ describe("QuestDetail page", () => {
             )
         );
     });
+/* ==== EXTRA COVERAGE TESTS FOR questDetail.jsx (fixed to match UI) ==== */
+
+it("falls back to 'Unknown' location when location fetch fails (no toast)", async () => {
+  const toast = (await import("react-hot-toast")).default;
+
+  // quests ok
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "q1", name: "Q", pointsAchievable: 10, locationId: "loc1" }],
+    })
+    // location fails
+    .mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: "Location broken" }),
+      text: async () => "Location broken",
+    });
+
+  render(<QuestDetail />);
+
+  // Page renders with fallback values
+  expect(await screen.findByRole("heading", { name: /^q$/i })).toBeInTheDocument();
+  expect(screen.getByText(/location:/i).closest("span")).toHaveTextContent(/unknown/i);
+  expect(screen.getByText(/radius/i).closest("span")).toHaveTextContent(/0/);
+
+  // Component doesn't toast on this path — assert no error toast
+  expect(toast.error).not.toHaveBeenCalled();
+});
+
+it("guards completion when no auth token (toasts sign-in message)", async () => {
+  const toast = (await import("react-hot-toast")).default;
+  const sb = (await import("../../supabase/supabaseClient")).default;
+
+  // Use the working setup to load quest + location
+  await setup();
+  await screen.findByRole("heading", { name: /test quest|^q$/i });
+
+  // Next time the component asks for session (on complete), return no token
+  sb.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+
+  const btn = screen.getByRole("button", { name: /check-in & complete/i });
+  await userEvent.click(btn);
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/sign in/i));
+  });
+});
+
+it("shows error toast when complete quest API returns non-ok", async () => {
+  const toast = (await import("react-hot-toast")).default;
+
+  // Load normally
+  await setup();
+  await screen.findByRole("heading", { name: /test quest|^q$/i });
+
+  // Completing fails
+  global.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => ({ message: "Fail complete" }),
+    text: async () => "Fail complete",
+  });
+
+  await userEvent.click(screen.getByRole("button", { name: /check-in & complete/i }));
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/fail complete/i));
+  });
+});
+
+it("shows error toast when awarding collectible fails", async () => {
+  const toast = (await import("react-hot-toast")).default;
+
+  // First load a quest with a collectible via setup-like sequence
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{
+        id: "q1",
+        name: "Q",
+        pointsAchievable: 10,
+        locationId: "loc1",
+        collectibleId: "c1",
+      }],
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "loc1", name: "L", lat: 0, lng: 0, radius: 100 }),
+    });
+
+  render(<QuestDetail />);
+  await screen.findByRole("heading", { name: /^q$/i });
+
+  // complete quest ok
+  global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+  // award collectible fails
+  global.fetch.mockResolvedValueOnce({
+    ok: false,
+    json: async () => ({ message: "No award" }),
+    text: async () => "No award",
+  });
+
+  await userEvent.click(screen.getByRole("button", { name: /check-in & complete/i }));
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/no award/i));
+  });
+});
+
+it("exposes a 'Directions' CTA (link or button) when there is a non-zero distance", async () => {
+  // Make distance non-zero to ensure the CTA shows
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "q1", name: "Q", pointsAchievable: 10, locationId: "loc1" }],
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "loc1", name: "L", lat: 0.001, lng: 0.001, radius: 10 }),
+    });
+
+  const winOpen = jest.spyOn(window, "open").mockImplementation(() => null);
+
+  render(<QuestDetail />);
+  await screen.findByRole("heading", { name: /^q$/i });
+
+  // Some implementations render a link, others a button
+  const link = screen.queryByRole("link", { name: /directions/i });
+  const btn  = screen.queryByRole("button", { name: /directions|get directions/i });
+
+  expect(link || btn).toBeTruthy();
+
+  if (link) {
+    expect(link).toHaveAttribute("href");
+    await userEvent.click(link);
+  } else if (btn) {
+    await userEvent.click(btn);
+  }
+
+  expect(winOpen).toHaveBeenCalled();
+  winOpen.mockRestore();
+});
+
+
 });

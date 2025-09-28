@@ -18,11 +18,13 @@ const USER_QUESTS_API = `${API_BASE}/user-quests`;
 export default function Quests() {
   const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [activeQuest, setActiveQuest] = useState(null);
   const [activeLocation, setActiveLocation] = useState(null);
   const [jwt, setJwt] = useState(null);
   const [myQuestIds, setMyQuestIds] = useState(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   // guard against double-click / concurrent adds of the same quest
   const pendingAdds = useRef(new Set());
 
@@ -52,7 +54,7 @@ export default function Quests() {
   );
 
   const loadQuests = async () => {
-    const t = toast.loading("Loading quests...");
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("quest_with_badges")
@@ -61,10 +63,11 @@ export default function Quests() {
 
       if (error) throw error;
       setQuests(data || []);
-      toast.success("Quests loaded", { id: t });
     } catch (err) {
-      toast.error(err.message || "Failed to load quests", { id: t });
+      toast.error(err.message || "Failed to load quests");
       setQuests([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,14 +126,24 @@ export default function Quests() {
     setActiveLocation(null);
   };
 
+  const handlePromptLogin = () => {
+    setShowLoginPrompt(false);
+    closeModal();
+    navigate("/login");
+  };
+
+  const handlePromptDismiss = () => {
+    setShowLoginPrompt(false);
+  };
+
   const addToMyQuests = async (questOrId) => {
     // derive a single stable id (string)
     const questIdStr =
       typeof questOrId === "object"
         ? getStableQuestId(questOrId)
         : Number.isFinite(Number(questOrId))
-        ? String(Number(questOrId))
-        : null;
+          ? String(Number(questOrId))
+          : null;
 
     if (!questIdStr) {
       toast.error("Could not determine questId for this quest.");
@@ -146,7 +159,11 @@ export default function Quests() {
         data: { session },
       } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) throw new Error("Please sign in.");
+      if (!token) {
+        toast.dismiss(t);
+        setShowLoginPrompt(true);
+        return;
+      }
 
       const ids = await fetchMyQuestIds(token);
       if (ids.has(questIdStr)) {
@@ -210,7 +227,6 @@ export default function Quests() {
     )}&hl=en&z=15&output=embed`;
   }, [activeLocation, activeQuest]);
 
-  // ESC closes modal
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") closeModal();
@@ -219,12 +235,22 @@ export default function Quests() {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open]);
 
+  if (loading) {
+    return (
+      <div className="quests-loading">
+        <Toaster />
+        <div>Loading quests...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="quests-container">
       <Toaster />
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">
+          <IconButton icon="map" onClick={() => navigate(`/map`)} label="Map" />
           <IconButton icon="refresh" onClick={loadQuests} label="Refresh" />
         </div>
       </div>
@@ -343,6 +369,40 @@ export default function Quests() {
                     onClick={() => addToMyQuests(activeQuest)}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLoginPrompt && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="login-required-title"
+          onClick={handlePromptDismiss}
+        >
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-body">
+              <h2 id="login-required-title">Login Required</h2>
+              <p>
+                You need an account to save quests. Would you like to sign in
+                now?
+              </p>
+              <div className="modal-actions">
+                <IconButton
+                  icon="login"
+                  label="Go to Login"
+                  onClick={handlePromptLogin}
+                />
+                <IconButton
+                  icon="close"
+                  label="Continue Browsing"
+                  onClick={handlePromptDismiss}
+                />
               </div>
             </div>
           </div>

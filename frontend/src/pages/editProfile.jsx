@@ -131,8 +131,6 @@ const Profile = () => {
 
   return (
     <div className="profile-container">
-      <Toaster />
-
       <div className="profile-top">
         <IconButton
           icon={isEditing ? "close" : "edit"}

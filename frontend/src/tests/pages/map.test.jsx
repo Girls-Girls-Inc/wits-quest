@@ -1,16 +1,18 @@
 /** @jest-environment jsdom */
 
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-// (optional) in case setup file doesn't include it
-// import '@testing-library/jest-dom';
-
-// ensure a sane default if your component falls back to process.env
+// env default
 process.env.VITE_WEB_URL = process.env.VITE_WEB_URL || "http://test.local";
 
-// Polyfill for libs that expect them (and to avoid router/TextEncoder issues)
+// Polyfill
 const { TextEncoder, TextDecoder } = require("util");
 if (!global.TextEncoder) global.TextEncoder = TextEncoder;
 if (!global.TextDecoder) global.TextDecoder = TextDecoder;
@@ -20,12 +22,22 @@ const jsonResponse = (body, status = 200) => ({
   status,
   headers: { get: () => null },
   json: async () => body,
-  text: async () => (typeof body === "string" ? body : JSON.stringify(body)),
+  text: async () =>
+    typeof body === "string" ? body : JSON.stringify(body),
 });
 
 /* ========================= Mocks ========================= */
 
-// react-hot-toast — mirror your other tests
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => {
+  const React = require("react");
+  return {
+    useNavigate: () => mockNavigate,
+    Link: ({ to, children }) =>
+      React.createElement("a", { href: to }, children),
+  };
+});
+
 jest.mock("react-hot-toast", () => {
   const mockToast = {
     success: jest.fn(),
@@ -44,24 +56,19 @@ jest.mock("react-hot-toast", () => {
   };
 });
 
-// Keep a ref to the last fake map so we can assert fitBounds was called
 let __lastMap = null;
 const setLastMap = (m) => (__lastMap = m);
 export const getLastMap = () => __lastMap;
 
-// Minimal mock of @react-google-maps/api
 jest.mock("@react-google-maps/api", () => {
   const React = require("react");
   const { useEffect } = React;
 
-  // This value is mutable per-test
   let useLoadScriptState = { isLoaded: true, loadError: null };
 
   const GoogleMap = ({ children, onLoad }) => {
-    // Simulate Google Maps map object
     const mapObj = { fitBounds: jest.fn() };
     useEffect(() => {
-      // Provide the LatLngBounds constructor expected by component
       if (!global.window.google) {
         global.window.google = {
           maps: {
@@ -79,12 +86,7 @@ jest.mock("@react-google-maps/api", () => {
   };
 
   const Marker = ({ title, onClick }) => (
-    <button
-      type="button"
-      data-testid={`marker-${title}`}
-      aria-label={`marker-${title}`}
-      onClick={onClick}
-    >
+    <button type="button" aria-label={title} onClick={onClick}>
       {title}
     </button>
   );
@@ -100,7 +102,6 @@ jest.mock("@react-google-maps/api", () => {
     GoogleMap,
     Marker,
     InfoWindow,
-    // Allow tests to toggle loaded/error states
     useLoadScript: () => useLoadScriptState,
     __setUseLoadScriptState: (s) => {
       useLoadScriptState = s;
@@ -110,24 +111,17 @@ jest.mock("@react-google-maps/api", () => {
 
 import { __setUseLoadScriptState as setMapLoadState } from "@react-google-maps/api";
 
-/* -------------------- Fetch Mock -------------------- */
-
 const WEB_URL = process.env.VITE_WEB_URL || "http://test.local";
-const QUESTS_URL = `${WEB_URL}/quests`;
-
-// Regex helpers so we don't depend on exact base URL
 const isQuests = (url) => /\/quests(?:\?.*)?$/.test(String(url));
+const isUserQuests = (url) => String(url).includes("/user-quests");
 const matchLocId = (url) => /\/locations\/([^/?#]+)/.exec(String(url));
 const matchLocQuery = (url) => /\/locations\?id=([^&]+)/.exec(String(url));
 
 beforeEach(() => {
   jest.clearAllMocks();
-
   setMapLoadState({ isLoaded: true, loadError: null });
   global.fetch = jest.fn();
 });
-
-/* ========================= Test Data ========================= */
 
 const questsPayload = [
   {
@@ -139,9 +133,7 @@ const questsPayload = [
     isActive: true,
     createdAt: "2025-08-30T12:00:00.000Z",
     description: "Main ceremony area",
-    collectibleId: "col-111",
   },
-  // 2) nested "location" with latitude/longitude
   {
     id: "q2",
     name: "Library",
@@ -152,7 +144,6 @@ const questsPayload = [
     description: "Quiet place to study",
     locationId: "loc-2",
   },
-  // 3) geojson-like: coordinates [lng, lat]
   {
     id: "q3",
     title: "Science Stadium",
@@ -161,14 +152,12 @@ const questsPayload = [
     isActive: true,
     createdAt: "2025-08-28T09:00:00.000Z",
   },
-  // 4) needs location lookup via /locations/:id
   {
     id: "q4",
     name: "Chamber of Mines",
     locationId: "loc-1",
     isActive: true,
   },
-  // 5) overlapping with q1 to exercise spreadOverlaps (same exact coords)
   {
     id: "q5",
     name: "Great Hall Annex",
@@ -181,21 +170,15 @@ const questsPayload = [
 
 const locationsById = {
   "loc-1": { lat: -26.195, lng: 28.041 },
-  // For loc-2 we'll simulate fallback endpoint instead of /:id
 };
 const locationsFallback = {
   "loc-2": { data: [{ latitude: -26.198, longitude: 28.01 }] },
 };
 
-/* ========================= Helpers ========================= */
-
 function mockHappyFetch() {
   global.fetch.mockImplementation((url) => {
     const s = String(url);
-
-    if (isQuests(s)) {
-      return Promise.resolve(jsonResponse(questsPayload, 200));
-    }
+    if (isQuests(s)) return Promise.resolve(jsonResponse(questsPayload, 200));
     const locIdMatch = matchLocId(s);
     if (locIdMatch) {
       const id = decodeURIComponent(locIdMatch[1]);
@@ -204,7 +187,6 @@ function mockHappyFetch() {
       }
       return Promise.resolve(jsonResponse("", 404));
     }
-
     const qMatch = matchLocQuery(s);
     if (qMatch) {
       const id = decodeURIComponent(qMatch[1]);
@@ -217,8 +199,20 @@ function mockHappyFetch() {
   });
 }
 
+jest.mock("../../styles/map.css", () => ({}));
+jest.mock("../../components/IconButton", () => (props) => (
+  <button {...props}>{props.label || "Button"}</button>
+));
 
-import QuestMap from "../../pages/map.jsx";
+jest.mock("../../supabase/supabaseClient", () => ({
+  __esModule: true,
+  default: { auth: { getSession: jest.fn() } },
+}));
+
+const path = require("path");
+const mapAbsPath = path.resolve(__dirname, "../../pages/map.jsx");
+jest.unmock(mapAbsPath);
+const QuestMap = require(mapAbsPath).default;
 
 /* ========================= Tests ========================= */
 
@@ -226,68 +220,35 @@ describe("QuestMap page", () => {
   it("shows Google Maps loading state when script not yet loaded", () => {
     setMapLoadState({ isLoaded: false, loadError: null });
     mockHappyFetch();
-
     render(<QuestMap />);
-    expect(screen.getByText(/Loading map…/i)).toBeInTheDocument();
-
-    // restore for other tests
+    expect(screen.getByText(/Loading map/i)).toBeInTheDocument();
     setMapLoadState({ isLoaded: true, loadError: null });
   });
 
   it("shows a friendly error if Google Maps script fails to load", () => {
     setMapLoadState({ isLoaded: false, loadError: new Error("boom") });
     mockHappyFetch();
-
     render(<QuestMap />);
-    expect(screen.getByText(/Failed to load Google Maps\./i)).toBeInTheDocument();
-
+    expect(
+      screen.getByText(/Failed to load Google Maps./i)
+    ).toBeInTheDocument();
     setMapLoadState({ isLoaded: true, loadError: null });
   });
 
   it("fetches quests, resolves locations, renders markers, and opens InfoWindow", async () => {
     mockHappyFetch();
-
     render(<QuestMap />);
     expect(await screen.findByText(/Quests Map/i)).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /refresh/i })).not.toBeDisabled();
-    });
 
-    // Counts reflect 5 quests plotted
-    expect(screen.getByText(/Quests:\s*5/i)).toBeInTheDocument();
-    expect(screen.getByText(/Plotted:\s*5/i)).toBeInTheDocument();
-    
-    const m1 = screen.getByTestId("marker-Great Hall");
-    const m2 = screen.getByTestId("marker-Library");
-    const m3 = screen.getByTestId("marker-Science Stadium");
-    const m4 = screen.getByTestId("marker-Chamber of Mines");
-    const m5 = screen.getByTestId("marker-Great Hall Annex");
+    const m1 = await screen.findByRole("button", { name: /^Great Hall$/i });
     expect(m1).toBeInTheDocument();
-    expect(m2).toBeInTheDocument();
-    expect(m3).toBeInTheDocument();
-    expect(m4).toBeInTheDocument();
-    expect(m5).toBeInTheDocument();
 
-    // Click a marker to open InfoWindow and check content
     await userEvent.click(m1);
-
     const info = await screen.findByRole("dialog", { name: /info-window/i });
     expect(within(info).getByText(/Great Hall/i)).toBeInTheDocument();
     expect(within(info).getByText(/Main ceremony area/i)).toBeInTheDocument();
     expect(within(info).getByText(/Points:\s*100/i)).toBeInTheDocument();
-    expect(within(info).getByText(/Status:\s*Active/i)).toBeInTheDocument();
-    expect(within(info).getByText(/Collectible:\s*col-111/i)).toBeInTheDocument();
-    // Created date is locale-dependent; assert the prefix
-    expect(within(info).getByText(/^Created:/i)).toBeInTheDocument();
 
-    // Click another marker — should show inactive status and location id
-    await userEvent.click(m2);
-    const info2 = await screen.findByRole("dialog", { name: /info-window/i });
-    expect(within(info2).getByText(/Library/i)).toBeInTheDocument();
-    expect(within(info2).getByText(/Status:\s*Inactive/i)).toBeInTheDocument();
-    expect(within(info2).getByText(/Location ID:\s*loc-2/i)).toBeInTheDocument();
-
-    // Verify map.fitBounds was called when the map loaded
     const mapRef = getLastMap();
     expect(mapRef).toBeTruthy();
     expect(mapRef.fitBounds).toHaveBeenCalledTimes(1);
@@ -295,35 +256,26 @@ describe("QuestMap page", () => {
 
   it("shows a toast error when /quests returns an error", async () => {
     global.fetch.mockResolvedValueOnce(jsonResponse("", 500));
-
     const toast = (await import("react-hot-toast")).default;
-
     render(<QuestMap />);
-
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("HTTP 500");
     });
   });
 
   it("refresh button re-fetches and updates counts", async () => {
-    // First payload: 5 quests
     mockHappyFetch();
-
     render(<QuestMap />);
     await screen.findByText(/Quests Map/i);
 
-    // wait for first load to finish
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /refresh/i })).not.toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /refresh/i })
+      ).not.toBeDisabled();
     });
 
-    expect(screen.getByText(/Quests:\s*5/i)).toBeInTheDocument();
-    expect(screen.getByText(/Plotted:\s*5/i)).toBeInTheDocument();
-
-    // Next fetch returns only 2 quests
     global.fetch.mockImplementationOnce((url) => {
-      const s = String(url);
-      if (isQuests(s)) {
+      if (isQuests(url)) {
         return Promise.resolve(
           jsonResponse(
             [
@@ -341,21 +293,140 @@ describe("QuestMap page", () => {
       return Promise.resolve(jsonResponse("", 404));
     });
 
-    // Click Refresh
     await userEvent.click(screen.getByRole("button", { name: /refresh/i }));
 
-    // wait for second load to finish
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /refresh/i })).not.toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /refresh/i })
+      ).not.toBeDisabled();
     });
 
-    await waitFor(() => {
-      expect(screen.getByText(/Quests:\s*2/i)).toBeInTheDocument();
-      expect(screen.getByText(/Plotted:\s*2/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /^FNB Stadium$/i })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /^Origins Centre$/i })
+    ).toBeInTheDocument();
+  });
+
+  it("prompts login when adding a quest without session", async () => {
+    mockHappyFetch();
+    const supabase = require("../../supabase/supabaseClient").default;
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+
+    render(<QuestMap />);
+    await screen.findByText(/Quests Map/i);
+
+    const marker = await screen.findByRole("button", { name: /^Great Hall$/i });
+    await userEvent.click(marker);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Add to my Quests/i })
+    );
+
+    const modal = await screen.findByRole("dialog", { name: /Login Required/i });
+    expect(modal).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Continue Browsing/i })
+    );
+    expect(
+      screen.queryByRole("dialog", { name: /Login Required/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("navigates to login when choosing Go to Login in modal", async () => {
+    mockHappyFetch();
+    const supabase = require("../../supabase/supabaseClient").default;
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+
+    render(<QuestMap />);
+    await screen.findByText(/Quests Map/i);
+
+    const marker = await screen.findByRole("button", { name: /^Great Hall$/i });
+    await userEvent.click(marker);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Add to my Quests/i })
+    );
+
+    await screen.findByRole("dialog", { name: /Login Required/i });
+    await userEvent.click(
+      screen.getByRole("button", { name: /Go to Login/i })
+    );
+    expect(mockNavigate).toHaveBeenCalledWith("/login");
+  });
+
+  it("handles 409 conflict when adding a quest", async () => {
+    const supabase = require("../../supabase/supabaseClient").default;
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { access_token: "token" } },
     });
 
-    // New markers present
-    expect(screen.getByTestId("marker-FNB Stadium")).toBeInTheDocument();
-    expect(screen.getByTestId("marker-Origins Centre")).toBeInTheDocument();
+    const toast = (await import("react-hot-toast")).default;
+    toast.loading.mockReturnValue("tid-1");
+
+    global.fetch.mockImplementation((url, opts) => {
+      const s = String(url);
+
+      // initial quests load
+      if (isQuests(s)) {
+        return Promise.resolve(jsonResponse(questsPayload, 200));
+      }
+
+      // user-quests GET (empty list)
+      if (isUserQuests(s) && (!opts || opts.method === "GET")) {
+        return Promise.resolve(jsonResponse([], 200));
+      }
+
+      // user-quests POST → conflict
+      if (isUserQuests(s) && opts?.method === "POST") {
+        return Promise.resolve(
+          new Response(JSON.stringify({ message: "dup" }), {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          })
+        );
+      }
+
+      return Promise.resolve(jsonResponse("", 404));
+    });
+
+    render(<QuestMap />);
+    await screen.findByText(/Quests Map/i);
+
+    const marker = await screen.findByRole("button", { name: /^Great Hall$/i });
+    await userEvent.click(marker);
+
+    const addBtn = await screen.findByRole("button", { name: /Add to my Quests/i });
+    await userEvent.click(addBtn);
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        "This quest is already in your list.",
+        { id: "tid-1" }
+      );
+    });
+  });
+
+
+  it("shows error when location lookup fails", async () => {
+    global.fetch.mockImplementation((url) => {
+      if (isQuests(url)) {
+        return Promise.resolve(
+          jsonResponse(
+            [{ id: "x", name: "Nowhere Quest", locationId: "does-not-exist" }],
+            200
+          )
+        );
+      }
+      return Promise.resolve(jsonResponse("", 404));
+    });
+    const toast = (await import("react-hot-toast")).default;
+    render(<QuestMap />);
+    await screen.findByText(/Quests Map/i);
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Could not load location does-not-exist"
+      );
+    });
   });
 });

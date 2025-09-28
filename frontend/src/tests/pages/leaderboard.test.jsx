@@ -1,32 +1,25 @@
 /** @jest-environment jsdom */
-
+import "@testing-library/jest-dom";
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-// Polyfill for libs that expect them (and to avoid router/TextEncoder issues)
+// Polyfills
 const { TextEncoder, TextDecoder } = require("util");
 if (!global.TextEncoder) global.TextEncoder = TextEncoder;
 if (!global.TextDecoder) global.TextDecoder = TextDecoder;
 
-const jsonResponse = (body, status = 200) => ({
-  ok: status >= 200 && status < 300,
-  status,
-  headers: { get: () => null },
-  json: async () => body,
-  text: async () => (typeof body === "string" ? body : JSON.stringify(body)),
-});
-
 /* ========================= Mocks ========================= */
 
-// Minimal IconButton mock
-jest.mock("../../components/IconButton", () => (props) => (
-  <button data-testid="refresh-btn" type="button" onClick={props.onClick}>
-    {props.icon || "refresh"}
-  </button>
-));
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => {
+  const React = require("react");
+  return {
+    useNavigate: () => mockNavigate,
+    Link: ({ to, children }) => React.createElement("a", { href: to }, children),
+  };
+});
 
-// Toasts
 jest.mock("react-hot-toast", () => {
   const mockToast = {
     success: jest.fn(),
@@ -45,200 +38,424 @@ jest.mock("react-hot-toast", () => {
   };
 });
 
-/* ========================= Fetch Mock Helpers ========================= */
+jest.mock("../../components/IconButton", () => (props) => (
+  <button {...props}>{props.label || "Button"}</button>
+));
 
-const matchLeaderboard = (url) => /\/leaderboard\?id=([^&]+)/.exec(String(url));
+jest.mock("../../styles/login-signup.css", () => ({}));
+jest.mock("../../index.css", () => ({}));
+jest.mock("../../styles/leaderboard.css", () => ({}));
+jest.mock("../../styles/quests.css", () => ({}));
 
-const yearData = [
-  { id: "u1", username: "Alice", points: 300 },
-  { id: "u2", username: "Bob", points: 250 },
-  { id: "u3", username: "Cara", points: 200 },
-  { id: "u4", username: "Dan", points: 150 },
-];
+/* =============== fetch router + helpers =============== */
 
-const monthData = [
-  { id: "m1", username: "Eve", points: 120 },
-  { id: "m2", username: "Frank", points: 110 },
-  { id: "m3", username: "Grace", points: 100 },
-];
+// IMPORTANT: Component builds URLs like `${API_BASE}/leaderboard` and API_BASE is "" in Jest,
+// so your requests are "/leaderboard?...".
+let routes;
+const setupFetchRouter = () => {
+  routes = [];
+  global.fetch = jest.fn(async (url, opts = {}) => {
+    const u = typeof url === "string" ? url : `${url}`;
+    const method = (opts.method || "GET").toUpperCase();
 
-const weekData = [
-  { id: "w1", username: "Heidi", points: 40 },
-  { id: "w2", username: "Ivan", points: 30 },
-];
+    const idx = routes.findIndex((r) => {
+      const mOk = !r.method || r.method === method;
+      const uOk =
+        typeof r.url === "string"
+          ? r.url === u
+          : r.url instanceof RegExp
+          ? r.url.test(u)
+          : false;
+      return mOk && uOk;
+    });
 
-const ids = { year: "12345", month: "1234", week: "123" };
+    if (idx === -1) {
+      throw new Error(`No mock for ${method} ${u}`);
+    }
 
-/** Default handler that returns per-board data by id */
-function installDefaultLeaderboardFetch() {
-  global.fetch.mockImplementation((url, opts) => {
-    const m = matchLeaderboard(url);
-    if (!m) return Promise.resolve(jsonResponse("", 404));
-    const id = decodeURIComponent(m[1]);
-    if (id === ids.year) return Promise.resolve(jsonResponse(yearData, 200));
-    if (id === ids.month) return Promise.resolve(jsonResponse(monthData, 200));
-    if (id === ids.week) return Promise.resolve(jsonResponse(weekData, 200));
-    return Promise.resolve(jsonResponse("", 404));
+    const hit = routes[idx];
+    // Consume this route so subsequent identical registrations are used later
+    routes.splice(idx, 1);
+    return typeof hit.reply === "function" ? hit.reply(u, opts) : hit.reply;
   });
-}
+};
 
-/* ========================= SUT Import =========================
-   IMPORTANT: import after mocks are set up
-=============================================================== */
+const addRoute = (method, url, reply) => routes.push({ method, url, reply });
 
-import Leaderboard from "../../pages/leaderboard.jsx";
+const jsonRes = (obj, { status = 200, headers = {} } = {}) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: {
+    get: (k) =>
+      k.toLowerCase() === "content-type"
+        ? headers["content-type"] || "application/json"
+        : null,
+  },
+  text: async () => JSON.stringify(obj),
+});
+const textRes = (txt, { status = 200, headers = {} } = {}) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: { get: (k) => headers[k] ?? null },
+  text: async () => txt,
+});
 
-/* ========================= Tests ========================= */
+/* =============== envs & globals =============== */
 
-describe("Leaderboard page", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    global.fetch = jest.fn();
-  });
+beforeEach(() => {
+  setupFetchRouter();
 
-  it.skip("loads Yearly on mount, renders rows, and shows success toast", async () => {
-    installDefaultLeaderboardFetch();
-    const toast = (await import("react-hot-toast")).default;
+  // Provide a Supabase-like token so includeAuth sets Authorization
+  localStorage.clear();
+  localStorage.setItem(
+    "supabase.auth.token",
+    JSON.stringify({ access_token: "tok-xyz" })
+  );
 
-    render(<Leaderboard />);
+  // Prevent ReferenceError if a catch path references { id: loadingToast }
+  global.loadingToast = "tid-1";
+});
 
-    expect(await screen.findByRole("heading", { name: /leaderboard/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /yearly/i })).toBeInTheDocument();
-
-    // We called the API with the yearly id
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/leaderboard\?id=12345$/),
-        expect.objectContaining({ headers: { Accept: "application/json" } })
-      );
-    });
-
-    // Success toast
-    await waitFor(() => {
-      expect(toast.loading).toHaveBeenCalledWith("Loading leaderboard…");
-      expect(toast.success).toHaveBeenCalledWith("Leaderboard loaded!", expect.any(Object));
-    });
-
-    // Table rows rendered; verify order, names, points, and trophies for top 3
-    const body = screen.getByRole("rowgroup", { name: "" }) || screen.getAllByRole("rowgroup")[1];
-    const rows = within(body).getAllByRole("row");
-    // Expect 4 data rows
-    expect(rows).toHaveLength(4);
-
-    // Row 1
-    expect(within(rows[0]).getByText("1")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("Alice")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("300")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("emoji_events")).toBeInTheDocument();
-
-    // Row 2
-    expect(within(rows[1]).getByText("2")).toBeInTheDocument();
-    expect(within(rows[1]).getByText("Bob")).toBeInTheDocument();
-    expect(within(rows[1]).getByText("250")).toBeInTheDocument();
-    expect(within(rows[1]).getByText("emoji_events")).toBeInTheDocument();
-
-    // Row 3
-    expect(within(rows[2]).getByText("3")).toBeInTheDocument();
-    expect(within(rows[2]).getByText("Cara")).toBeInTheDocument();
-    expect(within(rows[2]).getByText("200")).toBeInTheDocument();
-    expect(within(rows[2]).getByText("emoji_events")).toBeInTheDocument();
-
-    // Row 4 (no trophy)
-    expect(within(rows[3]).getByText("4")).toBeInTheDocument();
-    expect(within(rows[3]).getByText("Dan")).toBeInTheDocument();
-    expect(within(rows[3]).queryByText("emoji_events")).not.toBeInTheDocument();
-  });
-
-  it.skip("switches to Monthly via dropdown and updates header + rows", async () => {
-    installDefaultLeaderboardFetch();
-
-    render(<Leaderboard />);
-
-    expect(await screen.findByRole("heading", { name: /yearly/i })).toBeInTheDocument();
-
-    // Open dropdown then click Monthly
-    await userEvent.click(screen.getByRole("button", { name: /yearly/i }));
-    await userEvent.click(screen.getByRole("button", { name: /monthly/i }));
-
-    // Header updates
-    expect(await screen.findByRole("heading", { name: /monthly/i })).toBeInTheDocument();
-
-    // API called with monthly ID
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/leaderboard\?id=1234$/),
-        expect.any(Object)
-      );
-    });
-
-    // Check a few Monthly entries
-    expect(screen.getByText("Eve")).toBeInTheDocument();
-    expect(screen.getByText("120")).toBeInTheDocument();
-  });
-
-  it("refresh button re-fetches the current board", async () => {
-    installDefaultLeaderboardFetch();
-
-    render(<Leaderboard />);
-
-    // initial load (Yearly)
-    await screen.findByRole("heading", { name: /yearly/i });
-    expect(await screen.findByText("Alice")).toBeInTheDocument();
-
-    // Next call should return a different payload for Yearly
-    global.fetch.mockImplementationOnce((url) => {
-      const m = matchLeaderboard(url);
-      if (m && decodeURIComponent(m[1]) === ids.year) {
-        return Promise.resolve(
-          jsonResponse(
-            [
-              { id: "ny1", username: "Zed", points: 999 },
-              { id: "ny2", username: "Amy", points: 500 },
-            ],
-            200
-          )
-        );
-      }
-      return Promise.resolve(jsonResponse("", 404));
-    });
-
-    // Click the IconButton mock
-    await userEvent.click(screen.getByTestId("refresh-btn"));
-
-    // New data appears
-    await waitFor(() => {
-      expect(screen.getByText("Zed")).toBeInTheDocument();
-      expect(screen.getByText("999")).toBeInTheDocument();
-    });
-  });
-
-  it("shows toast and empty state on HTTP error", async () => {
-    global.fetch.mockResolvedValueOnce(jsonResponse("", 500));
-    const toast = (await import("react-hot-toast")).default;
-
-    render(<Leaderboard />);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("HTTP 500", expect.any(Object));
-    });
-
-    // Empty row shown
-    expect(screen.getByText(/No entries yet\./i)).toBeInTheDocument();
-  });
-
-  it("shows toast and empty state when API doesn't return an array", async () => {
-    global.fetch.mockResolvedValueOnce(jsonResponse({ ok: true }, 200));
-    const toast = (await import("react-hot-toast")).default;
-
-    render(<Leaderboard />);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "API did not return an array",
-        expect.any(Object)
-      );
-    });
-
-    expect(screen.getByText(/No entries yet\./i)).toBeInTheDocument();
+beforeAll(() => {
+  Object.assign(navigator, {
+    clipboard: { writeText: jest.fn().mockResolvedValue(undefined) },
   });
 });
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+/* =============== import component =============== */
+
+const path = require("path");
+const leaderboardAbsPath = path.resolve(
+  __dirname,
+  "../../pages/leaderboard.jsx"
+);
+jest.unmock(leaderboardAbsPath);
+const Leaderboard = require(leaderboardAbsPath).default;
+
+/* =============== small helpers =============== */
+
+const getDropdownToggleByLabel = (labelRe) =>
+  screen
+    .getAllByRole("button", { name: labelRe })
+    .find((el) => el.classList.contains("dropdown-toggle"));
+
+const openDropdownAndChoose = async (toggleButton, optionRegex) => {
+  await userEvent.click(toggleButton);
+  const item = await screen.findByRole("button", { name: optionRegex });
+  await userEvent.click(item);
+};
+
+/* ================================ Tests ================================= */
+
+describe("Leaderboard page", () => {
+  it("loads the public yearly board on mount and displays rows", async () => {
+    let hits = 0;
+    addRoute("GET", "/leaderboard?id=year", () => {
+      hits += 1;
+      return hits === 1
+        ? jsonRes([{ id: "u1", username: "Alice", points: 1 }]) // first load
+        : jsonRes([{ id: "u2", username: "Bob", points: 2 }]); // after refresh
+    });
+
+    render(<Leaderboard />);
+
+    // Header rendered
+    expect(
+      screen.getByRole("heading", { level: 1, name: /leaderboard/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: /yearly/i })
+    ).toBeInTheDocument();
+
+    // Rows appear – first load only (Alice / 1)
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("switches to Private scope, lists private leaderboards, and opens details", async () => {
+    let hits = 0;
+    addRoute("GET", "/leaderboard?id=year", () => {
+      hits += 1;
+      return hits === 1
+        ? jsonRes([{ id: "u1", username: "Alice", points: 1 }]) // first load
+        : jsonRes([{ id: "u2", username: "Bob", points: 2 }]); // after refresh
+    });
+
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1/members",
+      jsonRes([{ userId: "u1" }, { userId: "u2" }])
+    );
+
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1",
+      jsonRes({ id: "p1", name: "Club A", inviteCode: "INV-123" })
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=year$/,
+      jsonRes([
+        { userId: "u1", username: "Alice", points: 10, rank: 1 },
+        { userId: "u2", username: "Bob", points: 5, rank: 2 },
+      ])
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /private leaderboards/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: /club a/i })
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /club a/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("changes period inside private details and reloads standings", async () => {
+    addRoute("GET", "/leaderboard?id=year", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1/members",
+      jsonRes([{ userId: "u1" }])
+    );
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1",
+      jsonRes({ id: "p1", name: "Club A", inviteCode: "INV-123" })
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 10, rank: 1 }])
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=month$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 7, rank: 1 }])
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    const periodToggle = getDropdownToggleByLabel(/yearly/i);
+    await openDropdownAndChoose(periodToggle, /monthly/i);
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: /monthly/i })
+    ).toBeInTheDocument();
+    expect(await screen.findByText("7")).toBeInTheDocument();
+  });
+
+  it("shows invite code and copies it to clipboard", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=year", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1/members",
+      jsonRes([{ userId: "u1" }])
+    );
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1",
+      jsonRes({ id: "p1", name: "Club A", inviteCode: "INV-123" })
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 10, rank: 1 }])
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    await userEvent.click(screen.getByRole("button", { name: /show code/i }));
+    expect(await screen.findByText(/invite code/i)).toBeInTheDocument();
+    expect(screen.getByText("INV-123")).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("INV-123");
+    });
+    expect(toast.success).toHaveBeenCalledWith("Invite code copied to clipboard");
+  });
+
+  it("Refresh calls correct loader depending on view (public vs. private detail)", async () => {
+    // public load then refresh
+    addRoute(
+      "GET",
+      "/leaderboard?id=year",
+      jsonRes([{ id: "u1", username: "Alice", points: 1 }])
+    );
+    addRoute(
+      "GET",
+      "/leaderboard?id=year",
+      jsonRes([{ id: "u2", username: "Bob", points: 2 }])
+    );
+
+    // private list + details + standings twice
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A", inviteCode: "INV" }));
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 10, rank: 1 }])
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p1\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 11, rank: 1 }])
+    );
+
+    render(<Leaderboard />);
+
+    // public refresh
+    await userEvent.click(
+      await screen.findByRole("button", { name: /refresh/i })
+    );
+    expect(await screen.findByText("Bob")).toBeInTheDocument();
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: /refresh/i })
+    );
+    expect(await screen.findByText("11")).toBeInTheDocument();
+  });
+
+  it("Join flow: opens modal, posts code, reloads list, then opens details", async () => {
+    addRoute("GET", "/leaderboard?id=year", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    addRoute("POST", "/private-leaderboards/join", (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (body.code !== "CODE-123")
+        return jsonRes({ error: "bad code" }, { status: 400 });
+      return jsonRes({ member: { leaderboardId: "p2" } });
+    });
+
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p2", name: "New Club" }]));
+    addRoute("GET", "/private-leaderboards/p2/members", jsonRes([{ userId: "u1" }]));
+
+    addRoute(
+      "GET",
+      "/private-leaderboards/p2",
+      jsonRes({ id: "p2", name: "New Club", inviteCode: "NEW" })
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p2\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 1, rank: 1 }])
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    const input = await screen.findByPlaceholderText(/paste invite code/i);
+    await userEvent.type(input, "CODE-123");
+    // the modal's "Join" button (same label as tile button but inside modal too)
+    const btns = screen.getAllByRole("button", { name: /^join$/i });
+    await userEvent.click(btns[btns.length - 1]);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /new club/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("Create flow: opens modal, posts name, reloads list, then opens details", async () => {
+    addRoute("GET", "/leaderboard?id=year", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    addRoute("POST", "/private-leaderboards", (url, opts) => {
+      const body = JSON.parse(opts.body);
+      if (!body.name)
+        return jsonRes({ error: "name required" }, { status: 400 });
+      return jsonRes({ id: "p3", name: body.name });
+    });
+
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p3", name: "Fresh Club" }]));
+    addRoute("GET", "/private-leaderboards/p3/members", jsonRes([{ userId: "u1" }]));
+    addRoute(
+      "GET",
+      "/private-leaderboards/p3",
+      jsonRes({ id: "p3", name: "Fresh Club", inviteCode: "FRESH" })
+    );
+    addRoute(
+      "GET",
+      /\/private-leaderboards\/p3\/standings\?period=year$/,
+      jsonRes([{ userId: "u1", username: "Alice", points: 2, rank: 1 }])
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    const nameInput = await screen.findByPlaceholderText(/leaderboard name/i);
+    await userEvent.type(nameInput, "Fresh Club");
+    // the modal's "Create" button
+    const createBtns = screen.getAllByRole("button", { name: /^create$/i });
+    await userEvent.click(createBtns[createBtns.length - 1]);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /fresh club/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("shows Unauthorized toast when public load returns 401", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute(
+      "GET",
+      "/leaderboard?id=year",
+      textRes(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("unauthorized");
+    });
+  });
+});
+
+

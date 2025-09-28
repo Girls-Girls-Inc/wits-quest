@@ -3,15 +3,16 @@ import { useRef } from "react";
 import IconButton from "../components/IconButton";
 import PasswordInputField from "../components/PasswordInputField";
 import InputField from "../components/InputField";
-import GoogleImage from "../assets/google-icon.png";
+import GoogleImage from "../assets/google-icon.webp";
 import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Logo.webp";
 import SignupImage from "../assets/Signup3.png";
 import { Link } from "react-router-dom";
+import { VITE_WEB_URL } from "../lib/env";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -189,7 +190,7 @@ const Login = () => {
         options: {
           data: { displayName: signupForm.name },
         },
-        redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
+        redirectTo: VITE_WEB_URL + "/dashboard",
       });
 
       if (data.user.user_metadata.email_verified === true) {
@@ -214,7 +215,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: import.meta.env.VITE_WEB_URL + "/dashboard",
+          redirectTo: VITE_WEB_URL + "/dashboard",
         },
       });
 
@@ -230,7 +231,6 @@ const Login = () => {
 
   return (
     <div className={`container${isActive ? " active" : ""}`}>
-      <Toaster />
       {/* LOGIN FORM */}
       <div className="form-box login">
         <form onSubmit={handleLoginSubmit} className="login-form">
@@ -257,7 +257,7 @@ const Login = () => {
           </div>
 
           <div className="forgot-pass">
-            <Link to="/reset-request">Forgot Password?</Link>
+            <Link to="/resetRequest">Forgot Password?</Link>
           </div>
           <div className="btn">
             <IconButton type="submit" icon="login" label="LOGIN" />
@@ -333,7 +333,7 @@ const Login = () => {
       </div>
       <div className="toggle">
         <div className="toggle-panel toggle-left">
-          <img src={Logo} alt="Compass shaped Logo" />
+          <img src={Logo} alt="Compass shaped Logo" fetchPriority="high" decoding="async" />
           <h1>Welcome back!</h1>
           <p>Not yet a Witizen ?</p>
           <div className="btn signup-btn" onClick={() => setIsActive(true)}>
@@ -368,3 +368,5 @@ const Login = () => {
 };
 
 export default Login;
+
+

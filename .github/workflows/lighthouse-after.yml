@@ -53,6 +53,20 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/login" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/resetRequest" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/displayQuests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/displayLeaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manageQuests" \
+            --collect.url="$BASE_URL/manageHunts" \
+            --collect.url="$BASE_URL/manageQuizzes" \
+            --collect.url="$BASE_URL/addQuiz" \
             --collect.numberOfRuns=3 \
             --collect.settings.preset=desktop \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
@@ -70,7 +84,22 @@ jobs:
         run: |
           lhci autorun \
             --collect.url="$BASE_URL/" \
+            --collect.url="$BASE_URL/login" \
+            --collect.url="$BASE_URL/reset" \
+            --collect.url="$BASE_URL/resetRequest" \
+            --collect.url="$BASE_URL/profile" \
+            --collect.url="$BASE_URL/settings" \
+            --collect.url="$BASE_URL/dashboard" \
+            --collect.url="$BASE_URL/displayQuests" \
+            --collect.url="$BASE_URL/map" \
+            --collect.url="$BASE_URL/displayLeaderboard" \
+            --collect.url="$BASE_URL/adminDashboard" \
+            --collect.url="$BASE_URL/manageQuests" \
+            --collect.url="$BASE_URL/manageHunts" \
+            --collect.url="$BASE_URL/manageQuizzes" \
+            --collect.url="$BASE_URL/addQuiz" \
             --collect.numberOfRuns=3 \
+            --collect.settings.preset=mobile \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
             --collect.settings.chromeFlags="--no-sandbox" \
             --upload.target=temporary-public-storage
@@ -172,3 +201,9 @@ jobs:
       
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
           NODE
+
+
+
+
+
+

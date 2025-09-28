@@ -3,7 +3,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import NavButton from "./NavButton";
 import "../styles/navbar.css";
-import Logo from "../assets/Logo.png";
+import Logo from "../assets/Logo.webp";
 
 const Navbar = () => {
   const location = useLocation();
@@ -17,51 +17,62 @@ const Navbar = () => {
 
   const isModerator = window.__IS_MODERATOR__ === true;
 
-  const navItems = [
+  // All navigation items for desktop
+  const allNavItems = [
     ...(isModerator
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
     { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/quests", icon: "logo", label: "Quests" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
     { route: "/map", icon: "map", label: "Map" },
-    { route: "/leaderboard", icon: "leaderboard", label: "Leaderboard" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Leaderboard" },
     { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
+  // Mobile navigation items - exclude map button
+  const mobileNavItems = [
+    ...(isModerator
+      ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
+      : []),
+    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Board" },
+    { route: "/settings", icon: "profile", label: "Profile" },
+  ];
+
+  const getActiveClass = (itemRoute) => {
+    return location.pathname === itemRoute ||
+      location.pathname.startsWith(itemRoute + "/")
+      ? "active"
+      : "";
+  };
+
   return (
     <>
+      {/* Desktop Navbar */}
       <nav className="navbar-drawer">
         <img src={Logo} alt="" className="logo-img" draggable="false" />
         <h2 className="title">Campus Quest</h2>
-        {navItems.map((item) => (
+        {allNavItems.map((item) => (
           <NavButton
             key={item.route}
             route={item.route}
             iconName={item.icon}
             label={item.label}
-            className={
-              location.pathname === item.route ||
-              location.pathname.startsWith(item.route + "/")
-                ? "active"
-                : ""
-            }
+            className={getActiveClass(item.route)}
           />
         ))}
       </nav>
 
+      {/* Mobile Navbar - Map button removed */}
       <nav className="navbar-bottom">
-        {navItems.map((item) => (
+        {mobileNavItems.map((item) => (
           <NavButton
             key={item.route}
             route={item.route}
             iconName={item.icon}
             label={item.label}
-            className={
-              location.pathname === item.route ||
-              location.pathname.startsWith(item.route + "/")
-                ? "active"
-                : ""
-            }
+            className={getActiveClass(item.route)}
           />
         ))}
       </nav>
@@ -70,3 +81,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+

@@ -1,19 +1,11 @@
 // backend/models/userModel.js
 const supabase = require('../supabase/supabaseClient');
+const createSupabaseClientWithToken = require('../supabase/supabaseClientWithToken.js');
 
 const UserModel = {
-  async getAllUsers({ userId, email, isModerator, createdBefore, createdAfter }) {
-    let query = supabase.from('userData').select('*');
-
-    if (userId) query = query.eq('userId', userId.trim());
-    if (email) query = query.ilike('email', `%${email.trim()}%`);
-    if (typeof isModerator !== 'undefined') query = query.eq('isModerator', isModerator);
-    if (createdBefore) query = query.lte('created_at', createdBefore);
-    if (createdAfter) query = query.gte('created_at', createdAfter);
-
-    query = query.order('created_at', { ascending: true });
-
-    const { data, error } = await query;
+  async getAllUsers(token) {
+    const supabase = createSupabaseClientWithToken(token);
+    const { data, error } = await supabase.from('userData').select('*').order('created_at', { ascending: true });
     if (error) throw error;
     return data || [];
   },
@@ -34,16 +26,17 @@ const UserModel = {
     return data;
   },
 
-  async updateById(userId, fields) {
+  async updateById(userId, fields, token) {
+    const supabase = createSupabaseClientWithToken(token);
     const { data, error } = await supabase
       .from('userData')
       .update(fields)
       .eq('userId', userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data || null;
   },
 };
 

@@ -6,6 +6,9 @@ module.exports = {
 
   // run the root setup file that orchestrates other setup tasks
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  
+  // Add global setup for environment variables
+  setupFiles: ["<rootDir>/jest.env.setup.js"],
 
   // force single react copy + map styles & assets
   moduleNameMapper: {
@@ -29,23 +32,23 @@ module.exports = {
 
   collectCoverage: true,
   collectCoverageFrom: [
-    // Be very specific about what to include
-    "backend/controllers/**/*.js",
-    "backend/middleware/**/*.js", 
-    "backend/models/**/*.js",
-    "backend/routes/**/*.js",
-    "backend/supabase/**/*.js",
+    // Only include specific directories we want measured
+    "backend/controllers/*.js",
+    "backend/middleware/*.js", 
+    "backend/models/*.js",
+    "backend/routes/*.js",
+    "backend/supabase/*.js",
     "frontend/src/components/**/*.{js,jsx}",
     "frontend/src/pages/**/*.{js,jsx}",
-    // Exclude all test files
+    "frontend/src/*.{js,jsx}",
+    // Explicitly exclude problematic files
+    "!frontend/src/main.jsx",
+    "!frontend/src/lib/env.js", 
+    "!frontend/src/supabase/supabaseClient.js",
     "!**/*.test.{js,jsx}",
     "!**/*.spec.{js,jsx}",
     "!**/tests/**",
-    "!**/__tests__/**",
-    // Exclude specific problem files
-    "!frontend/src/main.jsx",
-    "!frontend/src/lib/env.js", 
-    "!frontend/src/supabase/supabaseClient.js"
+    "!**/__tests__/**"
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "json"],

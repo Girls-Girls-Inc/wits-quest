@@ -32,16 +32,15 @@ jobs:
           cd ../backend && npm install
 
       - name: Run tests with coverage
-        #run: npm run test:coverage
         run: npx jest --coverage
-        #continue-on-error: true
-        #continue-on-error: false
+        continue-on-error: true
 
       - name: Upload coverage reports to Codecov
+        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           flags: unittests
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false

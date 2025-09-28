@@ -33,7 +33,21 @@ module.exports = {
     "frontend/src/**/*.{js,jsx}",
     "!backend/tests/**",
     "!frontend/src/**/*.test.{js,jsx}",
-    "!frontend/src/tests/testUtils.js"
+    "!frontend/src/tests/testUtils.js",
+    // Exclude non-executable files
+    "!**/*.css",
+    "!**/*.scss", 
+    "!**/*.sass",
+    "!**/*.less",
+    "!**/*.json",
+    // Exclude config and build files
+    "!**/*.config.js",
+    "!**/build/**",
+    "!**/dist/**",
+    // Exclude files that show 0% coverage in your report
+    "!frontend/src/main.jsx",
+    "!frontend/src/lib/env.js",
+    "!frontend/src/supabase/supabaseClient.js"
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov"],

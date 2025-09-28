@@ -35,12 +35,19 @@ jobs:
         run: npx jest --coverage
         continue-on-error: true
 
+      - name: List coverage files (debug)
+        run: |
+          echo "Coverage directory contents:"
+          ls -la coverage/ || echo "No coverage directory found"
+          echo "Looking for lcov files:"
+          find . -name "*.info" -o -name "lcov.info" || echo "No lcov files found"
+
       - name: Upload coverage reports to Codecov
         if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          directory: ./coverage
           flags: unittests
           verbose: true
           fail_ci_if_error: false

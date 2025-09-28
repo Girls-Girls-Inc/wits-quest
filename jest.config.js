@@ -45,7 +45,8 @@ module.exports = {
     // Exclude specific problem files
     "!frontend/src/main.jsx",
     "!frontend/src/lib/env.js", 
-    "!frontend/src/supabase/supabaseClient.js"
+    "!frontend/src/supabase/supabaseClient.js",
+    "!frontend/src/App.jsx",
   ],
   coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "lcov"],

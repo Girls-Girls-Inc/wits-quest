@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
 import "../styles/adminDashboard.css";
+import "../styles/profile.css";
 import "../styles/button.css";
 import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
 import Profile from "./editProfile";
+import supabase from "../supabase/supabaseClient";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleBack = () => {
-    setSelectedTask(null);
-  };
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut({ scope: "global" });
 
-  useEffect(() => {
-    if (selectedTask === "Give Feedback") {
-      toast.success("Loading your submitted feedback...");
-    } else if (selectedTask === "Logout") {
-      toast.error("Ready to log out?");
+    if (error) {
+      toast.error("Failed to log out. Please try again.");
+      return;
     }
-  }, [selectedTask]);
+
+    toast.success("Logged out!");
+    setShowLogoutModal(false);
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="admin-container">
       <Toaster />
 
-      {/* 🔹 Profile is always displayed */}
       <div className="admin-header">
         <h1 className="heading">Profile</h1>
         <Profile />
 
-        <div className="admin-buttons flex flex-wrap gap-2 mt-4">
+        <div className="settings-buttons">
           <IconButton
             icon="feedback"
             label="Give Feedback"
@@ -47,43 +49,31 @@ const Settings = () => {
           <IconButton
             icon="logout"
             label="Logout"
-            onClick={() => setSelectedTask("Logout")}
+            onClick={() => setShowLogoutModal(true)}
           />
         </div>
       </div>
 
-      {/* 🔹 Conditional sections */}
-      {selectedTask === "Give Feedback" && (
-        <div className="quest-list">
-          <div className="btn flex gap-2 mt-2">
-            <IconButton
-              type="button"
-              icon="arrow_back"
-              label="Back"
-              onClick={handleBack}
-            />
-          </div>
-        </div>
-      )}
-
-      {selectedTask === "Logout" && (
-        <div className="quest-list">
-          <div className="btn flex gap-2 mt-2">
-            <IconButton
-              type="button"
-              icon="check"
-              label="Confirm Logout"
-              onClick={() => {
-                toast.success("Logged out!");
-                navigate("/");
-              }}
-            />
-            <IconButton
-              type="button"
-              icon="arrow_back"
-              label="Cancel"
-              onClick={handleBack}
-            />
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="modal-backdrop">
+          <div className="modal logout-modal">
+            <button
+              className="modal-close"
+              onClick={() => setShowLogoutModal(false)}
+            >
+              ✕
+            </button>
+            <h2>Confirm Logout</h2>
+            <p>Are you sure you want to log out of your account?</p>
+            <div className="logout-actions">
+              <IconButton
+                type="button"
+                icon="check"
+                label="Yes, Logout"
+                onClick={handleLogout}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -244,7 +244,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <Toaster />
       <main className="main-content" role="main" aria-label="Dashboard">
         <header className="dashboard-header">
           <h1>DASHBOARD</h1>
@@ -257,48 +256,51 @@ const Dashboard = () => {
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th>Quest</th>
-                  <th>Points</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingOngoing ? (
+            <div className="table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
                   <tr>
-                    <td colSpan={5}>Loading quests…</td>
+                    <th>Quest</th>
+                    <th>Points</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                ) : ongoing.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No ongoing quests</td>
-                  </tr>
-                ) : (
-                  ongoing.map((q) => (
-                    <tr key={q.id}>
-                      <td>{q.name}</td>
-                      <td>{q.points}</td>
-                      <td>{q.location}</td>
-                      <td>{q.isComplete ? "Completed" : "In progress"}</td>
-                      <td>
-                        <button
-                          className="dash-btn"
-                          onClick={() =>
-                            navigate(`/quests/${q.questId}?uq=${q.id}`)
-                          }
-                          disabled={!q.questId}
-                        >
-                          View
-                        </button>
-                      </td>
+                </thead>
+                <tbody>
+                  {loadingOngoing ? (
+                    <tr>
+                      <td colSpan={5}>Loading quests…</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : ongoing.length === 0 ? (
+                    <tr>
+                      <td colSpan={5}>No ongoing quests</td>
+                    </tr>
+                  ) : (
+                    ongoing.map((q) => (
+                      <tr key={q.id}>
+                        <td>
+                          <button
+                            aria-label="Quests feature"
+                            className="dash-btn"
+                            onClick={() =>
+                              navigate(`/displayQuests/${q.questId}?uq=${q.id}`)
+                            }
+                            disabled={!q.questId}
+                          >
+                            View
+                          </button>
+                        </td>
+                        <td>{q.name}</td>
+                        <td>{q.points}</td>
+                        <td>{q.location}</td>
+                        <td>{q.isComplete ? "Completed" : "In progress"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
           {/* Locations Card */}
           <article className="dashboard-card">
@@ -330,12 +332,22 @@ const Dashboard = () => {
 
             <div className="badges-carousel">
               <div className="carousel-header">
-                <button className="view-badges-btn">View Badges</button>
+                <button className="view-badges-btn" aria-label="View badges">
+                  View Badges
+                </button>
                 <div className="carousel-controls">
-                  <button className="carousel-btn" onClick={prevSlide}>
+                  <button
+                    aria-label="Scroll left on badges"
+                    className="carousel-btn"
+                    onClick={prevSlide}
+                  >
                     ←
                   </button>
-                  <button className="carousel-btn" onClick={nextSlide}>
+                  <button
+                    aria-label="Scroll right on badges"
+                    className="carousel-btn"
+                    onClick={nextSlide}
+                  >
                     →
                   </button>
                 </div>
@@ -367,7 +379,7 @@ const Dashboard = () => {
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">
-              <table className="leaderboard-table">
+              <table className="leaderboard-table ">
                 <thead>
                   <tr>
                     <th>#</th>

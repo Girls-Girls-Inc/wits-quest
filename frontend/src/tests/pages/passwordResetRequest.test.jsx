@@ -1,39 +1,58 @@
-// frontend/src/pages/__tests__/passwordResetRequest.test.jsx
+// frontend/src/tests/pages/passwordResetRequest.test.jsx
+import "@testing-library/jest-dom"; // <-- ADD THIS
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+
+// optional: keep test console logs tidy by silencing specific noisy console.error outputs
+const originalConsoleError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    // ignore the known network error log from component tests (so output is cleaner)
+    if (typeof args[0] === "string" && args[0].includes("Reset password error:")) {
+      return;
+    }
+    originalConsoleError.call(console, ...args);
+  };
+});
+afterAll(() => {
+  console.error = originalConsoleError;
+});
+
+// ---- Mocks BEFORE importing the page component ----
+jest.mock("../../components/InputField", () => (props) => {
+  const React = require("react");
+  return React.createElement("input", { ...props, "data-testid": props.id || "input" });
+});
+jest.mock("../../components/IconButton", () => (props) => {
+  const React = require("react");
+  return React.createElement("button", { ...props, type: props.type || "button" }, props.label || null);
+});
+jest.mock("../../supabase/supabaseClient", () => ({
+  auth: { resetPasswordForEmail: jest.fn() },
+}));
+jest.mock("react-hot-toast", () => ({
+  __esModule: true,
+  default: { error: jest.fn(), success: jest.fn() },
+  Toaster: () => {
+    const React = require("react");
+    return React.createElement("div", null);
+  },
+}));
+
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
+// Now import the module under test (after mocks)
 import PasswordResetRequest from "../../pages/passwordResetRequest";
 import supabase from "../../supabase/supabaseClient";
 import toast from "react-hot-toast";
-import { MemoryRouter } from "react-router-dom";
-
-// Mock supabase client
-jest.mock("../../supabase/supabaseClient", () => ({
-  auth: {
-    resetPasswordForEmail: jest.fn(),
-  },
-}));
-
-// Mock react-hot-toast
-jest.mock("react-hot-toast", () => ({
-  __esModule: true,
-  default: {
-    error: jest.fn(),
-    success: jest.fn(),
-  },
-  Toaster: () => <div />,
-}));
-
-// Mock react-router-dom navigation
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
-  useNavigate: () => mockNavigate,
-}));
 
 describe("PasswordResetRequest", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   it("renders form correctly", () => {
     render(
@@ -41,7 +60,6 @@ describe("PasswordResetRequest", () => {
         <PasswordResetRequest />
       </MemoryRouter>
     );
-
     expect(screen.getByText("Reset Password")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Email Address")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Send Reset Link/i })).toBeInTheDocument();
@@ -53,9 +71,7 @@ describe("PasswordResetRequest", () => {
         <PasswordResetRequest />
       </MemoryRouter>
     );
-
     fireEvent.click(screen.getByRole("button", { name: /Send Reset Link/i }));
-
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Please enter your email address.");
     });
@@ -79,13 +95,9 @@ describe("PasswordResetRequest", () => {
     await waitFor(() => {
       expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
         "user@example.com",
-        expect.objectContaining({
-          redirectTo: expect.stringContaining("/reset"),
-        })
+        expect.objectContaining({ redirectTo: expect.stringContaining("/reset") })
       );
-      expect(toast.success).toHaveBeenCalledWith(
-        "Check your email for password reset instructions."
-      );
+      expect(toast.success).toHaveBeenCalledWith("Check your email for password reset instructions.");
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
@@ -125,18 +137,14 @@ describe("PasswordResetRequest", () => {
     fireEvent.click(screen.getByRole("button", { name: /Send Reset Link/i }));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "Failed to send reset email. Please try again."
-      );
+      expect(toast.error).toHaveBeenCalledWith("Failed to send reset email. Please try again.");
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 
   it("disables button while loading", async () => {
     let resolvePromise;
-    supabase.auth.resetPasswordForEmail.mockReturnValue(
-      new Promise((res) => (resolvePromise = res))
-    );
+    supabase.auth.resetPasswordForEmail.mockReturnValue(new Promise((res) => (resolvePromise = res)));
 
     render(
       <MemoryRouter>
@@ -151,7 +159,10 @@ describe("PasswordResetRequest", () => {
     const button = screen.getByRole("button", { name: /Send Reset Link/i });
     fireEvent.click(button);
 
+    // matcher now comes from jest-dom
     expect(button).toBeDisabled();
+
+    // resolve the in-flight promise
     resolvePromise({ error: null });
 
     await waitFor(() => {
@@ -159,3 +170,5 @@ describe("PasswordResetRequest", () => {
     });
   });
 });
+
+

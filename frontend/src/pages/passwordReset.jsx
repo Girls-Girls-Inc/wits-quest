@@ -117,7 +117,6 @@ const PasswordReset = () => {
 
   return (
     <div className="container-pass">
-      <Toaster />
       <div className="pass-forget">
         <form onSubmit={handleSubmit} className="reset-password-form">
           <h1>Set New Password</h1>

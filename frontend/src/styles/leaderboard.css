@@ -43,7 +43,6 @@
   min-width: 300px;
   border-collapse: collapse;
   border-radius: 12px;
-  overflow: hidden;
 }
 
 .leaderboard-table thead {
@@ -207,4 +206,31 @@ td code {
   .leaderboard-table td {
     padding: 8px 10px;
   }
+}
+
+.btn.primary {
+  background-color: var(--wits-blue);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+/* hover / active / focus */
+.btn.primary:hover,
+.btn.primary:focus {
+  filter: brightness(0.97);
+  transform: translateY(0);
+}
+
+/* If you want a ghost/outline version that still uses the wits blue */
+.btn.ghost.primary {
+  background-color: transparent;
+  color: var(--wits-blue);
+  border: 1px solid var(--wits-blue);
+}
+
+/* small accessibility niceties */
+.btn.primary:focus {
+  outline: 3px solid color-mix(in srgb, var(--wits-blue) 30%, transparent);
+  outline-offset: 2px;
 }

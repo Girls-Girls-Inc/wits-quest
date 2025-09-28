@@ -11,11 +11,20 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
+const getToken = async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token || null;
+};
+
 export default function ManageQuests() {
   const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
   const [locations, setLocations] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
+  const [hunts, setHunts] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [editingQuest, setEditingQuest] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -23,6 +32,8 @@ export default function ManageQuests() {
     locationId: "",
     pointsAchievable: "",
     collectibleId: "",
+    huntId: "",
+    quizId: "",
     isActive: true,
   });
 
@@ -64,6 +75,8 @@ export default function ManageQuests() {
           locationId: q.locationId !== null ? Number(q.locationId) : null,
           collectibleId:
             q.collectibleId !== null ? Number(q.collectibleId) : null,
+          huntId: q.huntId !== null ? Number(q.huntId) : null,
+          quizId: q.quizId !== null ? Number(q.quizId) : null,
           pointsAchievable: q.pointsAchievable ?? 0,
           isActive: q.isActive ?? true,
           imageUrl,
@@ -108,10 +121,43 @@ export default function ManageQuests() {
     }
   };
 
+  const loadHunts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/hunts`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch hunts");
+      setHunts(await res.json());
+    } catch {
+      setHunts([]);
+    }
+  };
+
+  const loadQuizzes = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        setQuizzes([]);
+        return;
+      }
+      const res = await fetch(`${API_BASE}/quizzes`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setQuizzes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to fetch quizzes");
+      setQuizzes([]);
+    }
+  };
+
   useEffect(() => {
     loadQuests();
     loadLocations();
     loadCollectibles();
+    loadHunts();
+    loadQuizzes();
   }, []);
 
   const handleEditClick = (quest) => {
@@ -123,36 +169,75 @@ export default function ManageQuests() {
       locationId: quest.locationId || "",
       pointsAchievable: quest.pointsAchievable || "",
       collectibleId: quest.collectibleId || "",
+      huntId: quest.huntId || "",
+      quizId: quest.quizId != null ? String(quest.quizId) : "",
       isActive: quest.isActive ?? true,
     });
   };
 
   const handleSave = async () => {
+    const token = await getToken();
+    if (!token) {
+      toast.error("Session expired. Please sign in again.");
+      return;
+    }
     if (!editingQuest?.id) return toast.error("Invalid quest selected");
     const t = toast.loading("Saving quest...");
     try {
       const payload = {
         name: formData.name,
         description: formData.description,
-        locationId: formData.locationId || null,
-        pointsAchievable: formData.pointsAchievable || 0,
-        collectibleId: formData.collectibleId || null,
+        locationId: formData.locationId ? Number(formData.locationId) : null,
+        pointsAchievable: formData.pointsAchievable ? Number(formData.pointsAchievable) : 0,
+        collectibleId: formData.collectibleId ? Number(formData.collectibleId) : null,
+        huntId: formData.huntId ? Number(formData.huntId) : null,
+        quizId: formData.quizId ? Number(formData.quizId) : null,
         isActive: formData.isActive ?? true,
       };
       const questId = Number(editingQuest.id);
       const resp = await fetch(`${API_BASE}/quests/${questId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         credentials: "include",
         body: JSON.stringify(payload),
       });
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json.message || "Failed to update quest");
+      const contentType = resp.headers.get("content-type") || "";
+      let responseBody = null;
+      if (contentType.includes("application/json")) {
+        responseBody = await resp.json();
+      } else {
+        responseBody = await resp.text();
+      }
+
+      if (!resp.ok) {
+        const message =
+          (typeof responseBody === "string" && responseBody) ||
+          (responseBody && responseBody.message) ||
+          "Failed to update quest";
+        throw new Error(message);
+      }
+
+      const updatedQuest =
+        responseBody && typeof responseBody === "object"
+          ? responseBody.quest ?? responseBody
+          : null;
 
       setQuests(
-        quests.map((q) =>
-          q.id === questId ? { ...json.quest, imageUrl: q.imageUrl } : q
-        )
+        quests.map((q) => {
+          if (q.id !== questId) return q;
+          const merged = updatedQuest ? { ...q, ...updatedQuest } : { ...q, ...payload };
+          return {
+            ...merged,
+            imageUrl: q.imageUrl,
+            quizId:
+              updatedQuest?.quizId != null
+                ? Number(updatedQuest.quizId)
+                : payload.quizId,
+          };
+        })
       );
       toast.success("Quest updated", { id: t });
       setEditingQuest(null);
@@ -165,8 +250,14 @@ export default function ManageQuests() {
     if (!confirm("Delete this quest?")) return;
     const t = toast.loading("Deleting quest...");
     try {
+      const token = await getToken();
+      if (!token) {
+        toast.error("Session expired. Please sign in again.", { id: t });
+        return;
+      }
       const resp = await fetch(`${API_BASE}/quests/${id}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
       if (!resp.ok) throw new Error("Failed to delete quest");
@@ -180,7 +271,6 @@ export default function ManageQuests() {
 
   return (
     <div className="quests-container">
-      <Toaster />
       <div className="quests-header">
         <h1>Manage Quests</h1>
         {/* <button onClick={loadQuests}>Refresh</button> */}
@@ -260,6 +350,40 @@ export default function ManageQuests() {
               ))}
             </select>
           </div>
+          <div className="input-box">
+            <label>Hunt</label>
+            <select
+              name="huntId"
+              value={formData.huntId}
+              onChange={(e) =>
+                setFormData({ ...formData, huntId: e.target.value || "" })
+              }
+            >
+              <option value="">Select a hunt</option>
+              {hunts.map((hunt) => (
+                <option key={hunt.id} value={hunt.id}>
+                  {hunt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="input-box">
+            <label>Quiz</label>
+            <select
+              name="quizId"
+              value={formData.quizId}
+              onChange={(e) =>
+                setFormData({ ...formData, quizId: e.target.value || "" })
+              }
+            >
+              <option value="">None (no quiz)</option>
+              {quizzes.map((quiz) => (
+                <option key={quiz.id} value={quiz.id}>
+                  {quiz.questionText}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="input-box">
             <InputField
@@ -325,6 +449,8 @@ export default function ManageQuests() {
                 {collectibles.find((c) => c.id === q.collectibleId)?.name ||
                   "-"}
               </p>
+              <p><strong>Hunt:</strong> {hunts.find((h) => h.id === q.huntId)?.name || "-"}</p>
+              <p><strong>Quiz:</strong> {quizzes.find((quiz) => quiz.id === q.quizId)?.questionText || "-"}</p>
             </div>
             <div className="quest-action flex gap-2">
               {/* <button

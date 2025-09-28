@@ -9,6 +9,7 @@
   padding: 1rem;
   margin-left: 150px;
   overflow-y: auto;
+  /* overflow-x: hidden; */
 }
 
 @media (min-width: 769px) {
@@ -21,5 +22,6 @@
   .main-content {
     margin-left: 0;
     margin-bottom: 60px;
+    /* overflow-x: auto; */
   }
 }

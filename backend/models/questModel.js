@@ -8,8 +8,6 @@ const admin = createClient(
   { auth: { persistSession: false } }
 );
 
-// Prefer the passed sb (per-request client) when you need RLS;
-// fall back to admin when you don't.
 const pick = (sb) => sb || admin;
 
 const QuestModel = {
@@ -79,13 +77,14 @@ const QuestModel = {
 
     return { data, error };
   },
+
   async getUserQuestById(userQuestId, sb) {
     const supabase = pick(sb);
     const { data, error } = await supabase
       .from("userQuests")
       .select("id, userId, questId, step, isComplete, completedAt")
       .eq("id", userQuestId)
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -97,7 +96,7 @@ const QuestModel = {
       .eq("id", userQuestId)
       .eq("isComplete", false)
       .select()
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -107,7 +106,7 @@ const QuestModel = {
       .from("quests")
       .select("*")
       .eq("id", questId)
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -117,7 +116,8 @@ const QuestModel = {
       .from("quests")
       .update(questData)
       .eq("id", questId)
-      .select();
+      .select()
+      .maybeSingle();
     return { data, error };
   },
 
@@ -127,9 +127,13 @@ const QuestModel = {
       .from("quests")
       .delete()
       .eq("id", questId)
-      .select();
+      .select()
+      .maybeSingle();
     return { data, error };
   },
+
 };
 
 module.exports = QuestModel;
+
+

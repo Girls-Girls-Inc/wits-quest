@@ -8,9 +8,10 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/map.css";
 import IconButton from "../components/IconButton";
+import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 
-const API_BASE = import.meta.env.VITE_WEB_URL; // e.g. http://localhost:3000
+const API_BASE = import.meta.env.VITE_WEB_URL;
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
 const MAP_CONTAINER_STYLE = { width: "75vw", height: "70vh", borderRadius: 12 };
 const LIBRARIES = ["marker"];
@@ -42,7 +43,6 @@ const asLatLng = (obj) => {
 const questInlinePos = (q) =>
   asLatLng(q) || asLatLng(q.location) || asLatLng(q.geo) || null;
 
-// meters → degrees at given latitude (approx)
 const metersToDegrees = (meters, atLatDeg) => {
   const dLat = meters / 111_320; // ~ meters per degree latitude
   const dLng = meters / (111_320 * Math.cos((atLatDeg * Math.PI) / 180));
@@ -87,6 +87,7 @@ const spreadOverlaps = (markers, radiusMeters = 15) => {
 };
 
 export default function QuestMap() {
+  const navigate = useNavigate();
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: LIBRARIES,
@@ -98,24 +99,29 @@ export default function QuestMap() {
   const [selected, setSelected] = useState(null); // store full marker for InfoWindow
   const [adding, setAdding] = useState(false); // add-to-my-quests button state
 
+  const [myQuestIds, setMyQuestIds] = useState(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-const [myQuestIds, setMyQuestIds] = useState(null);
-
- // Cache user's quest IDs; only hits the network once per mount
- const fetchMyQuestIds = useCallback(async (token) => {
-   if (myQuestIds instanceof Set) return myQuestIds;
-   const res = await fetch(USER_QUESTS_API, {
-     headers: {
-       Accept: "application/json",
-       Authorization: `Bearer ${token}`,
-     },
-   });
-   const data = await res.json();
-   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
-   const ids = new Set((Array.isArray(data) ? data : []).map((r) => String(r.questId)));
-   setMyQuestIds(ids);
-   return ids;
-}, [myQuestIds]);
+  // Cache user's quest IDs; only hits the network once per mount
+  const fetchMyQuestIds = useCallback(
+    async (token) => {
+      if (myQuestIds instanceof Set) return myQuestIds;
+      const res = await fetch(USER_QUESTS_API, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+      const ids = new Set(
+        (Array.isArray(data) ? data : []).map((r) => String(r.questId))
+      );
+      setMyQuestIds(ids);
+      return ids;
+    },
+    [myQuestIds]
+  );
 
   const center = useMemo(() => ({ lat: -26.19, lng: 28.03 }), []);
   const bounds = useMemo(
@@ -221,7 +227,6 @@ const [myQuestIds, setMyQuestIds] = useState(null);
 
   useEffect(() => {
     loadQuests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resolveQuestId = (marker) =>
@@ -242,14 +247,20 @@ const [myQuestIds, setMyQuestIds] = useState(null);
         data: { session },
       } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) throw new Error("Please sign in.");
+      if (!token) {
+        toast.dismiss(t);
+        setShowLoginPrompt(true);
+        return;
+      }
 
       // 1) Load my quest ids (cached)
       const ids = await fetchMyQuestIds(token);
 
       // 2) Duplicate check
       if (ids.has(questId)) {
-        toast.success("This quest is already in your list.", { id: t });
+        toast("⚠️ This quest is already in your list.", {
+          id: t,
+        });
         return;
       }
 
@@ -294,12 +305,21 @@ const [myQuestIds, setMyQuestIds] = useState(null);
     }
   };
 
+  const handlePromptLogin = () => {
+    setShowLoginPrompt(false);
+    setSelected(null);
+    navigate("/login");
+  };
+
+  const handlePromptDismiss = () => {
+    setShowLoginPrompt(false);
+  };
+
   if (loadError) return <div>Failed to load Google Maps.</div>;
   if (!isLoaded) return <div>Loading map…</div>;
 
   return (
     <div>
-      <Toaster />
       <div className="map-container">
         <div className="map-header">
           <h1>Quests Map</h1>
@@ -371,6 +391,39 @@ const [myQuestIds, setMyQuestIds] = useState(null);
             </InfoWindow>
           )}
         </GoogleMap>
+        {showLoginPrompt && (
+          <div
+            className="modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="map-login-required"
+            onClick={handlePromptDismiss}
+          >
+            <div
+              className="modal login-required"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-body">
+                <h2 id="map-login-required">Login Required</h2>
+                <p>
+                  You need to sign in before you can add quests to your list.
+                </p>
+                <div className="modal-actions">
+                  <IconButton
+                    icon="login"
+                    label="Go to Login"
+                    onClick={handlePromptLogin}
+                  />
+                  <IconButton
+                    icon="close"
+                    label="Continue Browsing"
+                    onClick={handlePromptDismiss}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

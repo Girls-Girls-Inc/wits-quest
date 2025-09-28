@@ -1,0 +1,74 @@
+name: "🐛 Bug Report"
+description: "Report a reproducible bug to help us improve."
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out a bug report!
+
+  - type: input
+    id: issue_number
+    attributes:
+      label: Issue Number
+      description: Leave empty — will be assigned automatically by GitHub.
+      placeholder: Auto-assigned by GitHub
+
+  - type: input
+    id: date_reported
+    attributes:
+      label: Date Reported
+      description: Enter the date you are creating this issue.
+      placeholder: YYYY-MM-DD
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      description: Current state of the issue.
+      options:
+        - Open
+        - In Progress
+        - Resolved
+        - Closed
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug Summary
+      placeholder: e.g. App crashes when clicking "Save"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, browser, Node version, etc.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low
+        - Medium
+        - High

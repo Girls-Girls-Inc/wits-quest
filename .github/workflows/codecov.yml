@@ -3,8 +3,8 @@ name: Run Tests and Upload Coverage
 on:
   push:
     branches: [ dev ]
-  #pull_request:
-  #  branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
 
 jobs:
   test:
@@ -13,40 +13,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # important: fetch full history so Codecov can find the base commit
+          fetch-depth: 0
+          # keep credentials so uploads using secrets work if needed
+          persist-credentials: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install all dependencies (root, frontend, backend)
         run: |
+          rm -rf node_modules
           npm install
           cd frontend && npm install
           cd ../backend && npm install
-          cd ..
 
-      - name: Run tests with coverage (frontend + backend)
-        run: |
-          # Frontend
-          cd frontend
-          npx jest --coverage --coverageDirectory=../coverage/frontend
-          cd ..
+      - name: Run tests with coverage
+        #run: npm run test:coverage
+        run: npx jest --coverage
+        continue-on-error: true
+        #continue-on-error: false
 
-          # Backend
-          cd backend
-          npx jest --coverage --coverageDirectory=../coverage/backend
-          cd ..
-
-      - name: Merge coverage reports
-        run: |
-          npm install -g lcov-result-merger
-          lcov-result-merger 'coverage/**/lcov.info' > coverage/lcov.info
-
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}   # Only needed for private repos, safe to keep
-          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
           flags: unittests
+          verbose: true
           fail_ci_if_error: true

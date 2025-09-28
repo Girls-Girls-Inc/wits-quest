@@ -15,6 +15,11 @@
   gap: 10px;
 }
 
+.quest-buttons {
+  display: flex;
+  flex-direction: row;
+}
+
 .quest-list {
   display: flex;
   flex-direction: column;
@@ -220,7 +225,7 @@
   flex-wrap: wrap;
   gap: 12px;
   font-size: 0.95rem;
-  color: #555;
+  color: #fff;
 }
 
 .map-wrap {
@@ -246,4 +251,61 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.modal.login-required {
+  max-width: 400px;
+  width: 95%;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: var(--background);
+  border: 1px solid #444;
+}
+
+.modal.login-required h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--accent, var(--wits-yellow));
+}
+
+.modal.login-required p {
+  font-size: 0.95rem;
+  color: #ccc;
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+.modal.login-required .modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.modal.login-required .icon-button {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: var(--accent, var(--wits-yellow));
+  color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal.login-required .icon-button:nth-child(2) {
+  background: var(--wits-gold);
+  color: #eee;
+}
+
+.modal.login-required .icon-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+.modal.login-required .modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0;
+  padding: 0;
 }

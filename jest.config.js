@@ -22,7 +22,7 @@ module.exports = {
 
   // transpile react-router-dom if necessary; extend if other node_modules need transpiling
   transformIgnorePatterns: [
-    "/node_modules/",
+    "/node_modules/", "\\.(css)$"
   ],
 
   moduleFileExtensions: ["js", "jsx", "json"],
@@ -47,7 +47,7 @@ module.exports = {
     "!frontend/src/lib/env.js", 
     "!frontend/src/supabase/supabaseClient.js"
   ],
-  coverageDirectory: "coverage",
+  coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "lcov"],
 
   verbose: true

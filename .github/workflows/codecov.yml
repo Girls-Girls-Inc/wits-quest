@@ -1,3 +1,20 @@
+
+The CI environment is generating different coverage data
+Codecov is failing to parse your coverage file correctly
+There's a path/encoding issue in the upload
+After you update and push:
+Check the GitHub Action logs for the debugging output
+Compare the CI-generated lcov.info with your local one
+Look at the Codecov upload logs for any parsing errors
+The debugging step will show us exactly what the CI environment is generating vs. what you see locally. If the CI shows the same good coverage data, then the issue is in how Codecov is processing it.
+
+My prediction: The CI environment will show the same good coverage data as your local, but Codecov is having trouble parsing or processing it correctly.
+
+
+
+
+
+
 name: Run Tests and Upload Coverage
 
 on:

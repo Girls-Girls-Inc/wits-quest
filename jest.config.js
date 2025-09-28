@@ -22,7 +22,7 @@ module.exports = {
 
   // transpile react-router-dom if necessary; extend if other node_modules need transpiling
   transformIgnorePatterns: [
-    "/node_modules/", "\\.(css)$"
+    "/node_modules/",
   ],
 
   moduleFileExtensions: ["js", "jsx", "json"],
@@ -45,11 +45,14 @@ module.exports = {
     // Exclude specific problem files
     "!frontend/src/main.jsx",
     "!frontend/src/lib/env.js", 
-    "!frontend/src/supabase/supabaseClient.js",
-    "!frontend/src/App.jsx",
+    "!frontend/src/supabase/supabaseClient.js"
   ],
-  coverageDirectory: "<rootDir>/coverage",
-  coverageReporters: ["text", "lcov"],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "lcov", "json"],
+  coveragePathIgnorePatterns: [
+    "/node_modules/",
+    "/coverage/"
+  ],
 
   verbose: true
 };

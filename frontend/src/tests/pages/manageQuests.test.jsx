@@ -1,32 +1,35 @@
 /** @jest-environment jsdom */
-import "@testing-library/jest-dom";
+
+const API_BASE = process.env.VITE_WEB_URL || "http://localhost:3000";
+
 import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-// Polyfills (for libs that expect them)
+/* ================= Polyfills ================= */
+
 const { TextEncoder, TextDecoder } = require("util");
 if (!global.TextEncoder) global.TextEncoder = TextEncoder;
 if (!global.TextDecoder) global.TextDecoder = TextDecoder;
 
-/* ========================= Mocks ========================= */
+/* ================= Mocks ================= */
 
-// Router: useNavigate only
+// fetch + confirm
+global.fetch = jest.fn();
+global.confirm = jest.fn();
+
+// Router
 const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => {
-  const React = require("react");
-  return {
-    useNavigate: () => mockNavigate,
-    Link: ({ to, children }) => React.createElement("a", { href: to }, children),
-  };
-});
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+}));
 
-// Toasts
+// Toast
 jest.mock("react-hot-toast", () => {
   const mockToast = {
     success: jest.fn(),
     error: jest.fn(),
-    loading: jest.fn(() => "tid-1"),
+    loading: jest.fn(() => "toast-id"),
     dismiss: jest.fn(),
   };
   return {
@@ -36,374 +39,580 @@ jest.mock("react-hot-toast", () => {
     error: mockToast.error,
     loading: mockToast.loading,
     dismiss: mockToast.dismiss,
-    Toaster: () => null,
+    Toaster: () => <div data-testid="toaster" />,
   };
 });
 
-// Replace IconButton with a plain button
+// Supabase client: we provide jest.fn shells that tests will set up per test.
+jest.mock("../../supabase/supabaseClient", () => ({
+  __esModule: true,
+  default: {
+    from: jest.fn(),
+    storage: {
+      from: jest.fn(),
+    },
+    auth: {
+      getSession: jest.fn(),
+    },
+  },
+}));
+
+// Lightweight UI mocks
+jest.mock("../../components/InputField", () => (props) => {
+  const { name, placeholder, value, onChange, required, type = "text" } = props;
+  return (
+    <input
+      data-testid={name}
+      name={name}
+      placeholder={placeholder}
+      value={value ?? ""}
+      onChange={onChange}
+      required={required}
+      type={type}
+    />
+  );
+});
+
 jest.mock("../../components/IconButton", () => (props) => (
-  <button {...props}>{props.label || "Button"}</button>
+  <button
+    data-testid={`icon-btn-${(props.label || "button")
+      .toLowerCase()
+      .replace(/\s+/g, "-")}`}
+    {...props}
+  >
+    {props.label || "Button"}
+  </button>
 ));
 
-// Replace InputField with a plain input
-jest.mock("../../components/InputField", () => (props) => <input {...props} />);
-
-// Styles no-ops
+// CSS
 jest.mock("../../styles/quests.css", () => ({}));
 jest.mock("../../styles/layout.css", () => ({}));
 jest.mock("../../styles/login-signup.css", () => ({}));
 jest.mock("../../styles/button.css", () => ({}));
 
-/* ========================= Supabase mock ========================= */
+import supabase from "../../supabase/supabaseClient";
+import ManageQuests from "../../pages/manageQuests";
 
-const makeFromChain = (table, data, error = null) => {
-  // For quests: .select().order() -> Promise
-  // For quest_with_badges: .select() -> Promise
-  const chain = {
-    select: jest.fn(() => {
-      if (table === "quests") {
-        return {
-          order: jest.fn(() => Promise.resolve({ data, error })),
-        };
-      }
-      // quest_with_badges (no .order() used in code)
-      return Promise.resolve({ data, error });
-    }),
-  };
-  return chain;
+/* ================= Helpers ================= */
+
+// common text matcher when labels & values are split across elements
+const hasText = (re) => (_c, n) => (n?.textContent ? re.test(n.textContent) : false);
+
+const mockFetch = (response, status = 200, headers = { "content-type": "application/json" }) => {
+  global.fetch.mockResolvedValueOnce({
+    ok: status >= 200 && status < 300,
+    status,
+    text: jest.fn().mockResolvedValue(
+      typeof response === "string" ? response : JSON.stringify(response)
+    ),
+    json: jest.fn().mockResolvedValue(
+      typeof response === "string" ? JSON.parse(response) : response
+    ),
+    headers: { get: (k) => headers[k?.toLowerCase()] ?? headers[k] ?? null },
+  });
 };
 
-// IMPORTANT: Jest allows variables prefixed with `mock` to be referenced in a mock factory.
-let mockSupabaseHandlers = {};
-const setMockSupabaseHandlers = (handlers) => {
-  mockSupabaseHandlers = handlers || {};
+const mockFetchError = (status = 500, message = "Server error") => {
+  global.fetch.mockResolvedValueOnce({
+    ok: false,
+    status,
+    text: jest.fn().mockResolvedValue(message),
+    json: jest.fn().mockRejectedValue(new Error("not json")),
+    headers: { get: () => "text/plain" },
+  });
 };
 
-// Full supabase client mock
-jest.mock("../../supabase/supabaseClient", () => {
-  const auth = { getSession: jest.fn() };
-  const from = jest.fn((table) => {
-    const h = mockSupabaseHandlers || {};
+// Supabase setup for loadQuests() path
+const setupSupabaseForQuests = ({
+  questsData = [],
+  badgeData = [],
+  publicUrlHost = "https://cdn.test/",
+  session = { access_token: "tok-123" },
+} = {}) => {
+  // auth.getSession (used for /quizzes fetch + later actions)
+  supabase.auth.getSession.mockResolvedValue({ data: { session } });
+
+  // storage.from('quests').getPublicUrl(path)
+  const getPublicUrl = jest.fn((path) => ({
+    data: { publicUrl: `${publicUrlHost}${String(path).replace(/^\//, "")}` },
+  }));
+  supabase.storage.from.mockImplementation((bucket) => {
+    if (bucket !== "quests") return { getPublicUrl: jest.fn(() => ({ data: { publicUrl: "" } })) };
+    return { getPublicUrl };
+  });
+
+  // from('...') select/order chains
+  supabase.from.mockImplementation((table) => {
     if (table === "quests") {
-      return makeFromChain("quests", h.questsData || [], h.questsError || null);
+      return {
+        select: () => ({
+          order: () => Promise.resolve({ data: questsData, error: null }),
+        }),
+      };
     }
     if (table === "quest_with_badges") {
-      return makeFromChain("quest_with_badges", h.badgesData || [], h.badgesError || null);
+      return {
+        select: () =>
+          Promise.resolve({
+            data: badgeData,
+            error: null,
+          }),
+      };
     }
-    // default no-op
-    return makeFromChain(table, [], null);
-  });
-
-  const storage = {
-    from: jest.fn(() => ({
-      getPublicUrl: jest.fn((path) => ({
-        data: {
-          publicUrl: (mockSupabaseHandlers?.publicUrlBase || "https://cdn.test") + "/" + path,
-        },
-      })),
-    })),
-  };
-
-  return {
-    __esModule: true,
-    default: { from, auth, storage },
-  };
-});
-
-import supabase from "../../supabase/supabaseClient";
-
-/* =============== fetch router + helpers =============== */
-
-// Component builds `${API_BASE}/…`. In tests API_BASE may be undefined, so final URL
-// might look like "undefined/locations" or just "/locations" depending on code.
-// We match by regex on the tail (…/locations, …/collectibles, …/hunts, …/quizzes, …/quests/:id)
-let routes;
-const setupFetchRouter = () => {
-  routes = [];
-  global.fetch = jest.fn(async (url, opts = {}) => {
-    const u = typeof url === "string" ? url : `${url}`;
-    const method = (opts.method || "GET").toUpperCase();
-
-    const idx = routes.findIndex((r) => {
-      const mOk = !r.method || r.method === method;
-      const uOk = r.url instanceof RegExp ? r.url.test(u) : r.url === u;
-      return mOk && uOk;
-    });
-    if (idx === -1) throw new Error(`No mock for ${method} ${u}`);
-
-    const hit = routes[idx];
-    // consume in order
-    routes.splice(idx, 1);
-    return typeof hit.reply === "function" ? hit.reply(u, opts) : hit.reply;
+    // default: never used here
+    return {
+      select: () => Promise.resolve({ data: [], error: null }),
+    };
   });
 };
 
-const addRoute = (method, url, reply) => routes.push({ method, url, reply });
+/* ================= Test Data ================= */
 
-const jsonRes = (obj, { status = 200, headers = {} } = {}) => ({
-  ok: status >= 200 && status < 300,
-  status,
-  headers: {
-    get: (k) =>
-      k && k.toLowerCase() === "content-type"
-        ? headers["content-type"] || "application/json"
-        : null,
+const QUESTS = [
+  {
+    id: 1,
+    name: "Find the Library",
+    description: "Look for the main library",
+    locationId: 10,
+    pointsAchievable: 25,
+    collectibleId: null,
+    huntId: null,
+    quizId: 101,
+    isActive: true,
+    createdAt: "2025-01-01T00:00:00Z",
   },
-  text: async () => JSON.stringify(obj),
-});
-const textRes = (txt, { status = 200, headers = {} } = {}) => ({
-  ok: status >= 200 && status < 300,
-  status,
-  headers: { get: (k) => headers[k] ?? null },
-  text: async () => txt,
-});
+  {
+    id: 2,
+    name: "Visit the Museum",
+    description: "Walk to the museum",
+    locationId: 11,
+    pointsAchievable: 10,
+    collectibleId: 5,
+    huntId: 3,
+    quizId: null,
+    isActive: false,
+    createdAt: "2025-01-02T00:00:00Z",
+  },
+];
 
-/* =============== Globals/Env =============== */
+const BADGES = [
+  { questId: 1, imageUrl: "folder/img1.png" },
+  { questId: 2, imageUrl: "https://assets.example.com/folder/img2.png" }, // already absolute
+];
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  setupFetchRouter();
-  // Provide a default auth token for API calls that require it
-  supabase.auth.getSession.mockResolvedValue({
-    data: { session: { access_token: "tok-123" } },
-    error: null,
-  });
-});
+const LOCATIONS = [{ id: 10, name: "Campus Library" }, { id: 11, name: "City Museum" }];
+const COLLECTIBLES = [{ id: 5, name: "Gold Badge" }];
+const HUNTS = [{ id: 3, name: "Starter Hunt" }];
+const QUIZZES = [{ id: 101, questionText: "What is 2 + 2?" }];
 
-// Quiet unrelated act() warnings from other components imported elsewhere in the suite
-beforeAll(() => {
-  jest.spyOn(console, "error").mockImplementation((msg, ...rest) => {
-    if (typeof msg === "string" && msg.includes("not wrapped in act")) return;
-    // pass through anything else
-    // eslint-disable-next-line no-console
-    console.warn(msg, ...rest);
-  });
-});
-
-afterAll(() => {
-  // restore after suite
-  console.error.mockRestore();
-});
-
-// confirm() used in delete flow
-beforeAll(() => {
-  jest.spyOn(window, "confirm").mockImplementation(() => true);
-});
-afterAll(() => {
-  window.confirm.mockRestore();
-});
-
-/* =============== import component =============== */
-
-const path = require("path");
-const absPath = path.resolve(__dirname, "../../pages/manageQuests.jsx");
-jest.unmock(absPath);
-const ManageQuests = require(absPath).default;
-
-/* ========================= Test Data ========================= */
-
-const QUEST = {
-  id: 1,
-  name: "Find the Library",
-  description: "Clue-based quest",
-  locationId: 10,
-  collectibleId: 100,
-  huntId: 500,
-  quizId: 900,
-  pointsAchievable: 25,
-  isActive: true,
-  createdAt: "2024-01-01T00:00:00Z",
-};
-
-const BADGE = { questId: 1, imageUrl: "folder/img1.png" };
-
-const LOCATIONS = [{ id: 10, name: "Main Library" }];
-const COLLECTIBLES = [{ id: 100, name: "Gold Badge" }];
-const HUNTS = [{ id: 500, name: "Orientation Hunt" }];
-const QUIZZES = [{ id: 900, questionText: "What is 2+2?" }];
-
-/* ========================= Helpers ========================= */
-
-const registerDefaultApiRoutes = () => {
-  // match tail so "undefined/..." or "/..." both pass
-  addRoute("GET", /\/locations$/, jsonRes(LOCATIONS));
-  addRoute("GET", /\/collectibles$/, jsonRes(COLLECTIBLES));
-  addRoute("GET", /\/hunts$/, jsonRes(HUNTS));
-  addRoute("GET", /\/quizzes$/, jsonRes(QUIZZES));
-};
-
-/* ================================ Tests ================================= */
+/* ============================== Tests =============================== */
 
 describe("ManageQuests page", () => {
-  it("loads quests and related data, merges images, and renders cards", async () => {
-    setMockSupabaseHandlers({
-      questsData: [QUEST],
-      badgesData: [BADGE],
-      publicUrlBase: "https://assets.example.com",
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch.mockClear();
+    global.confirm.mockReset();
+    mockNavigate.mockReset();
+  });
+
+  it("loads quests, merges images, fetches related lists, and renders cards", async () => {
+    setupSupabaseForQuests({
+      questsData: QUESTS,
+      badgeData: BADGES,
+      publicUrlHost: "https://assets.example.com/",
+      session: { access_token: "tok-123" },
     });
-    registerDefaultApiRoutes();
+
+    // fetch sequence for locations, collectibles, hunts, quizzes
+    mockFetch(LOCATIONS);     // GET /locations
+    mockFetch(COLLECTIBLES);  // GET /collectibles
+    mockFetch(HUNTS);         // GET /hunts
+    mockFetch(QUIZZES);       // GET /quizzes (auth)
 
     render(<ManageQuests />);
 
-    // Header
+    // header
     expect(
       await screen.findByRole("heading", { level: 1, name: /manage quests/i })
     ).toBeInTheDocument();
 
-    // Card shows quest name + points + active
-    const card = await screen.findByRole("heading", {
-      level: 2,
-      name: /find the library/i,
-    });
-    const cardRoot = card.closest(".quest-card");
-    expect(within(cardRoot).getByText(/points:\s*25/i)).toBeInTheDocument();
-    expect(within(cardRoot).getByText(/active:\s*yes/i)).toBeInTheDocument();
+    // cards
+    const card1 = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const root1 = card1.closest(".quest-card");
+    expect(within(root1).getByText(hasText(/Points:\s*25/i))).toBeInTheDocument();
+    expect(within(root1).getByText(hasText(/Active:\s*Yes/i))).toBeInTheDocument();
+    // mapped names
+    expect(within(root1).getByText(hasText(/Collectible:\s*-\s*$/i))).toBeInTheDocument();
+    expect(within(root1).getByText(hasText(/Hunt:\s*-\s*$/i))).toBeInTheDocument();
+    expect(within(root1).getByText(hasText(/Quiz:\s*What is 2 \+ 2\?/i))).toBeInTheDocument();
 
-    // Mapped names from lists
-    expect(
-      within(cardRoot).getByText(/collectible:\s*gold badge/i)
-    ).toBeInTheDocument();
-    expect(
-      within(cardRoot).getByText(/hunt:\s*orientation hunt/i)
-    ).toBeInTheDocument();
-    expect(
-      within(cardRoot).getByText(/quiz:\s*what is 2\+2\?/i)
-    ).toBeInTheDocument();
+    const img1 = within(root1).getByRole("img", { name: /find the library/i });
+    expect(img1).toHaveAttribute("src", "https://assets.example.com/folder/img1.png");
 
-    // Image URL from storage.getPublicUrl(...)
-    const img = within(cardRoot).getByRole("img", { name: /find the library/i });
-    expect(img).toHaveAttribute(
-      "src",
-      expect.stringMatching(/^https:\/\/assets\.example\.com\/folder\/img1\.png$/)
-    );
+    const card2 = screen.getByRole("heading", { level: 2, name: /visit the museum/i });
+    const root2 = card2.closest(".quest-card");
+    expect(within(root2).getByText(hasText(/Points:\s*10/i))).toBeInTheDocument();
+    expect(within(root2).getByText(hasText(/Active:\s*No/i))).toBeInTheDocument();
+    expect(within(root2).getByText(hasText(/Collectible:\s*Gold Badge/i))).toBeInTheDocument();
+    expect(within(root2).getByText(hasText(/Hunt:\s*Starter Hunt/i))).toBeInTheDocument();
+    expect(within(root2).getByText(hasText(/Quiz:\s*-\s*$/i))).toBeInTheDocument();
+
+    const img2 = within(root2).getByRole("img", { name: /visit the museum/i });
+    expect(img2).toHaveAttribute("src", "https://assets.example.com/folder/img2.png");
+
+    const toast = (await import("react-hot-toast")).default;
+    expect(toast.success).toHaveBeenCalledWith("Quests loaded", { id: "toast-id" });
   });
 
-  it("opens Edit, saves via PUT, and updates row + shows success toast", async () => {
-    const toast = (await import("react-hot-toast")).default;
-
-    setMockSupabaseHandlers({ questsData: [QUEST], badgesData: [BADGE] });
-    registerDefaultApiRoutes();
-
-    // PUT /quests/1
-    addRoute("PUT", /\/quests\/1$/, (url, opts) => {
-      // Validate auth header present
-      expect(opts.headers.Authorization).toMatch(/^Bearer /);
-      const body = JSON.parse(opts.body);
-      // echo back an updated quest
-      return jsonRes({ quest: { id: 1, ...body } });
+  it("handles supabase load error and shows toast", async () => {
+    // Make 'quests' call fail
+    supabase.from.mockImplementation((table) => {
+      if (table === "quests") {
+        return {
+          select: () => ({
+            order: () => Promise.resolve({ data: null, error: new Error("boom") }),
+          }),
+        };
+      }
+      if (table === "quest_with_badges") {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      return { select: () => Promise.resolve({ data: [], error: null }) };
     });
+    supabase.auth.getSession.mockResolvedValue({ data: { session: { access_token: "tok" } } });
+    supabase.storage.from.mockReturnValue({ getPublicUrl: jest.fn(() => ({ data: { publicUrl: "" } })) });
+
+    // still attempt related fetches (component calls them anyway)
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
 
     render(<ManageQuests />);
 
-    // Open edit form
-    const card = await screen.findByRole("heading", {
-      level: 2,
-      name: /find the library/i,
+    const toast = (await import("react-hot-toast")).default;
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("boom", { id: "toast-id" });
     });
-    const cardRoot = card.closest(".quest-card");
-    await userEvent.click(
-      within(cardRoot).getByRole("button", { name: /edit/i })
-    );
 
-    // Form fields populated
+    // no cards
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+  });
+
+  it("does not fetch quizzes when unauthenticated and shows '-' mapping", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]], // has quizId 101, but we won't fetch quizzes
+      badgeData: [BADGES[0]],
+      session: null, // no token -> loadQuizzes early return
+    });
+
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    // no quizzes call enqueued
+
+    render(<ManageQuests />);
+
+    const card = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const root = card.closest(".quest-card");
+    expect(within(root).getByText(hasText(/Quiz:\s*-\s*$/i))).toBeInTheDocument();
+
+    // Ensure we didn't call /quizzes
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      `${API_BASE}/quizzes`,
+      expect.anything()
+    );
+  });
+
+  it("Refresh button reloads quests", async () => {
+    // initial list -> one quest
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
+
+    render(<ManageQuests />);
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /find the library/i })
+    ).toBeInTheDocument();
+
+    // Update supabase.from to now return both quests for next load
+    setupSupabaseForQuests({
+      questsData: QUESTS,
+      badgeData: BADGES,
+      session: { access_token: "tok" },
+    });
+
+    // No related fetches on refresh (they're separate buttons) — but the component's
+    // "Refresh" only reloads quests; we don't re-fetch lists here. It's ok.
+    // Clicking refresh triggers loadQuests() → which calls supabase only.
+    await userEvent.click(screen.getByText(/refresh/i));
+
+    // The second item should appear
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /visit the museum/i })
+    ).toBeInTheDocument();
+  });
+
+  it("opens Edit, saves via PUT (with token), updates row and closes form", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-999" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
+
+    render(<ManageQuests />);
+
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const cardRoot = heading.closest(".quest-card");
+
+    await userEvent.click(within(cardRoot).getByText(/edit/i));
+
+    // form shows with values
     const nameInput = await screen.findByPlaceholderText(/quest name/i);
+    const descInput = screen.getByPlaceholderText(/quest description/i);
     const pointsInput = screen.getByPlaceholderText(/points achievable/i);
 
-    // Change name and points
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "Updated Quest");
+    await userEvent.clear(descInput);
+    await userEvent.type(descInput, "Clue-based quest");
     await userEvent.clear(pointsInput);
     await userEvent.type(pointsInput, "30");
 
-    // Save
-    await userEvent.click(screen.getByRole("button", { name: /save quest/i }));
+    // successful PUT
+    mockFetch({
+      quest: {
+        ...QUESTS[0],
+        name: "Updated Quest",
+        description: "Clue-based quest",
+        pointsAchievable: 30,
+      },
+    });
 
-    // Row updated
+    await userEvent.click(screen.getByText(/save quest/i));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE}/quests/1`,
+        expect.objectContaining({
+          method: "PUT",
+          credentials: "include",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer tok-999",
+          }),
+          body: JSON.stringify({
+            name: "Updated Quest",
+            description: "Clue-based quest",
+            locationId: 10,
+            pointsAchievable: 30,
+            collectibleId: null,
+            huntId: null,
+            quizId: 101,
+            isActive: true,
+          }),
+        })
+      );
+    });
+
+    const toast = (await import("react-hot-toast")).default;
+    expect(toast.success).toHaveBeenCalledWith("Quest updated", { id: "toast-id" });
+
+    // Form closes; heading updates
     expect(
       await screen.findByRole("heading", { level: 2, name: /updated quest/i })
     ).toBeInTheDocument();
-    const updatedCard = screen.getByRole("heading", {
-      level: 2,
-      name: /updated quest/i,
-    }).closest(".quest-card");
-    expect(within(updatedCard).getByText(/points:\s*30/i)).toBeInTheDocument();
-
-    // Toast success
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Quest updated", { id: "tid-1" });
-    });
+    expect(screen.queryByPlaceholderText(/quest name/i)).not.toBeInTheDocument();
   });
 
-  it("deletes a quest via DELETE and removes the card", async () => {
-    const toast = (await import("react-hot-toast")).default;
-
-    setMockSupabaseHandlers({ questsData: [QUEST], badgesData: [BADGE] });
-    registerDefaultApiRoutes();
-
-    addRoute("DELETE", /\/quests\/1$/, jsonRes({}));
+  it("save shows error toast on server error", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-1" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
 
     render(<ManageQuests />);
 
-    const card = await screen.findByRole("heading", {
-      level: 2,
-      name: /find the library/i,
-    });
-    const cardRoot = card.closest(".quest-card");
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const cardRoot = heading.closest(".quest-card");
+    await userEvent.click(within(cardRoot).getByText(/edit/i));
 
-    await userEvent.click(
-      within(cardRoot).getByRole("button", { name: /delete/i })
-    );
+    mockFetch({ message: "Failed to update quest" }, 400);
 
+    await userEvent.click(screen.getByText(/save quest/i));
+
+    const toast = (await import("react-hot-toast")).default;
     await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to update quest", { id: "toast-id" });
+    });
+  });
+
+  it("delete removes the card when confirmed", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-1" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
+
+    global.confirm.mockReturnValue(true);
+
+    render(<ManageQuests />);
+
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const cardRoot = heading.closest(".quest-card");
+
+    // DELETE success
+    mockFetch("", 200);
+
+    await userEvent.click(within(cardRoot).getByText(/delete/i));
+
+    expect(global.confirm).toHaveBeenCalledWith("Delete this quest?");
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE}/quests/1`,
+        expect.objectContaining({
+          method: "DELETE",
+          credentials: "include",
+          headers: { Authorization: "Bearer tok-1" },
+        })
+      );
+    });
+
+    const toast = (await import("react-hot-toast")).default;
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Quest deleted", { id: "toast-id" });
       expect(
         screen.queryByRole("heading", { level: 2, name: /find the library/i })
       ).not.toBeInTheDocument();
     });
-    expect(toast.success).toHaveBeenCalledWith("Quest deleted", { id: "tid-1" });
   });
 
-  it("does not fetch quizzes when unauthenticated and shows '-' for quiz mapping", async () => {
-    // No session
-    supabase.auth.getSession.mockResolvedValueOnce({
-      data: { session: null },
-      error: null,
+  it("does not delete if user cancels confirm", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-1" },
     });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
 
-    // Quest with no quizId to show "-" mapping
-    const QUEST_NO_QUIZ = { ...QUEST, id: 2, quizId: null };
-    const BADGE2 = { questId: 2, imageUrl: "" };
-
-    setMockSupabaseHandlers({ questsData: [QUEST_NO_QUIZ], badgesData: [BADGE2] });
-
-    // Other lists still fetched
-    addRoute("GET", /\/locations$/, jsonRes(LOCATIONS));
-    addRoute("GET", /\/collectibles$/, jsonRes(COLLECTIBLES));
-    addRoute("GET", /\/hunts$/, jsonRes(HUNTS));
-    // No /quizzes route on purpose
+    global.confirm.mockReturnValue(false);
 
     render(<ManageQuests />);
 
-    const card = await screen.findByRole("heading", {
-      level: 2,
-      name: /find the library/i,
-    });
-    const cardRoot = card.closest(".quest-card");
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const cardRoot = heading.closest(".quest-card");
+    await userEvent.click(within(cardRoot).getByText(/delete/i));
 
-    expect(within(cardRoot).getByText(/quiz:\s*-/i)).toBeInTheDocument();
+    expect(global.confirm).toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/quests/1"),
+      expect.objectContaining({ method: "DELETE" })
+    );
   });
 
-  it("shows a toast when supabase quest query fails", async () => {
+  it("delete shows error toast on failure", async () => {
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-1" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
+
+    global.confirm.mockReturnValue(true);
+
+    render(<ManageQuests />);
+
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const cardRoot = heading.closest(".quest-card");
+
+    mockFetchError(500, "Failed to delete quest");
+
+    await userEvent.click(within(cardRoot).getByText(/delete/i));
+
     const toast = (await import("react-hot-toast")).default;
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to delete quest", { id: "toast-id" });
+    });
+  });
 
-    setMockSupabaseHandlers({ questsData: [], questsError: { message: "boom" } });
-    registerDefaultApiRoutes();
+  it("Back to Admin navigates to /adminDashboard", async () => {
+    setupSupabaseForQuests({
+      questsData: [],
+      badgeData: [],
+      session: { access_token: "tok" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
 
     render(<ManageQuests />);
 
+    await userEvent.click(screen.getByText(/back to admin/i));
+    expect(mockNavigate).toHaveBeenCalledWith("/adminDashboard");
+  });
+
+  it("shows session expired error on save/delete when no token", async () => {
+    // load with a session (for initial lists)
+    setupSupabaseForQuests({
+      questsData: [QUESTS[0]],
+      badgeData: [BADGES[0]],
+      session: { access_token: "tok-initial" },
+    });
+    mockFetch(LOCATIONS);
+    mockFetch(COLLECTIBLES);
+    mockFetch(HUNTS);
+    mockFetch(QUIZZES);
+
+    render(<ManageQuests />);
+
+    const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
+    const root = heading.closest(".quest-card");
+    await userEvent.click(within(root).getByText(/edit/i));
+
+    // Simulate later getToken() returning no session
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+
+    await userEvent.click(screen.getByText(/save quest/i));
+    const toast = (await import("react-hot-toast")).default;
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ").toLowerCase();
-      expect(msg).toContain("boom");
+      expect(toast.error).toHaveBeenCalledWith("Session expired. Please sign in again.");
+    });
+
+    // Delete path:
+    global.confirm.mockReturnValue(true);
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
+
+    await userEvent.click(within(root).getByText(/delete/i));
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Session expired. Please sign in again.", { id: "toast-id" });
     });
   });
 });
+

@@ -23,12 +23,12 @@ describe("env.js wrapper", () => {
     // Mock env.js to simulate a defined environment
     jest.doMock("../../lib/env", () => ({
       __esModule: true,
-      VITE_WEB_URL: "http://localhost:5173",
-      default: { VITE_WEB_URL: "http://localhost:5173" },
+      VITE_WEB_URL: "http://localhost:3000",
+      default: { VITE_WEB_URL: "http://localhost:3000" },
     }));
 
     const envModule = require("../../lib/env");
-    expect(envModule.VITE_WEB_URL).toBe("http://localhost:5173");
-    expect(envModule.default.VITE_WEB_URL).toBe("http://localhost:5173");
+    expect(envModule.VITE_WEB_URL).toBe("http://localhost:3000");
+    expect(envModule.default.VITE_WEB_URL).toBe("http://localhost:3000");
   });
 });

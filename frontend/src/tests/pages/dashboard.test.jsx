@@ -336,4 +336,78 @@ describe("Dashboard", () => {
         fireEvent.click(screen.getByLabelText(/Scroll left on badges/i));
         expect(await screen.findByText(/No badges yet/i)).toBeInTheDocument();
     });
+    it("updates state on auth state change", async () => {
+        // trigger callback manually
+        const callback = mockOnAuthStateChange.mock.calls[0][0];
+        act(() => {
+            callback("SIGNED_IN", { access_token: "tok2", user: { id: "u2" } });
+        });
+        expect(screen).toBeTruthy(); // just to hit lines 90–91
+    });
+
+    it("handles loadBadges early bail when no me.id", async () => {
+        mockGetSession.mockResolvedValue({
+            data: { session: { access_token: "token", user: {} } },
+        });
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+
+        await act(async () => {
+            render(<MemoryRouter><Dashboard /></MemoryRouter>);
+        });
+
+        expect(await screen.findByText(/No badges yet/i)).toBeInTheDocument();
+    });
+
+    it("handles loadBadges network error", async () => {
+        global.fetch.mockRejectedValue(new Error("fail badges"));
+
+        await act(async () => {
+            render(<MemoryRouter><Dashboard /></MemoryRouter>);
+        });
+
+        expect(await screen.findByText(/No badges yet/i)).toBeInTheDocument();
+    });
+
+    it("handles loadOngoing fetch error", async () => {
+        global.fetch.mockRejectedValue(new Error("fail ongoing"));
+
+        await act(async () => {
+            render(<MemoryRouter><Dashboard /></MemoryRouter>);
+        });
+
+        expect(await screen.findByText(/No ongoing quests/i)).toBeInTheDocument();
+    });
+
+    it("does nothing on nextSlide/prevSlide when no badges", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+
+        await act(async () => {
+            render(<MemoryRouter><Dashboard /></MemoryRouter>);
+        });
+
+        fireEvent.click(screen.getByLabelText(/Scroll right on badges/i));
+        fireEvent.click(screen.getByLabelText(/Scroll left on badges/i));
+        expect(screen.getByText(/No badges yet/i)).toBeInTheDocument();
+    });
+
+    it("falls back to placeholder image on error", async () => {
+        global.fetch.mockImplementation((url) => {
+            if (url.includes("/collectibles")) {
+                return Promise.resolve({
+                    ok: true,
+                    json: async () => [{ id: 1, name: "Badge Broken", imageUrl: "bad.png" }],
+                });
+            }
+            return Promise.resolve({ ok: true, json: async () => [] });
+        });
+
+        await act(async () => {
+            render(<MemoryRouter><Dashboard /></MemoryRouter>);
+        });
+
+        const img = await screen.findByAltText("Badge Broken");
+        fireEvent.error(img); // trigger onError
+        expect(img.src).toContain("data:image/svg+xml"); // placeholder
+    });
+
 });

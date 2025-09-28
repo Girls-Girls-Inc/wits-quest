@@ -1,11 +1,10 @@
 /** @jest-environment jsdom */
 import "@testing-library/jest-dom";
-
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-/* router stub (same as original) */
+/* router stub */
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => {
   const React = require("react");
@@ -19,31 +18,93 @@ jest.mock("react-router-dom", () => {
 
 /* stub CSS & assets */
 jest.mock("../../styles/button.css", () => ({}));
-jest.mock("../../styles/navbar.css", () => ({}));
 jest.mock("../../assets/logo.png", () => "logo.png");
+jest.mock("../../assets/leaderboard.png", () => "leaderboard.png");
+jest.mock("../../assets/home.png", () => "home.png");
+jest.mock("../../assets/map.png", () => "map.png");
+jest.mock("../../assets/profile.png", () => "profile.png");
+jest.mock("../../assets/admin.png", () => "admin.png");
 
-/* import component under test (after mocks) */
 const NavButton = require("../../components/NavButton").default;
 
+afterEach(() => cleanup());
+
 describe("NavButton", () => {
-  it("renders a link when no onClick/type=submit", () => {
-    render(<NavButton route="/dashboard" iconName="logo" label="Home" />);
-    const link = screen.getByRole("link", { name: /home/i });
+  it("renders a link with correct icon", () => {
+    render(<NavButton route="/dashboard" iconName="logo" label="UniqueHome" />);
+    const link = screen.getByRole("link", { name: /uniquehome/i });
     expect(link).toHaveAttribute("href", "/dashboard");
+
+    const img = within(link).getByRole("img", { name: /uniquehome/i });
+    expect(img).toHaveAttribute("src", "logo.png");
   });
 
-  it("renders a button and calls onClick when provided", async () => {
+  it("renders a button and calls onClick", async () => {
     const onClick = jest.fn();
-    render(<NavButton iconName="logo" label="Go" onClick={onClick} />);
-    const btn = screen.getByRole("button", { name: /go/i });
+    render(<NavButton iconName="home" label="UniqueGo" onClick={onClick} />);
+    const btn = screen.getByRole("button", { name: /uniquego/i });
+
+    const img = within(btn).getByRole("img", { name: /uniquego/i });
+    expect(img).toHaveAttribute("src", "home.png");
+
     await userEvent.click(btn);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it("renders a submit button with correct icon", () => {
+    render(<NavButton iconName="profile" label="UniqueSubmit" type="submit" />);
+    const btn = screen.getByRole("button", { name: /uniquesubmit/i });
+    expect(btn).toHaveAttribute("type", "submit");
+
+    const img = within(btn).getByRole("img", { name: /uniquesubmit/i });
+    expect(img).toHaveAttribute("src", "profile.png");
+  });
+
   it("adds aria-disabled and tabIndex when disabled link", () => {
-    render(<NavButton route="/profile" iconName="logo" label="Profile" disabled />);
-    const link = screen.getByRole("link", { name: /profile/i });
+    render(<NavButton route="/profile" iconName="logo" label="UniqueProfile" disabled />);
+    const link = screen.getByRole("link", { name: /uniqueprofile/i });
     expect(link).toHaveAttribute("aria-disabled", "true");
     expect(link).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("renders a disabled button correctly", () => {
+    render(<NavButton iconName="map" label="UniqueMap" onClick={() => { }} disabled />);
+    const btn = screen.getByRole("button", { name: /uniquemap/i });
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveStyle("pointer-events: none");
+
+    const img = within(btn).getByRole("img", { name: /uniquemap/i });
+    expect(img).toHaveAttribute("src", "map.png");
+  });
+
+  it("renders with target when provided", () => {
+    render(<NavButton route="/leaderboard" iconName="leaderboard" label="UniqueBoard" target="_blank" />);
+    const link = screen.getByRole("link", { name: /uniqueboard/i });
+    expect(link).toHaveAttribute("target", "_blank");
+
+    const img = within(link).getByRole("img", { name: /uniqueboard/i });
+    expect(img).toHaveAttribute("src", "leaderboard.png");
+  });
+
+  it("uses custom alt when provided", () => {
+    render(<NavButton route="/admin" iconName="admin" label="UniqueSecret" alt="CustomAlt" />);
+    const img = screen.getByAltText("CustomAlt");
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute("src", "admin.png");
+  });
+
+  it("falls back to label as alt when no alt provided", () => {
+    render(<NavButton route="/admin" iconName="admin" label="UniqueAdmin" />);
+    const img = screen.getByAltText("UniqueAdmin");
+    expect(img).toBeInTheDocument();
+  });
+
+  it("prevents navigation when disabled link is clicked", () => {
+    render(<NavButton route="/blocked" iconName="logo" label="UniqueBlocked" disabled />);
+    const link = screen.getByRole("link", { name: /uniqueblocked/i });
+    const spy = jest.spyOn(Event.prototype, "preventDefault");
+    fireEvent.click(link);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

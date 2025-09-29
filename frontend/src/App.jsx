@@ -16,9 +16,11 @@ const Admin = lazy(() => import("./pages/adminDashboard"));
 const QuestDetail = lazy(() => import("./pages/questDetail"));
 const ManageQuests = lazy(() => import("./pages/manageQuests"));
 const ManageHunts = lazy(() => import("./pages/manageHunts"));
+import Hunts from "./pages/hunts";
 const ManageQuizzes = lazy(() => import("./pages/manageQuizzes"));
 const AddQuiz = lazy(() => import("./pages/addQuiz"));
 const Settings = lazy(() => import("./pages/settings"));
+import HuntDetail from "./pages/huntDetail";
 
 const App = () => {
   return (
@@ -150,6 +152,22 @@ const App = () => {
                 </RequireSession>
               }
             />
+            <Route
+              path="/hunts"
+              element={
+                <RequireSession>
+                  <Hunts />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/hunts/:huntId"
+              element={
+                <RequireSession>
+                  <HuntDetail />
+                </RequireSession>
+              }
+            />
           </Route>
         </Routes>
       </Suspense>
@@ -158,4 +176,3 @@ const App = () => {
 };
 
 export default App;
-

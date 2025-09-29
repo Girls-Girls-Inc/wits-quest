@@ -239,7 +239,7 @@ export default function QuestDetail() {
     }
 
     try {
-      // 1) Complete the quest (points, status, etc.)
+      // 1) Complete the quest
       const res = await fetch(
         `${API_BASE}/user-quests/${userQuestId}/complete`,
         {
@@ -257,7 +257,45 @@ export default function QuestDetail() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
-      // 2) If the quest is linked to a collectible, add it to the user's inventory (idempotent)
+      // 2) Activate the hunt linked to this quest
+      // fetch the hunt linked to this quest
+      const { data: huntData, error: huntError } = await supabase
+        .from("hunts")
+        .select("*")
+        .eq("id", quest.huntId)
+        .single();
+
+      if (huntError || !huntData) {
+        console.error("Could not fetch hunt:", huntError);
+        toast.error("Quest completed, but hunt could not be activated.");
+        return;
+      }
+
+      const now = new Date();
+      const timeLimitMinutes = huntData.timeLimit || 0;
+
+      const closingAt = new Date(
+        now.getTime() + timeLimitMinutes * 60 * 1000
+      ).toISOString();
+
+      const { error: updateError } = await supabase
+        .from("userHunts")
+        .update({
+          isActive: true,
+          startedAt: now.toISOString(),
+          closingAt,
+        })
+        .eq("userId", me.id)
+        .eq("huntId", quest.huntId);
+
+      if (updateError) {
+        console.error("Error activating hunt:", updateError);
+        toast.error("Quest completed, but hunt could not be activated.");
+      } else {
+        toast.success("Hunt activated!");
+      }
+
+      // 3) Award collectible (if any)
       if (quest.collectibleId != null) {
         const award = await fetch(
           `${API_BASE}/users/${encodeURIComponent(
@@ -274,11 +312,8 @@ export default function QuestDetail() {
         );
         const aj = await award.json().catch(() => ({}));
         if (!award.ok) {
-          // Not fatal for completion, but tell the user
           console.warn("Award collectible failed:", aj);
-          toast.error(
-            aj?.error || "Quest done, but collectible could not be awarded."
-          );
+          toast.error("Quest done, but collectible could not be awarded.");
         } else {
           toast.success("Collectible added to your inventory!");
         }

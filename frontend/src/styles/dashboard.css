@@ -103,10 +103,9 @@
   background: #131f24;
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 12px 20px rgba(0, 0, 0, 0.4);
   color: #e0e0e0;
-  border: 1px solid #333;
-  /* Prevent overflow */
+
   min-width: 0;
   overflow: auto;
 }
@@ -522,7 +521,7 @@
 
 /* Fonts: in your CSS @font-face add */
 @font-face {
-  font-family: 'YourFont';
-  src: url('/fonts/YourFont.woff2') format('woff2');
+  font-family: "YourFont";
+  src: url("/fonts/YourFont.woff2") format("woff2");
   font-display: swap;
 }

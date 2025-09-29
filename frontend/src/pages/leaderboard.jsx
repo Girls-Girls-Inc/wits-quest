@@ -10,8 +10,8 @@ import "../styles/quests.css"; // reuse quests classes for the private-list look
 const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in your .env
 
 const BOARDS = {
-  year: { label: "Yearly", id: "year", icon: "calendar_today" },
-  month: { label: "Monthly", id: "month", icon: "calendar_month" },
+  year: { label: "Yearly", id: "12345", icon: "calendar_today" },
+  month: { label: "Monthly", id: "1234", icon: "calendar_month" },
   week: { label: "Weekly", id: "week", icon: "calendar_view_week" },
 };
 

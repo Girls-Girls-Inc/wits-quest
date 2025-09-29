@@ -50,6 +50,7 @@ VITE_GOOGLE_MAPS_API_KEY=<your Google Maps Key>
 SUPABASE_URL=<your Supabase URL>
 SUPABASE_SERVICE_ROLE_KEY=<your Supabase Anonymous Key>
 WEB_URL=http://localhost:3000
+SYSTEM_USER_ID=<your ThriftFinders Bearer Token>
 ```
 ### Start the Server
 This command installs all required dependencies and starts the server:

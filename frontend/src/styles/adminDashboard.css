@@ -164,3 +164,11 @@ table button.remove {
     padding: 1rem;
   }
 }
+
+.make-red {
+  background-color: red;
+}
+
+.make-green {
+  background-color: green;
+}

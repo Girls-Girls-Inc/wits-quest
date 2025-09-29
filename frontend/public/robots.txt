@@ -1,2 +1,12 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /settings
+Disallow: /editProfile
+Disallow: /adminDashboard
+Disallow: /manageHunts
+Disallow: /manageQuests
+Disallow: /manageQuizzes
+Disallow: /dashboard
+Disallow: /loginSignup
+Disallow: /passwordReset
+Disallow: /passwordResetRequest

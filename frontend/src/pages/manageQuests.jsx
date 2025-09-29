@@ -188,8 +188,12 @@ export default function ManageQuests() {
         name: formData.name,
         description: formData.description,
         locationId: formData.locationId ? Number(formData.locationId) : null,
-        pointsAchievable: formData.pointsAchievable ? Number(formData.pointsAchievable) : 0,
-        collectibleId: formData.collectibleId ? Number(formData.collectibleId) : null,
+        pointsAchievable: formData.pointsAchievable
+          ? Number(formData.pointsAchievable)
+          : 0,
+        collectibleId: formData.collectibleId
+          ? Number(formData.collectibleId)
+          : null,
         huntId: formData.huntId ? Number(formData.huntId) : null,
         quizId: formData.quizId ? Number(formData.quizId) : null,
         isActive: formData.isActive ?? true,
@@ -199,7 +203,7 @@ export default function ManageQuests() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
         body: JSON.stringify(payload),
@@ -228,7 +232,9 @@ export default function ManageQuests() {
       setQuests(
         quests.map((q) => {
           if (q.id !== questId) return q;
-          const merged = updatedQuest ? { ...q, ...updatedQuest } : { ...q, ...payload };
+          const merged = updatedQuest
+            ? { ...q, ...updatedQuest }
+            : { ...q, ...payload };
           return {
             ...merged,
             imageUrl: q.imageUrl,
@@ -278,149 +284,171 @@ export default function ManageQuests() {
       </div>
 
       {editingQuest && (
-        <form
-          className="login-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
-          <div className="input-box">
-            <InputField
-              type="text"
-              name="name"
-              placeholder="Quest Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className="input-box">
-            <InputField
-              type="text"
-              name="description"
-              placeholder="Quest Description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className="input-box">
-            <label>Location</label>
-            <select
-              name="locationId"
-              value={formData.locationId}
-              onChange={(e) =>
-                setFormData({ ...formData, locationId: e.target.value || "" })
-              }
-              required
-            >
-              <option value="">Select a location</option>
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="input-box">
-            <label>Collectible</label>
-            <select
-              name="collectibleId"
-              value={formData.collectibleId}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  collectibleId: e.target.value || "",
-                })
-              }
-            >
-              <option value="">Select a collectible</option>
-              {collectibles.map((col) => (
-                <option key={col.id} value={col.id}>
-                  {col.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="input-box">
-            <label>Hunt</label>
-            <select
-              name="huntId"
-              value={formData.huntId}
-              onChange={(e) =>
-                setFormData({ ...formData, huntId: e.target.value || "" })
-              }
-            >
-              <option value="">Select a hunt</option>
-              {hunts.map((hunt) => (
-                <option key={hunt.id} value={hunt.id}>
-                  {hunt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="input-box">
-            <label>Quiz</label>
-            <select
-              name="quizId"
-              value={formData.quizId}
-              onChange={(e) =>
-                setFormData({ ...formData, quizId: e.target.value || "" })
-              }
-            >
-              <option value="">None (no quiz)</option>
-              {quizzes.map((quiz) => (
-                <option key={quiz.id} value={quiz.id}>
-                  {quiz.questionText}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="input-box">
-            <InputField
-              type="number"
-              name="pointsAchievable"
-              placeholder="Points Achievable"
-              value={formData.pointsAchievable}
-              onChange={(e) =>
-                setFormData({ ...formData, pointsAchievable: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="input-box">
-            <label>
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-              />
-              Active
-            </label>
-          </div>
-
-          <div className="btn">
-            <IconButton type="submit" icon="save" label="Save Quest" />
-            <IconButton
-              type="button"
-              icon="arrow_back"
-              label="Cancel"
+        <div className="modal-backdrop" onClick={() => setEditingQuest(null)}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()} // prevent backdrop close
+          >
+            <button
+              className="modal-close"
               onClick={() => setEditingQuest(null)}
-            />
+            >
+              ✖
+            </button>
+
+            <form
+              className="login-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSave();
+              }}
+            >
+              <div className="input-box">
+                <InputField
+                  type="text"
+                  name="name"
+                  placeholder="Quest Name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="input-box">
+                <InputField
+                  type="text"
+                  name="description"
+                  placeholder="Quest Description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="input-box">
+                <label>Location</label>
+                <select
+                  name="locationId"
+                  value={formData.locationId}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      locationId: e.target.value || "",
+                    })
+                  }
+                  required
+                >
+                  <option value="">Select a location</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-box">
+                <label>Collectible</label>
+                <select
+                  name="collectibleId"
+                  value={formData.collectibleId}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      collectibleId: e.target.value || "",
+                    })
+                  }
+                >
+                  <option value="">Select a collectible</option>
+                  {collectibles.map((col) => (
+                    <option key={col.id} value={col.id}>
+                      {col.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-box">
+                <label>Hunt</label>
+                <select
+                  name="huntId"
+                  value={formData.huntId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, huntId: e.target.value || "" })
+                  }
+                >
+                  <option value="">Select a hunt</option>
+                  {hunts.map((hunt) => (
+                    <option key={hunt.id} value={hunt.id}>
+                      {hunt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-box">
+                <label>Quiz</label>
+                <select
+                  name="quizId"
+                  value={formData.quizId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quizId: e.target.value || "" })
+                  }
+                >
+                  <option value="">None (no quiz)</option>
+                  {quizzes.map((quiz) => (
+                    <option key={quiz.id} value={quiz.id}>
+                      {quiz.questionText}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-box">
+                <InputField
+                  type="number"
+                  name="pointsAchievable"
+                  placeholder="Points Achievable"
+                  value={formData.pointsAchievable}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pointsAchievable: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="input-box">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isActive: e.target.checked })
+                    }
+                  />
+                  Active
+                </label>
+              </div>
+
+              <div className="btn">
+                <IconButton type="submit" icon="save" label="Save Quest" />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Cancel"
+                  onClick={() => setEditingQuest(null)}
+                />
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       <div className="quest-list">
@@ -449,8 +477,15 @@ export default function ManageQuests() {
                 {collectibles.find((c) => c.id === q.collectibleId)?.name ||
                   "-"}
               </p>
-              <p><strong>Hunt:</strong> {hunts.find((h) => h.id === q.huntId)?.name || "-"}</p>
-              <p><strong>Quiz:</strong> {quizzes.find((quiz) => quiz.id === q.quizId)?.questionText || "-"}</p>
+              <p>
+                <strong>Hunt:</strong>{" "}
+                {hunts.find((h) => h.id === q.huntId)?.name || "-"}
+              </p>
+              <p>
+                <strong>Quiz:</strong>{" "}
+                {quizzes.find((quiz) => quiz.id === q.quizId)?.questionText ||
+                  "-"}
+              </p>
             </div>
             <div className="quest-action flex gap-2">
               {/* <button

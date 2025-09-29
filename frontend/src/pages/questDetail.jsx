@@ -223,7 +223,10 @@ export default function QuestDetail() {
       const normalizedAnswer = answer.trim();
       const normalizedCorrect = quiz.correctAnswer?.trim() || "";
       if (quizType === "text") {
-        if (!normalizedCorrect || normalizedAnswer.toLowerCase() !== normalizedCorrect.toLowerCase()) {
+        if (
+          !normalizedCorrect ||
+          normalizedAnswer.toLowerCase() !== normalizedCorrect.toLowerCase()
+        ) {
           toast.error("Incorrect answer. Try again!");
           return;
         }

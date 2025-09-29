@@ -22,7 +22,6 @@ export default function ManageHunts() {
     timeLimit: "",
   });
 
-  // Load hunts
   const loadHunts = async () => {
     const t = toast.loading("Loading hunts...");
     try {
@@ -74,11 +73,7 @@ export default function ManageHunts() {
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.message || "Failed to update hunt");
 
-      setHunts(
-        hunts.map((h) =>
-          h.id === huntId ? { ...json.hunt } : h
-        )
-      );
+      setHunts(hunts.map((h) => (h.id === huntId ? { ...json.hunt } : h)));
       toast.success("Hunt updated", { id: t });
       setEditingHunt(null);
     } catch (err) {
@@ -105,70 +100,114 @@ export default function ManageHunts() {
 
   return (
     <div className="quests-container">
+      <Toaster />
       <div className="quests-header">
         <h1>Manage Hunts</h1>
         <IconButton icon="refresh" label="Refresh" onClick={loadHunts} />
       </div>
 
       {editingHunt && (
-        <form
-          className="login-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
-          <InputField
-            type="text"
-            name="name"
-            placeholder="Hunt Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-
-          <InputField
-            type="text"
-            name="description"
-            placeholder="Hunt Description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
-
-          <InputField
-            type="text"
-            name="question"
-            placeholder="Question"
-            value={formData.question}
-            onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-          />
-
-          <InputField
-            type="text"
-            name="answer"
-            placeholder="Answer"
-            value={formData.answer}
-            onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-          />
-
-          <InputField
-            type="number"
-            name="timeLimit"
-            placeholder="Time Limit (seconds)"
-            value={formData.timeLimit}
-            onChange={(e) => setFormData({ ...formData, timeLimit: e.target.value })}
-          />
-
-          <div className="btn">
-            <IconButton type="submit" icon="save" label="Save Hunt" />
-            <IconButton
-              type="button"
-              icon="arrow_back"
-              label="Cancel"
+        <div className="modal-backdrop" onClick={() => setEditingHunt(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
               onClick={() => setEditingHunt(null)}
-            />
+            >
+              ✖
+            </button>
+
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSave();
+                }}
+              >
+                <div className="form-row">
+                  <label htmlFor="name">Hunt Name</label>
+                  <InputField
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Hunt Name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="description">Hunt Description</label>
+                  <InputField
+                    type="text"
+                    id="description"
+                    name="description"
+                    placeholder="Hunt Description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="question">Question</label>
+                  <InputField
+                    type="text"
+                    id="question"
+                    name="question"
+                    placeholder="Question"
+                    value={formData.question}
+                    onChange={(e) =>
+                      setFormData({ ...formData, question: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="answer">Answer</label>
+                  <InputField
+                    type="text"
+                    id="answer"
+                    name="answer"
+                    placeholder="Answer"
+                    value={formData.answer}
+                    onChange={(e) =>
+                      setFormData({ ...formData, answer: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="timeLimit">Time Limit (seconds)</label>
+                  <InputField
+                    type="number"
+                    id="timeLimit"
+                    name="timeLimit"
+                    placeholder="Time Limit (seconds)"
+                    value={formData.timeLimit}
+                    onChange={(e) =>
+                      setFormData({ ...formData, timeLimit: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="btn">
+                  <IconButton type="submit" icon="save" label="Save Hunt" />
+                  <IconButton
+                    type="button"
+                    icon="arrow_back"
+                    label="Cancel"
+                    onClick={() => setEditingHunt(null)}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
-        </form>
+        </div>
       )}
 
       <div className="quest-list">
@@ -180,13 +219,27 @@ export default function ManageHunts() {
             <div className="quest-info flex-1">
               <h2 className="font-bold">{h.name}</h2>
               <p>{h.description || "-"}</p>
-              <p><strong>Question:</strong> {h.question || "-"}</p>
-              <p><strong>Answer:</strong> {h.answer || "-"}</p>
-              <p><strong>Time Limit:</strong> {h.timeLimit ?? "-"}</p>
+              <p>
+                <strong>Question:</strong> {h.question || "-"}
+              </p>
+              <p>
+                <strong>Answer:</strong> {h.answer || "-"}
+              </p>
+              <p>
+                <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
+              </p>
             </div>
             <div className="quest-action flex gap-2">
-              <IconButton onClick={() => handleEditClick(h)} icon="edit" label="Edit" />
-              <IconButton icon="delete" label="Delete" onClick={() => handleDelete(h.id)} />
+              <IconButton
+                onClick={() => handleEditClick(h)}
+                icon="edit"
+                label="Edit"
+              />
+              <IconButton
+                icon="delete"
+                label="Delete"
+                onClick={() => handleDelete(h.id)}
+              />
             </div>
           </div>
         ))}

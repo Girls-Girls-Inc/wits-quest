@@ -103,7 +103,7 @@
   background: #131f24;
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 12px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 12px 0px rgba(0, 0, 0, 0.4);
   color: #e0e0e0;
 
   min-width: 0;

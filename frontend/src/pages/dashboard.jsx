@@ -22,6 +22,41 @@ const Dashboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
+  // --- inside Dashboard component ---
+
+  const [hunts, setHunts] = useState([]);
+  const [loadingHunts, setLoadingHunts] = useState(true);
+
+  // Fetch hunts
+  const loadHunts = async () => {
+    try {
+      setLoadingHunts(true);
+      const res = await fetch(`${API_BASE}/hunts`, {
+        headers: { Accept: "application/json" },
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
+      setHunts(Array.isArray(json) ? json : []);
+    } catch (e) {
+      console.error("Hunts fetch failed:", e.message);
+      setHunts([]);
+      toast.error(e.message || "Failed to load hunts");
+    } finally {
+      setLoadingHunts(false);
+    }
+  };
+
+  // call loadHunts together with other loaders
+  useEffect(() => {
+    if (accessToken) {
+      loadBadges();
+      loadOngoing();
+      loadLeaderboard();
+      loadHunts(); // 👈 added
+    }
+  }, [accessToken]);
+
   const [dashboardData, setDashboardData] = useState({
     badgesCollected: 0,
     locationsVisited: 0,
@@ -132,9 +167,13 @@ const Dashboard = () => {
       setOngoing(rows.filter((q) => !q.isComplete));
       const completedQuests = rows.filter((q) => q.isComplete);
       const uniqueLocations = new Set(
-        completedQuests.map((q) => q.location).filter((loc) => loc && loc !== "—")
+        completedQuests
+          .map((q) => q.location)
+          .filter((loc) => loc && loc !== "—")
       );
-      const completedRows = rows.filter((q) => q.isComplete && q.userId === me?.id);
+      const completedRows = rows.filter(
+        (q) => q.isComplete && q.userId === me?.id
+      );
 
       const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
       const latestRow = completedRows.sort(
@@ -198,7 +237,8 @@ const Dashboard = () => {
     if (badges.length > 0)
       setCurrentSlide(
         (prev) =>
-          (prev - 1 + Math.ceil(badges.length / 4)) % Math.ceil(badges.length / 4)
+          (prev - 1 + Math.ceil(badges.length / 4)) %
+          Math.ceil(badges.length / 4)
       );
   };
 
@@ -217,7 +257,10 @@ const Dashboard = () => {
           <h1>DASHBOARD</h1>
         </header>
 
-        <section className="dashboard-grid" aria-label="User statistics and badges">
+        <section
+          className="dashboard-grid"
+          aria-label="User statistics and badges"
+        >
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -269,16 +312,42 @@ const Dashboard = () => {
               </table>
             </div>
           </article>
-
-          {/* Locations Card */}
-          <article className="dashboard-card">
-            <h3>Locations Visited</h3>
-            <div className="stat-number">{dashboardData.locationsVisited}</div>
-            <div className="latest-info">
-              <div className="latest-box">
-                <span>Latest Location</span>
-                <div className="truncate">{dashboardData.latestLocation}</div>
-              </div>
+          {/* Hunts */}
+          <article className="dashboard-card quests-card">
+            <h3>Available Hunts</h3>
+            <div className="table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Question</th>
+                    <th>Time Limit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingHunts ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i}>
+                        <td colSpan={4} className="skeleton-row"></td>
+                      </tr>
+                    ))
+                  ) : hunts.length === 0 ? (
+                    <tr>
+                      <td colSpan={4}>No hunts available</td>
+                    </tr>
+                  ) : (
+                    hunts.map((h) => (
+                      <tr key={h.id}>
+                        <td className="truncate">{h.name}</td>
+                        <td className="truncate">{h.description || "—"}</td>
+                        <td className="truncate">{h.question || "—"}</td>
+                        <td>{h.timeLimit ? `${h.timeLimit}s` : "—"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </article>
 
@@ -294,7 +363,9 @@ const Dashboard = () => {
                 aria-label={`Latest badge: ${dashboardData.latestBadge}`}
               >
                 <span>Latest badge</span>
-                <div className="badge-name truncate">{dashboardData.latestBadge}</div>
+                <div className="badge-name truncate">
+                  {dashboardData.latestBadge}
+                </div>
               </div>
             </div>
 
@@ -337,7 +408,9 @@ const Dashboard = () => {
                           height={120}
                           onError={(e) => (e.currentTarget.src = placeholder)}
                         />
-                        <span className="badge-item-name truncate">{badge.name}</span>
+                        <span className="badge-item-name truncate">
+                          {badge.name}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -374,7 +447,9 @@ const Dashboard = () => {
                       <tr
                         key={person.rank}
                         className={
-                          person.name === me?.user_metadata?.username ? "me" : ""
+                          person.name === me?.user_metadata?.username
+                            ? "me"
+                            : ""
                         }
                       >
                         <td>{person.rank}</td>
@@ -398,6 +473,17 @@ const Dashboard = () => {
           <article className="dashboard-card small-card">
             <h3>Quests Completed</h3>
             <div className="stat-number">{dashboardData.questsCompleted}</div>
+          </article>
+          {/* Locations Card */}
+          <article className="dashboard-card">
+            <h3>Locations Visited</h3>
+            <div className="stat-number">{dashboardData.locationsVisited}</div>
+            <div className="latest-info">
+              <div className="latest-box">
+                <span>Latest Location</span>
+                <div className="truncate">{dashboardData.latestLocation}</div>
+              </div>
+            </div>
           </article>
         </section>
       </main>

@@ -10,7 +10,10 @@ const pick = (sb) => sb || admin;
 
 const HuntModel = {
   async createHunt(huntData) {
-    const { data, error } = await admin.from("hunts").insert([huntData]).select();
+    const { data, error } = await admin
+      .from("hunts")
+      .insert([huntData])
+      .select();
     return { data, error };
   },
 
@@ -24,19 +27,30 @@ const HuntModel = {
   },
 
   async updateHunt(huntId, huntData) {
-    const { data, error } = await admin.from("hunts").update(huntData).eq("id", huntId).select();
+    const { data, error } = await admin
+      .from("hunts")
+      .update(huntData)
+      .eq("id", huntId)
+      .select();
     return { data, error };
   },
 
   async deleteHunt(huntId) {
-    const { data, error } = await admin.from("hunts").delete().eq("id", huntId).select();
+    const { data, error } = await admin
+      .from("hunts")
+      .delete()
+      .eq("id", huntId)
+      .select();
     return { data, error };
   },
 
   // --- userHunts ---
   async addForUser(payload, sb) {
     const supabase = pick(sb);
-    const { data, error } = await supabase.from("userHunts").insert([payload]).select();
+    const { data, error } = await supabase
+      .from("userHunts")
+      .insert([payload])
+      .select();
     return { data, error };
   },
 };

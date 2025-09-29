@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+
+import IconButton from "../components/IconButton";
 import "../styles/dashboard.css";
 import "../styles/leaderboard.css";
 
@@ -127,6 +129,7 @@ const Dashboard = () => {
     }
   };
 
+  const [showHelpModal, setShowHelpModal] = useState(false);
   // Fetch ongoing quests
   const loadOngoing = async () => {
     if (!accessToken) {
@@ -255,6 +258,13 @@ const Dashboard = () => {
       <main className="main-content" role="main" aria-label="Dashboard">
         <header className="dashboard-header">
           <h1>DASHBOARD</h1>
+          <button
+            className="help-btn"
+            aria-label="Help"
+            onClick={() => setShowHelpModal(true)}
+          >
+            ?
+          </button>
         </header>
 
         <section
@@ -486,9 +496,60 @@ const Dashboard = () => {
             </div>
           </article>
         </section>
-      </main>
+      </main>{" "}
+      {/* --- Modal --- */}
+      {showHelpModal && (
+        <div className="modal-backdrop">
+          <div className="modal help-modal">
+            <div className="modal-header">
+              <button
+                className="modal-close"
+                onClick={() => setShowHelpModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <h2>How to Complete a Quest</h2>
+            <ol className="help-list">
+              <li>
+                Go to the <strong>Quests</strong> page.
+              </li>
+              <li>
+                Browse the list and click <strong>View Details</strong> on a
+                quest that interests you.
+              </li>
+              <li>
+                Select <strong>Add to My Quests</strong> to save it.
+              </li>
+              <li>
+                Open your <strong>Dashboard</strong> and, in the Quests table,
+                click <strong>View</strong> next to the quest you want to
+                complete.
+              </li>
+              <li>
+                Travel to the quest’s location on the map (make sure you’re
+                within the marked radius).
+              </li>
+              <li>
+                Click <strong>Check In</strong> to finish the quest.
+              </li>
+              <li>Your points will be automatically added to your profile.</li>
+            </ol>
+            <div className="help-actions">
+              <IconButton
+                type="button"
+                icon="map"
+                label="View Quests"
+                onClick={() => {
+                  setShowHelpModal(false);
+                  navigate("/displayQuests");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default Dashboard;

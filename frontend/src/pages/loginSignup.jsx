@@ -10,7 +10,7 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import Logo from "../assets/Logo.webp";
-import SignupImage from "../assets/Signup3.png";
+import SignupImage from "../assets/Signup3.webp";
 import { Link } from "react-router-dom";
 import { VITE_WEB_URL } from "../lib/env";
 

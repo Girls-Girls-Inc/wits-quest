@@ -18,12 +18,12 @@ jest.mock("react-router-dom", () => {
 
 /* stub CSS & assets */
 jest.mock("../../styles/button.css", () => ({}));
-jest.mock("../../assets/logo.png", () => "logo.png");
-jest.mock("../../assets/leaderboard.png", () => "leaderboard.png");
-jest.mock("../../assets/home.png", () => "home.png");
-jest.mock("../../assets/map.png", () => "map.png");
-jest.mock("../../assets/profile.png", () => "profile.png");
-jest.mock("../../assets/admin.png", () => "admin.png");
+jest.mock("../../assets/Logo.webp", () => "Logo.webp");
+jest.mock("../../assets/leaderboard.webp", () => "leaderboard.webp");
+jest.mock("../../assets/home.webp", () => "home.webp");
+jest.mock("../../assets/map.webp", () => "map.webp");
+jest.mock("../../assets/profile.webp", () => "profile.webp");
+jest.mock("../../assets/admin.webp", () => "admin.webp");
 
 const NavButton = require("../../components/NavButton").default;
 
@@ -36,7 +36,7 @@ describe("NavButton", () => {
     expect(link).toHaveAttribute("href", "/dashboard");
 
     const img = within(link).getByRole("img", { name: /uniquehome/i });
-    expect(img).toHaveAttribute("src", "logo.png");
+    expect(img).toHaveAttribute("src", "Logo.webp");
   });
 
   it("renders a button and calls onClick", async () => {
@@ -45,7 +45,7 @@ describe("NavButton", () => {
     const btn = screen.getByRole("button", { name: /uniquego/i });
 
     const img = within(btn).getByRole("img", { name: /uniquego/i });
-    expect(img).toHaveAttribute("src", "home.png");
+    expect(img).toHaveAttribute("src", "home.webp");
 
     await userEvent.click(btn);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -57,7 +57,7 @@ describe("NavButton", () => {
     expect(btn).toHaveAttribute("type", "submit");
 
     const img = within(btn).getByRole("img", { name: /uniquesubmit/i });
-    expect(img).toHaveAttribute("src", "profile.png");
+    expect(img).toHaveAttribute("src", "profile.webp");
   });
 
   it("adds aria-disabled and tabIndex when disabled link", () => {
@@ -74,7 +74,7 @@ describe("NavButton", () => {
     expect(btn).toHaveStyle("pointer-events: none");
 
     const img = within(btn).getByRole("img", { name: /uniquemap/i });
-    expect(img).toHaveAttribute("src", "map.png");
+    expect(img).toHaveAttribute("src", "map.webp");
   });
 
   it("renders with target when provided", () => {
@@ -83,14 +83,14 @@ describe("NavButton", () => {
     expect(link).toHaveAttribute("target", "_blank");
 
     const img = within(link).getByRole("img", { name: /uniqueboard/i });
-    expect(img).toHaveAttribute("src", "leaderboard.png");
+    expect(img).toHaveAttribute("src", "leaderboard.webp");
   });
 
   it("uses custom alt when provided", () => {
     render(<NavButton route="/admin" iconName="admin" label="UniqueSecret" alt="CustomAlt" />);
     const img = screen.getByAltText("CustomAlt");
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute("src", "admin.png");
+    expect(img).toHaveAttribute("src", "admin.webp");
   });
 
   it("falls back to label as alt when no alt provided", () => {

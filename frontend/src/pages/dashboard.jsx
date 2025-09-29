@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
 import "../styles/leaderboard.css";
@@ -19,6 +19,9 @@ const Dashboard = () => {
   const [ongoing, setOngoing] = useState([]);
   const [loadingOngoing, setLoadingOngoing] = useState(true);
 
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+
   const [dashboardData, setDashboardData] = useState({
     badgesCollected: 0,
     locationsVisited: 0,
@@ -30,53 +33,9 @@ const Dashboard = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // const leaderboard = [
-  //   { rank: 1, name: "Person 1" },
-  //   { rank: 2, name: "Person 2" },
-  //   { rank: 3, name: "Me" },
-  //   { rank: 4, name: "Person 3" },
-  //   { rank: 5, name: "Person 4" },
-  //   { rank: 6, name: "Person 5" },
-  // ];
-
-  // Leaderboard state
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
-
-  // Fetch leaderboard via backend API (like Leaderboard.jsx)
-  const loadLeaderboard = async () => {
-    try {
-      setLoadingLeaderboard(true);
-
-      // Always fetch yearly (id=12345). Change if you want monthly/weekly.
-      const res = await fetch(`${API_BASE}/leaderboard?id=12345`, {
-        headers: { Accept: "application/json" },
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("API did not return an array");
-
-      // Add rank numbers
-      const rows = data.map((r, i) => ({
-        rank: i + 1,
-        name: r.username,
-        points: r.points,
-      }));
-
-      setLeaderboard(rows);
-    } catch (e) {
-      console.error("Leaderboard fetch failed:", e.message);
-      setLeaderboard([]);
-    } finally {
-      setLoadingLeaderboard(false);
-    }
-  };
-
   // Fetch Supabase session
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       const {
         data: { session },
@@ -94,12 +53,6 @@ const Dashboard = () => {
     return () => sub?.subscription?.unsubscribe?.();
   }, []);
 
-  // Badge URL helper
-  const makeBadgesUrl = () =>
-    me?.id
-      ? `${API_BASE}/users/${encodeURIComponent(me.id)}/collectibles`
-      : null;
-
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'>
@@ -109,15 +62,14 @@ const Dashboard = () => {
 
   // Fetch badges
   const loadBadges = async () => {
-    const url = makeBadgesUrl();
-    if (!accessToken || !url) {
+    if (!accessToken || !me?.id) {
       setBadges([]);
       setLoadingBadges(false);
       return;
     }
-
     setLoadingBadges(true);
     try {
+      const url = `${API_BASE}/users/${encodeURIComponent(me.id)}/collectibles`;
       const res = await fetch(url, {
         headers: {
           Accept: "application/json",
@@ -127,7 +79,6 @@ const Dashboard = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setBadges(data || []);
-
       setDashboardData((prev) => ({
         ...prev,
         badgesCollected: data.length,
@@ -148,7 +99,6 @@ const Dashboard = () => {
       setLoadingOngoing(false);
       return;
     }
-
     setLoadingOngoing(true);
     try {
       const res = await fetch(`${API_BASE}/user-quests`, {
@@ -182,19 +132,14 @@ const Dashboard = () => {
       setOngoing(rows.filter((q) => !q.isComplete));
       const completedQuests = rows.filter((q) => q.isComplete);
       const uniqueLocations = new Set(
-        completedQuests
-          .map((q) => q.location)
-          .filter((loc) => loc && loc !== "—")
+        completedQuests.map((q) => q.location).filter((loc) => loc && loc !== "—")
       );
-      const completedRows = rows.filter(
-        (q) => q.isComplete && q.userId === me?.id
-      );
+      const completedRows = rows.filter((q) => q.isComplete && q.userId === me?.id);
 
       const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
       const latestRow = completedRows.sort(
         (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
       )[0];
-
       const latestLocation = latestRow?.location || "—";
 
       setDashboardData((prev) => ({
@@ -209,6 +154,30 @@ const Dashboard = () => {
       toast.error(e.message || "Failed to load ongoing quests");
     } finally {
       setLoadingOngoing(false);
+    }
+  };
+
+  // Fetch leaderboard
+  const loadLeaderboard = async () => {
+    try {
+      setLoadingLeaderboard(true);
+      const res = await fetch(`${API_BASE}/leaderboard?id=12345`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("API did not return an array");
+      const rows = data.map((r, i) => ({
+        rank: i + 1,
+        name: r.username,
+        points: r.points,
+      }));
+      setLeaderboard(rows);
+    } catch (e) {
+      console.error("Leaderboard fetch failed:", e.message);
+      setLeaderboard([]);
+    } finally {
+      setLoadingLeaderboard(false);
     }
   };
 
@@ -229,8 +198,7 @@ const Dashboard = () => {
     if (badges.length > 0)
       setCurrentSlide(
         (prev) =>
-          (prev - 1 + Math.ceil(badges.length / 4)) %
-          Math.ceil(badges.length / 4)
+          (prev - 1 + Math.ceil(badges.length / 4)) % Math.ceil(badges.length / 4)
       );
   };
 
@@ -249,10 +217,7 @@ const Dashboard = () => {
           <h1>DASHBOARD</h1>
         </header>
 
-        <section
-          className="dashboard-grid"
-          aria-label="User statistics and badges"
-        >
+        <section className="dashboard-grid" aria-label="User statistics and badges">
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -269,9 +234,11 @@ const Dashboard = () => {
                 </thead>
                 <tbody>
                   {loadingOngoing ? (
-                    <tr>
-                      <td colSpan={5}>Loading quests…</td>
-                    </tr>
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i}>
+                        <td colSpan={5} className="skeleton-row"></td>
+                      </tr>
+                    ))
                   ) : ongoing.length === 0 ? (
                     <tr>
                       <td colSpan={5}>No ongoing quests</td>
@@ -291,9 +258,9 @@ const Dashboard = () => {
                             View
                           </button>
                         </td>
-                        <td>{q.name}</td>
+                        <td className="truncate">{q.name}</td>
                         <td>{q.points}</td>
-                        <td>{q.location}</td>
+                        <td className="truncate">{q.location}</td>
                         <td>{q.isComplete ? "Completed" : "In progress"}</td>
                       </tr>
                     ))
@@ -302,6 +269,7 @@ const Dashboard = () => {
               </table>
             </div>
           </article>
+
           {/* Locations Card */}
           <article className="dashboard-card">
             <h3>Locations Visited</h3>
@@ -309,7 +277,7 @@ const Dashboard = () => {
             <div className="latest-info">
               <div className="latest-box">
                 <span>Latest Location</span>
-                <div>{dashboardData.latestLocation}</div>
+                <div className="truncate">{dashboardData.latestLocation}</div>
               </div>
             </div>
           </article>
@@ -326,7 +294,7 @@ const Dashboard = () => {
                 aria-label={`Latest badge: ${dashboardData.latestBadge}`}
               >
                 <span>Latest badge</span>
-                <div className="badge-name">{dashboardData.latestBadge}</div>
+                <div className="badge-name truncate">{dashboardData.latestBadge}</div>
               </div>
             </div>
 
@@ -355,7 +323,7 @@ const Dashboard = () => {
 
               <div className="carousel-container">
                 {loadingBadges ? (
-                  <div>Loading badges...</div>
+                  <div className="skeleton-badges">Loading…</div>
                 ) : badges.length === 0 ? (
                   <div>No badges yet</div>
                 ) : (
@@ -365,9 +333,11 @@ const Dashboard = () => {
                         <img
                           src={badge.imageUrl || placeholder}
                           alt={badge.name || "badge"}
+                          width={120}
+                          height={120}
                           onError={(e) => (e.currentTarget.src = placeholder)}
                         />
-                        <span className="badge-item-name">{badge.name}</span>
+                        <span className="badge-item-name truncate">{badge.name}</span>
                       </div>
                     ))}
                   </div>
@@ -375,11 +345,12 @@ const Dashboard = () => {
               </div>
             </div>
           </article>
+
           {/* Leaderboard */}
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">
-              <table className="leaderboard-table ">
+              <table className="leaderboard-table">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -389,9 +360,11 @@ const Dashboard = () => {
                 </thead>
                 <tbody>
                   {loadingLeaderboard ? (
-                    <tr>
-                      <td colSpan={3}>Loading leaderboard…</td>
-                    </tr>
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        <td colSpan={3} className="skeleton-row"></td>
+                      </tr>
+                    ))
                   ) : leaderboard.length === 0 ? (
                     <tr>
                       <td colSpan={3}>No leaderboard data</td>
@@ -401,13 +374,11 @@ const Dashboard = () => {
                       <tr
                         key={person.rank}
                         className={
-                          person.name === me?.user_metadata?.username
-                            ? "me"
-                            : ""
+                          person.name === me?.user_metadata?.username ? "me" : ""
                         }
                       >
                         <td>{person.rank}</td>
-                        <td>{person.name}</td>
+                        <td className="truncate">{person.name}</td>
                         <td>{person.points}</td>
                       </tr>
                     ))

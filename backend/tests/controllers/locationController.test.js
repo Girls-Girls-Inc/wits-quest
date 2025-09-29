@@ -1,3 +1,4 @@
+// backend/tests/controllers/locationController.test.js
 const makeRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
@@ -27,6 +28,7 @@ const makePostgrestBuilder = (behaviors, table) => {
     select: jest.fn(() => b),
     ilike: jest.fn(() => b),
     eq: jest.fn(() => b),
+    order: jest.fn(() => b),
     limit: jest.fn(() =>
       Promise.resolve(behaviors[table]?.selectResult ?? { data: [], error: null })
     ),
@@ -54,6 +56,9 @@ describe('LocationController', () => {
   let LocationModel;
   let createClient;
 
+  // Coords that are INSIDE the WITS radius
+  const NEAR_WITS = { lat: -26.1902, lng: 28.0302 };
+
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -64,7 +69,7 @@ describe('LocationController', () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role';
     process.env.SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
-    // default external API response
+    // default external API response -> in-radius so they are processed
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => [
@@ -73,14 +78,14 @@ describe('LocationController', () => {
           storeName: 'Vintage Vibes',
           address: '123 Main',
           description: 'Great finds',
-          location: { lat: -26.2, lng: 28.04 },
+          location: { ...NEAR_WITS },
         },
         {
           storeId: 's2',
           storeName: 'Retro Rack',
           address: '456 High',
           description: 'More finds',
-          location: { lat: -26.21, lng: 28.05 },
+          location: { ...NEAR_WITS },
         },
       ],
     });
@@ -112,7 +117,7 @@ describe('LocationController', () => {
     });
 
     it('dryRun returns preview and does not write', async () => {
-      const req = { headers: authHeader, query: { dryRun: 'true' } };
+      const req = { headers: authHeader, query: { dryRun: 'true', syncIfStale: 'false' } };
       const res = makeRes();
 
       await LocationController.importThriftToDb(req, res);
@@ -137,7 +142,7 @@ describe('LocationController', () => {
         .mockResolvedValueOnce({ id: 10 })
         .mockResolvedValueOnce({ id: 11 });
 
-      const req = { headers: authHeader, query: {} };
+      const req = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
 
@@ -148,7 +153,6 @@ describe('LocationController', () => {
           storesProcessed: 2,
           createdLocations: 2,
           skippedExisting: 0,
-          // questsCreated counts the immediate createQuestForLocation per store
           questsCreated: 2,
           lastSync: expect.any(Number),
         })
@@ -156,7 +160,6 @@ describe('LocationController', () => {
     });
 
     it('skips second call while inflight', async () => {
-      // stall fetch until released
       let release;
       global.fetch = jest.fn(
         () =>
@@ -165,17 +168,17 @@ describe('LocationController', () => {
               resolve({
                 ok: true,
                 json: async () => [
-                  { storeId: 's1', storeName: 'Vintage Vibes', location: { lat: 1, lng: 2 } },
+                  { storeId: 's1', storeName: 'Vintage Vibes', location: { ...NEAR_WITS } },
                 ],
               });
           })
       );
 
-      const req1 = { headers: authHeader, query: {} };
+      const req1 = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res1 = makeRes();
       const p1 = LocationController.importThriftToDb(req1, res1);
 
-      const req2 = { headers: authHeader, query: {} };
+      const req2 = { headers: authHeader, query: { syncIfStale: 'true' } };
       const res2 = makeRes();
       const p2 = LocationController.importThriftToDb(req2, res2);
 
@@ -190,7 +193,7 @@ describe('LocationController', () => {
     it('skips when fresh (TTL) but runs when syncIfStale=false', async () => {
       LocationModel.createLocation.mockResolvedValue({ id: 10 });
 
-      const req1 = { headers: authHeader, query: {} };
+      const req1 = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res1 = makeRes();
       await LocationController.importThriftToDb(req1, res1);
 
@@ -211,7 +214,7 @@ describe('LocationController', () => {
 
     it('applies name filter', async () => {
       LocationModel.createLocation.mockResolvedValue({ id: 10 });
-      const req = { headers: authHeader, query: { name: 'vintage' } };
+      const req = { headers: authHeader, query: { name: 'vintage', syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ storesProcessed: 1 }));
@@ -219,7 +222,7 @@ describe('LocationController', () => {
 
     it('passes defaultRadius to createLocation payload', async () => {
       LocationModel.createLocation.mockResolvedValue({ id: 10 });
-      const req = { headers: authHeader, query: { defaultRadius: '123' } };
+      const req = { headers: authHeader, query: { defaultRadius: '123', syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
       expect(LocationModel.createLocation).toHaveBeenCalledWith(
@@ -234,7 +237,7 @@ describe('LocationController', () => {
         makeSupabaseClient({
           locations: {
             selectResult: {
-              data: [{ id: 77, name: 'Vintage Vibes', latitude: -26.2, longitude: 28.04 }],
+              data: [{ id: 77, name: 'Vintage Vibes', latitude: NEAR_WITS.lat, longitude: NEAR_WITS.lng }],
               error: null,
             },
           },
@@ -244,7 +247,7 @@ describe('LocationController', () => {
 
       LocationModel.createLocation.mockResolvedValue({ id: 99 }); // at least one will still be created
 
-      const req = { headers: authHeader, query: {} };
+      const req = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
 
@@ -262,12 +265,12 @@ describe('LocationController', () => {
         ok: true,
         json: async () => [
           { storeId: 'bad', storeName: 'No Coords', location: {} },
-          { storeId: 'ok', storeName: 'Good', location: { lat: 1, lng: 2 } },
+          { storeId: 'ok', storeName: 'Good', location: { ...NEAR_WITS } },
         ],
       });
       LocationModel.createLocation.mockResolvedValue({ id: 55 });
 
-      const req = { headers: authHeader, query: {} };
+      const req = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
 
@@ -276,16 +279,17 @@ describe('LocationController', () => {
       );
     });
 
-    it('401 when Authorization is "Bearer undefined"', async () => {
-      const req = { headers: { authorization: 'Bearer undefined' }, query: {} };
+    it('401 when Authorization header is missing (truly no token)', async () => {
+      const req = { headers: {}, query: {} };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
       expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Missing Authorization Bearer token' });
     });
 
     it('500 when external API not ok', async () => {
       global.fetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) });
-      const req = { headers: authHeader, query: {} };
+      const req = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
@@ -294,7 +298,7 @@ describe('LocationController', () => {
 
     it('500 when createLocation throws', async () => {
       LocationModel.createLocation.mockRejectedValue(new Error('insert fail'));
-      const req = { headers: authHeader, query: {} };
+      const req = { headers: authHeader, query: { syncIfStale: 'false' } };
       const res = makeRes();
       await LocationController.importThriftToDb(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
@@ -542,4 +546,5 @@ describe('LocationController', () => {
     });
   });
 });
+
 

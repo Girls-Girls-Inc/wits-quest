@@ -344,4 +344,280 @@ describe('CollectiblesController', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'db crash' });
     });
   });
+  describe('create (more branches)', () => {
+  it('403 when RLS error bubbles from model', async () => {
+    CollectiblesModel.create.mockRejectedValueOnce(
+      new Error('violates row-level security on table "collectibles"')
+    );
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      body: { name: 'X' },
+    });
+    await CollectiblesController.create(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.stringMatching(/row-level security/i) })
+    );
+  });
+
+  it('500 on unexpected model error', async () => {
+    CollectiblesModel.create.mockRejectedValueOnce(new Error('weird'));
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      body: { name: 'X' },
+    });
+    await CollectiblesController.create(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'weird' });
+  });
+
+  it('passes optional fields and sets default createdAt', async () => {
+    CollectiblesModel.create.mockResolvedValueOnce({ id: 9, name: 'N' });
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      body: {
+        id: 9,
+        name: '  N  ',
+        description: 'desc',
+        imageUrl: 'https://x/y.png',
+      },
+    });
+    await CollectiblesController.create(req, res);
+    expect(CollectiblesModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 9,
+        name: 'N',
+        description: 'desc',
+        imageUrl: 'https://x/y.png',
+        createdAt: expect.any(String), // defaulted
+      }),
+      expect.any(Object)
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('update (more branches)', () => {
+  it('400 invalid id', async () => {
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '-1' },
+      body: { name: 'X' },
+    });
+    await CollectiblesController.update(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid id' });
+  });
+
+  it('200 success with allowed fields only', async () => {
+    CollectiblesModel.update.mockResolvedValueOnce({ id: 1, name: 'OK', imageUrl: null });
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '1' },
+      body: { name: 'OK', description: null, imageUrl: null, ignored: 'nope' },
+    });
+    await CollectiblesController.update(req, res);
+    expect(CollectiblesModel.update).toHaveBeenCalledWith(
+      1,
+      { name: 'OK', description: null, imageUrl: null },
+      expect.any(Object)
+    );
+    expect(res.json).toHaveBeenCalledWith({ id: 1, name: 'OK', imageUrl: null });
+  });
+
+  it('500 generic error', async () => {
+    CollectiblesModel.update.mockRejectedValueOnce(new Error('boom'));
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '2' },
+      body: { name: 'X' },
+    });
+    await CollectiblesController.update(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'boom' });
+  });
+});
+
+describe('remove (more branches)', () => {
+  it('401 when no token', async () => {
+    const { req, res } = mockReqRes({ params: { id: '1' } });
+    await CollectiblesController.remove(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('400 invalid id', async () => {
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '1.5' },
+    });
+    await CollectiblesController.remove(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid id' });
+  });
+
+  it('403 on RLS violation', async () => {
+    CollectiblesModel.remove.mockRejectedValueOnce(new Error('row-level security'));
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '3' },
+    });
+    await CollectiblesController.remove(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ error: 'row-level security' });
+  });
+
+  it('204 success', async () => {
+    CollectiblesModel.remove.mockResolvedValueOnce(undefined);
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { id: '4' },
+    });
+    await CollectiblesController.remove(req, res);
+    expect(res.status).toHaveBeenCalledWith(204);
+    expect(res.send).toHaveBeenCalled();
+  });
+});
+
+describe('earnForUser', () => {
+  it('401 when no token', async () => {
+    const { req, res } = mockReqRes({ params: { userId: 'u1', collectibleId: '1' } });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('401 when unauthenticated', async () => {
+    // make this client return null user
+    const client = createClient();
+    client.auth.getUser.mockResolvedValueOnce({ data: { user: null } });
+
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'u1', collectibleId: '1' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Unauthenticated' });
+  });
+
+  it('400 invalid collectibleId', async () => {
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'u1', collectibleId: 'x' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid collectibleId' });
+  });
+
+  it('403 not permitted when caller != user and not moderator', async () => {
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'someone-else', collectibleId: '5' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Not permitted' });
+  });
+
+  it('201 success when awarding self', async () => {
+    CollectiblesModel.addToInventory.mockResolvedValueOnce({ ok: true });
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'u1', collectibleId: '7' },
+      body: { earnedAt: '2024-01-01T00:00:00Z' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(CollectiblesModel.addToInventory).toHaveBeenCalledWith(
+      'u1',
+      7,
+      '2024-01-01T00:00:00Z',
+      expect.any(Object)
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('201 success when moderator awarding others', async () => {
+    // Override isModerator to return true for this request
+    const client = createClient();
+    client.from.mockReturnValueOnce({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          maybeSingle: jest.fn().mockResolvedValue({ data: { isModerator: true }, error: null }),
+        })),
+      })),
+    });
+    CollectiblesModel.addToInventory.mockResolvedValueOnce({ ok: true });
+
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'someone-else', collectibleId: '9' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('500 when model throws', async () => {
+    CollectiblesModel.addToInventory.mockRejectedValueOnce(new Error('db add fail'));
+    const { req, res } = mockReqRes({
+      headers: { authorization: 'Bearer token' },
+      params: { userId: 'u1', collectibleId: '1' },
+    });
+    await CollectiblesController.earnForUser(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'db add fail' });
+  });
+});
+
+describe('getCollectibles (simple list)', () => {
+  it('returns [] when model returns non-array', async () => {
+    CollectiblesModel.getCollectibles.mockResolvedValueOnce(null);
+    const { req, res } = mockReqRes({ query: { name: 'ab' } });
+    await CollectiblesController.getCollectibles(req, res);
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  it('500 when model errors', async () => {
+    CollectiblesModel.getCollectibles.mockRejectedValueOnce(new Error('fail'));
+    const { req, res } = mockReqRes({ query: {} });
+    await CollectiblesController.getCollectibles(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'fail' });
+  });
+});
+
+describe('getOne (extra invalid id branches)', () => {
+  it('400 when id is negative', async () => {
+    const { req, res } = mockReqRes({ params: { id: '-5' } });
+    await CollectiblesController.getOne(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+  it('400 when id is float', async () => {
+    const { req, res } = mockReqRes({ params: { id: '3.14' } });
+    await CollectiblesController.getOne(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe('listUserCollectibles – isModerator error path returns false', () => {
+  it('treats moderator check error as non-mod and blocks other user', async () => {
+    // Force maybeSingle to return an error for the isModerator query
+    const client = createClient();
+    client.from.mockReturnValueOnce({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          maybeSingle: jest.fn().mockResolvedValue({ data: null, error: { message: 'oops' } }),
+        })),
+      })),
+    });
+
+    const { req, res } = mockReqRes({
+      params: { userId: 'another' },
+      headers: { authorization: 'Bearer token' },
+    });
+    await CollectiblesController.listUserCollectibles(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Not permitted' });
+  });
+});
+
 });

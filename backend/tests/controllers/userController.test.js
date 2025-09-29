@@ -1,4 +1,4 @@
-// backend/controllers/__tests__/controllers/userController.test.js
+
 const UserController = require('../../controllers/userController');
 const UserModel = require('../../models/userModel');
 
@@ -17,28 +17,39 @@ describe('UserController', () => {
     jest.clearAllMocks();
   });
 
+  /* ================= getAllUsers ================= */
   describe('getAllUsers', () => {
-    it('should return users when model succeeds', async () => {
-      const req = { query: { email: 'test@example.com', isModerator: 'true' } };
+    it('returns users when model resolves (with Authorization token)', async () => {
+      const req = {
+        headers: { authorization: 'Bearer tok-123' },
+        query: { email: 'ignored@by.controller' }, // controller does not parse filters
+      };
       const res = mockResponse();
 
-      const fakeUsers = [{ userId: '1', email: 'test@example.com', isModerator: true }];
+      const fakeUsers = [{ userId: '1', email: 'a@b.com', isModerator: true }];
       UserModel.getAllUsers.mockResolvedValue(fakeUsers);
 
       await UserController.getAllUsers(req, res);
 
-      expect(UserModel.getAllUsers).toHaveBeenCalledWith({
-        userId: undefined,
-        email: 'test@example.com',
-        isModerator: true,
-        createdBefore: undefined,
-        createdAfter: undefined,
-      });
+      // Controller passes ONLY the token to the model
+      expect(UserModel.getAllUsers).toHaveBeenCalledWith('tok-123');
       expect(res.json).toHaveBeenCalledWith(fakeUsers);
     });
 
-    it('should handle errors from model', async () => {
-      const req = { query: {} };
+    it('still calls model with undefined token when header missing', async () => {
+      const req = { headers: {}, query: {} };
+      const res = mockResponse();
+
+      UserModel.getAllUsers.mockResolvedValue([]);
+
+      await UserController.getAllUsers(req, res);
+
+      expect(UserModel.getAllUsers).toHaveBeenCalledWith(undefined);
+      expect(res.json).toHaveBeenCalledWith([]);
+    });
+
+    it('handles model error with 500', async () => {
+      const req = { headers: { authorization: 'Bearer tok' }, query: {} };
       const res = mockResponse();
 
       UserModel.getAllUsers.mockRejectedValue(new Error('DB fail'));
@@ -48,42 +59,25 @@ describe('UserController', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: 'DB fail' });
     });
-
-    it('should ignore malformed isModerator value', async () => {
-      const req = { query: { isModerator: 'maybe' } };
-      const res = mockResponse();
-
-      UserModel.getAllUsers.mockResolvedValue([]);
-
-      await UserController.getAllUsers(req, res);
-
-      expect(UserModel.getAllUsers).toHaveBeenCalledWith({
-        userId: undefined,
-        email: undefined,
-        isModerator: undefined, // malformed ignored
-        createdBefore: undefined,
-        createdAfter: undefined,
-      });
-      expect(res.json).toHaveBeenCalledWith([]);
-    });
   });
 
+  /* ================= getUserById ================= */
   describe('getUserById', () => {
-    it('should return a user if found', async () => {
-      const req = { params: { id: '1' } };
+    it('200 when user found', async () => {
+      const req = { params: { id: 'u1' } };
       const res = mockResponse();
 
-      const fakeUser = { userId: '1', email: 'u@e.com' };
-      UserModel.getById.mockResolvedValue(fakeUser);
+      const fake = { userId: 'u1', email: 'u@e.com' };
+      UserModel.getById.mockResolvedValue(fake);
 
       await UserController.getUserById(req, res);
 
-      expect(UserModel.getById).toHaveBeenCalledWith('1');
-      expect(res.json).toHaveBeenCalledWith(fakeUser);
+      expect(UserModel.getById).toHaveBeenCalledWith('u1');
+      expect(res.json).toHaveBeenCalledWith(fake);
     });
 
-    it('should return 404 if not found', async () => {
-      const req = { params: { id: '2' } };
+    it('404 when user missing', async () => {
+      const req = { params: { id: 'u-missing' } };
       const res = mockResponse();
 
       UserModel.getById.mockResolvedValue(null);
@@ -94,46 +88,78 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
     });
 
-    it('should handle errors from model', async () => {
-      const req = { params: { id: '3' } };
+    it('500 on model throw', async () => {
+      const req = { params: { id: 'bad' } };
       const res = mockResponse();
 
-      UserModel.getById.mockRejectedValue(new Error('Unexpected fail'));
+      UserModel.getById.mockRejectedValue(new Error('boom'));
 
       await UserController.getUserById(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Unexpected fail' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'boom' });
     });
   });
 
+  /* ================= patchUser ================= */
   describe('patchUser', () => {
-    it('should update user and return updated data', async () => {
-      const req = { params: { id: '1' }, body: { isModerator: true } };
+    it('updates user and returns updated (token present)', async () => {
+      const req = {
+        params: { id: 'u2' },
+        body: { isModerator: true },
+        headers: { authorization: 'Bearer tok-999' },
+      };
       const res = mockResponse();
 
-      const updatedUser = { userId: '1', isModerator: true };
-      UserModel.updateById.mockResolvedValue(updatedUser);
+      const updated = { userId: 'u2', isModerator: true };
+      UserModel.updateById.mockResolvedValue(updated);
 
       await UserController.patchUser(req, res);
 
-      expect(UserModel.updateById).toHaveBeenCalledWith('1', { isModerator: true });
-      expect(res.json).toHaveBeenCalledWith(updatedUser);
+      // Controller passes (id, updates, token)
+      expect(UserModel.updateById).toHaveBeenCalledWith('u2', { isModerator: true }, 'tok-999');
+      expect(res.json).toHaveBeenCalledWith(updated);
     });
 
-    it('should fall back to returning request data if updateById returns null', async () => {
-      const req = { params: { id: '1' }, body: { isModerator: false } };
+    it('passes undefined token when header absent', async () => {
+      const req = {
+        params: { id: 'u2' },
+        body: { isModerator: false },
+        headers: {},
+      };
+      const res = mockResponse();
+
+      const updated = { userId: 'u2', isModerator: false };
+      UserModel.updateById.mockResolvedValue(updated);
+
+      await UserController.patchUser(req, res);
+
+      expect(UserModel.updateById).toHaveBeenCalledWith('u2', { isModerator: false }, undefined);
+      expect(res.json).toHaveBeenCalledWith(updated);
+    });
+
+    it('falls back to request echo when model returns null', async () => {
+      const req = {
+        params: { id: 'u3' },
+        body: { isModerator: false },
+        headers: { authorization: 'Bearer tok' },
+      };
       const res = mockResponse();
 
       UserModel.updateById.mockResolvedValue(null);
 
       await UserController.patchUser(req, res);
 
-      expect(res.json).toHaveBeenCalledWith({ userId: '1', isModerator: false });
+      expect(UserModel.updateById).toHaveBeenCalledWith('u3', { isModerator: false }, 'tok');
+      expect(res.json).toHaveBeenCalledWith({ userId: 'u3', isModerator: false });
     });
 
-    it('should handle errors from model', async () => {
-      const req = { params: { id: '1' }, body: { isModerator: true } };
+    it('500 when model throws', async () => {
+      const req = {
+        params: { id: 'u4' },
+        body: { isModerator: true },
+        headers: { authorization: 'Bearer tok' },
+      };
       const res = mockResponse();
 
       UserModel.updateById.mockRejectedValue(new Error('DB fail'));
@@ -144,8 +170,11 @@ describe('UserController', () => {
       expect(res.json).toHaveBeenCalledWith({ message: 'DB fail' });
     });
 
-    it('should handle thrown error gracefully', async () => {
-      const req = { params: { id: '99' }, body: { isModerator: true } };
+    it('handles thrown error (explicit branch)', async () => {
+      const req = {
+        params: { id: 'u5' },
+        body: { isModerator: true },
+      };
       const res = mockResponse();
 
       UserModel.updateById.mockRejectedValue(new Error('Forced failure'));

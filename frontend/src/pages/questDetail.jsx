@@ -223,7 +223,10 @@ export default function QuestDetail() {
       const normalizedAnswer = answer.trim();
       const normalizedCorrect = quiz.correctAnswer?.trim() || "";
       if (quizType === "text") {
-        if (!normalizedCorrect || normalizedAnswer.toLowerCase() !== normalizedCorrect.toLowerCase()) {
+        if (
+          !normalizedCorrect ||
+          normalizedAnswer.toLowerCase() !== normalizedCorrect.toLowerCase()
+        ) {
           toast.error("Incorrect answer. Try again!");
           return;
         }
@@ -236,7 +239,7 @@ export default function QuestDetail() {
     }
 
     try {
-      // 1) Complete the quest (points, status, etc.)
+      // 1) Complete the quest
       const res = await fetch(
         `${API_BASE}/user-quests/${userQuestId}/complete`,
         {
@@ -254,7 +257,49 @@ export default function QuestDetail() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
-      // 2) If the quest is linked to a collectible, add it to the user's inventory (idempotent)
+      // 2) Activate the hunt linked to this quest
+      // fetch the hunt linked to this quest
+      const { data: huntData, error: huntError } = await supabase
+        .from("hunts")
+        .select("*")
+        .eq("id", quest.huntId)
+        .single();
+
+      if (huntError || !huntData) {
+        console.error("Could not fetch hunt:", huntError);
+        toast.error("Quest completed, but hunt could not be activated.");
+        return;
+      }
+
+      const now = new Date();
+      const timeLimitMinutes = huntData.timeLimit || 0;
+
+      const closingAt = new Date(
+        now.getTime() + timeLimitMinutes * 60 * 1000
+      ).toISOString();
+
+      const { error: upsertError } = await supabase
+        .from("userHunts")
+        .upsert(
+          {
+            userId: me.id,
+            huntId: quest.huntId,
+            isActive: true,
+            startedAt: now.toISOString(),
+            closingAt,
+          },
+          { onConflict: ["userId", "huntId"] } // ensure uniqueness
+        );
+
+      if (upsertError) {
+        console.error("Error activating hunt:", upsertError);
+        toast.error("Quest completed, but hunt could not be activated.");
+      } else {
+        toast.success("Hunt activated!");
+      }
+
+
+      // 3) Award collectible (if any)
       if (quest.collectibleId != null) {
         const award = await fetch(
           `${API_BASE}/users/${encodeURIComponent(
@@ -271,11 +316,8 @@ export default function QuestDetail() {
         );
         const aj = await award.json().catch(() => ({}));
         if (!award.ok) {
-          // Not fatal for completion, but tell the user
           console.warn("Award collectible failed:", aj);
-          toast.error(
-            aj?.error || "Quest done, but collectible could not be awarded."
-          );
+          toast.error("Quest done, but collectible could not be awarded.");
         } else {
           toast.success("Collectible added to your inventory!");
         }
@@ -311,13 +353,13 @@ export default function QuestDetail() {
 
   const youIcon = isLoaded
     ? {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: "#1E90FF",
-        fillOpacity: 1,
-        strokeColor: "white",
-        strokeWeight: 2,
-        scale: 10,
-      }
+      path: window.google.maps.SymbolPath.CIRCLE,
+      fillColor: "#1E90FF",
+      fillOpacity: 1,
+      strokeColor: "white",
+      strokeWeight: 2,
+      scale: 10,
+    }
     : undefined;
 
   const hasRadius =
@@ -449,9 +491,8 @@ export default function QuestDetail() {
 
       <section className="actions">
         <div
-          className={` highlight radius-indicator ${
-            withinRadius ? "ok" : "far"
-          }`}
+          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
+            }`}
         >
           {withinRadius
             ? "You are inside the radius"

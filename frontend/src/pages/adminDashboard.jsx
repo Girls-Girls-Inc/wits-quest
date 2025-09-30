@@ -68,7 +68,9 @@ const AdminDashboard = () => {
     const fetchOptions = async () => {
       try {
         const token = await getToken();
-        const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const authHeaders = token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined;
         const authedOptions = {
           credentials: "include",
           ...(authHeaders ? { headers: authHeaders } : {}),
@@ -173,7 +175,9 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!user) return toast.error("You must be logged in");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     if (!accessToken) {
       toast.error("Your session expired. Please sign in again.");
@@ -196,9 +200,9 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/quests`, {
         method: "POST",
         headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         credentials: "include",
         body: JSON.stringify(questInsert),
       });
@@ -211,11 +215,10 @@ const AdminDashboard = () => {
     }
   };
 
-  
-
   const handleLocationSubmit = async (e) => {
-
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     if (!accessToken) {
       toast.error("Your session expired. Please sign in again.");
@@ -235,20 +238,21 @@ const AdminDashboard = () => {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
         headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         credentials: "include",
         body: JSON.stringify(locationInsert),
       });
       const result = await res.json();
 
       if (!res.ok) {
-      const msg = result?.error || result?.message || "Failed to create location";
-      throw new Error(msg);
-    }
-    toast.success(`Location created successfully!`);
-    handleBack();
+        const msg =
+          result?.error || result?.message || "Failed to create location";
+        throw new Error(msg);
+      }
+      toast.success(`Location created successfully!`);
+      handleBack();
     } catch (err) {
       toast.error(`Failed to create location: ${err.message}`);
     }
@@ -353,12 +357,12 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Admin Privilege")}
               className="tile-button"
             />
-            <IconButton
+            {/* <IconButton
               icon="award_star"
               label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
               className="tile-button"
-            />
+            /> */}
             <IconButton
               icon="star"
               label="Manage Quests"
@@ -649,7 +653,7 @@ const AdminDashboard = () => {
                         handleToggleModerator(u.userId, !u.isModerator)
                       }
                       className={`px-2 py-1 rounded text-white ${
-                        u.isModerator ? "btn-red" : "btn-green"
+                        u.isModerator ? "make-red" : "make-green"
                       }`}
                     >
                       {u.isModerator ? "Remove Admin" : "Make Admin"}
@@ -688,6 +692,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-
-

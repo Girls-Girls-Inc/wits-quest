@@ -13,6 +13,7 @@ import supabase from "../supabase/supabaseClient";
 const Settings = () => {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut({ scope: "global" });
@@ -46,6 +47,14 @@ const Settings = () => {
               )
             }
           />
+
+          {/* Help Button */}
+          <IconButton
+            icon="help"
+            label="Help"
+            onClick={() => setShowHelpModal(true)}
+          />
+
           <IconButton
             icon="logout"
             label="Logout"
@@ -54,16 +63,69 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="modal-backdrop">
+          <div className="modal help-modal">
+            <button
+              className="modal-close"
+              onClick={() => setShowHelpModal(false)}
+            >
+              ✕
+            </button>
+            <h2>How to Complete a Quest</h2>
+            <ol className="help-list">
+              <li>
+                Go to the <strong>Quests</strong> page.
+              </li>
+              <li>
+                Browse the list and click <strong>View Details</strong> on a
+                quest that interests you.
+              </li>
+              <li>
+                Select <strong>Add to My Quests</strong> to save it.
+              </li>
+              <li>
+                Open your <strong>Dashboard</strong> and, in the Quests table,
+                click <strong>View</strong> next to the quest you want to
+                complete.
+              </li>
+              <li>
+                Travel to the quest’s location on the map (make sure you’re
+                within the marked radius).
+              </li>
+              <li>
+                Click <strong>Check In</strong> to finish the quest.
+              </li>
+              <li>Your points will be automatically added to your profile.</li>
+            </ol>
+            <div className="help-actions">
+              <IconButton
+                type="button"
+                icon="map"
+                label="View Quests"
+                onClick={() => {
+                  setShowHelpModal(false);
+                  navigate("/displayQuests");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Logout Modal */}
       {showLogoutModal && (
         <div className="modal-backdrop">
           <div className="modal logout-modal">
-            <button
-              className="modal-close"
-              onClick={() => setShowLogoutModal(false)}
-            >
-              ✕
-            </button>
+            <div className="modal-header">
+              <button
+                className="modal-close"
+                onClick={() => setShowLogoutModal(false)}
+              >
+                ✕
+              </button>
+            </div>
             <h2>Confirm Logout</h2>
             <p>Are you sure you want to log out of your account?</p>
             <div className="logout-actions">

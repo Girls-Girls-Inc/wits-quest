@@ -7,11 +7,11 @@ try {
 
 try {
   require('dotenv').config({ path: path.resolve(__dirname, 'backend', '.env') });
-} catch {}
+} catch { }
 
-try { jest.mock("./frontend/src/styles/button.css", () => ({})); } catch (e) {}
-try { jest.mock("./frontend/src/styles/navbar.css", () => ({})); } catch (e) {}
-try { jest.mock("./frontend/src/assets/logo.png", () => "logo.png"); } catch (e) {}
+try { jest.mock("./frontend/src/styles/button.css", () => ({})); } catch (e) { }
+try { jest.mock("./frontend/src/styles/navbar.css", () => ({})); } catch (e) { }
+try { jest.mock("./frontend/src/assets/Logo.webp", () => "Logo.webp"); } catch (e) { }
 
 // 3) Mock the env wrapper so tests never need to parse import.meta
 try {

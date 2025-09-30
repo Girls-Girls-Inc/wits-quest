@@ -78,7 +78,7 @@ jest.mock("../../components/PasswordInputField", () => (props) => {
 // Static assets & CSS
 jest.mock("../../assets/google-icon.webp", () => "google.png");
 jest.mock("../../assets/Logo.webp", () => "Logo.webp");
-jest.mock("../../assets/Signup3.png", () => "signup.png");
+jest.mock("../../assets/Signup3.webp", () => "Signup.webp");
 jest.mock("../../styles/login-signup.css", () => ({}));
 jest.mock("../../index.css", () => ({}));
 

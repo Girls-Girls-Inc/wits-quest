@@ -1,0 +1,31 @@
+# Simple ignore configuration that should work
+ignore:
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.sass"
+  - "**/*.less"
+  - "**/*.json"
+  - "**/node_modules/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/*.config.js"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/*.test.js"
+  - "**/*.test.jsx"
+  - "frontend/src/main.jsx"
+  - "frontend/src/lib/env.js"
+  - "frontend/src/supabase/supabaseClient.js"
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+comment: false

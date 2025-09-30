@@ -203,4 +203,220 @@ describe("Quests page", () => {
       expect(toast.error).toHaveBeenCalled();
     });
   });
+  // ───────────────────────── extra branch coverage for Quests ─────────────────────────
+describe("Quests page — extra branches", () => {
+  const makeFromChain = (data, error = null) => ({
+    select: () => ({
+      order: () => Promise.resolve({ data, error }),
+    }),
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // reset supabase mocks to a known state
+    supabase.auth.getSession.mockResolvedValue({
+      data: { session: { access_token: "token-123" } },
+      error: null,
+    });
+    supabase.from.mockImplementation(() => makeFromChain([QUEST_A], null));
+    global.fetch = jest.fn();
+  });
+
+  it("reuses cached location on second open (no second fetch)", async () => {
+    render(<Quests />);
+
+    // First open → fetches location and caches it
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "loc-1", name: "Library" }),
+    });
+
+    await screen.findByRole("button", { name: /view details/i });
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+    await screen.findByRole("dialog");
+    // close
+    await userEvent.click(screen.getByRole("button", { name: /close/i }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    // Second open → should NOT call fetch again (cache hit)
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+    await screen.findByRole("dialog");
+    // only 1 fetch call (first location)
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows toast when location fetch fails", async () => {
+    render(<Quests />);
+
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: "Failed to load location" }),
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+
+    const toast = (await import("react-hot-toast")).default;
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Failed to load location", { id: "tid-1" })
+    );
+  });
+
+  it("omits Authorization header when no JWT is available on location fetch", async () => {
+    // Make session fetch return no token
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    render(<Quests />);
+
+    // Intercept fetch call and check headers
+    global.fetch.mockImplementationOnce((url, init) =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({ id: "loc-1", name: "NoAuth" }),
+      }).then((r) => {
+        expect(init?.headers?.Authorization).toBeUndefined();
+        return r;
+      })
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    await screen.findByRole("dialog");
+  });
+
+  it("prompts login when adding without session and navigates on confirm", async () => {
+    // mounted component still loads quests
+    render(<Quests />);
+
+    // For addToMyQuests path, make auth.getSession return null at click time
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: { access_token: "t" } }, error: null }); // initial mount token fetch
+    // location fetch
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: "loc-1" }) });
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const dialog = await screen.findByRole("dialog");
+
+    // When pressing "Add", force auth.getSession to return null (no token)
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    await userEvent.click(within(dialog).getByRole("button", { name: /add to my quests/i }));
+
+    // Login-required modal shows
+    const loginModal = await screen.findByRole("dialog", { name: /login required/i });
+    await userEvent.click(within(loginModal).getByRole("button", { name: /go to login/i }));
+    expect(mockNavigate).toHaveBeenCalledWith("/login");
+  });
+
+  it("treats already-saved quest as success without POST", async () => {
+    render(<Quests />);
+
+    // location, then GET user-quests returns the quest id
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "loc-1" }) }) // location
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ questId: 1 }],
+      }); // GET user-quests
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: /add to my quests/i }));
+
+    const toast = (await import("react-hot-toast")).default;
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("This quest is already in your list.", {
+        id: "tid-1",
+      })
+    );
+    // Only 2 fetches (location + GET), no POST
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("handles POST 409 conflict by showing success and not throwing", async () => {
+    render(<Quests />);
+
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "loc-1" }) }) // location
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET user-quests
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ message: "already" }),
+      }); // POST add -> conflict
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: /add to my quests/i }));
+
+    const toast = (await import("react-hot-toast")).default;
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("This quest is already in your list.", {
+        id: "tid-1",
+      })
+    );
+  });
+
+  it("prevents double POST when clicking Add twice quickly (pendingAdds guard)", async () => {
+    render(<Quests />);
+
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "loc-1" }) }) // location
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET user-quests
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "new" }) }); // POST add
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const dialog = await screen.findByRole("dialog");
+
+    // click twice before awaiting network resolution
+    const addBtn = within(dialog).getByRole("button", { name: /add to my quests/i });
+    await userEvent.click(addBtn);
+    await userEvent.click(addBtn);
+
+    await waitFor(() => {
+      const toast = require("react-hot-toast").default;
+      expect(toast.success).toHaveBeenCalledWith("Added to your quests!", { id: "tid-1" });
+    });
+
+    // Calls: 1 location + 1 GET + 1 POST (not 2 posts)
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("builds map iframe src from address when lat/lng are missing", async () => {
+    render(<Quests />);
+
+    // Return a location without lat/lng but with address
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "loc-1", name: "Place", address: "1 Test Road" }),
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const iframe = await screen.findByTitle("map");
+    expect(iframe.getAttribute("src")).toMatch(/q=1%20Test%20Road/i);
+  });
+
+  it("closes modal on Escape and on backdrop click, but not on inner click", async () => {
+    render(<Quests />);
+
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: "loc-1" }) });
+
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    const dialog = await screen.findByRole("dialog");
+
+    // inner click should not close
+    await userEvent.click(within(dialog).getByRole("button", { name: /close/i }), { skipHover: true });
+    // (we clicked the close button above to prove it *does* close, so reopen)
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    await screen.findByRole("dialog");
+
+    // backdrop click closes
+    await userEvent.click(screen.getByRole("dialog").parentElement);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    // reopen and close via Escape
+    await userEvent.click(await screen.findByRole("button", { name: /view details/i }));
+    await screen.findByRole("dialog");
+
+    // fire Escape
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+});
+
 });

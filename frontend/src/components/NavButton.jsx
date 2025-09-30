@@ -3,12 +3,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/button.css";
 
-import LogoIcon from "../assets/logo.png";
-import leaderBoardLogo from "../assets/leaderboard.png";
-import homeLogo from "../assets/home.png";
-import mapLogo from "../assets/map.png";
-import profileLogo from "../assets/profile.png";
-import adminLogo from "../assets/admin.png";
+import LogoIcon from "../assets/Logo.webp";
+import leaderBoardLogo from "../assets/leaderboard.webp";
+import homeLogo from "../assets/home.webp";
+import mapLogo from "../assets/map.webp";
+import profileLogo from "../assets/profile.webp";
+import adminLogo from "../assets/admin.webp";
 import Leaderboard from "../pages/leaderboard";
 
 

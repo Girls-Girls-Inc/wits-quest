@@ -363,4 +363,130 @@ describe("ManageHunts page", () => {
     await userEvent.click(screen.getByText(/back to admin/i));
     expect(mockNavigate).toHaveBeenCalledWith("/adminDashboard");
   });
+  it("treats non-array /hunts payload as empty but still toasts success", async () => {
+  // server returns object, not array
+  mockFetch({ ok: true, message: "not-an-array" });
+
+  render(<ManageHunts />);
+
+  // header renders
+  expect(
+    await screen.findByRole("heading", { level: 1, name: /manage hunts/i })
+  ).toBeInTheDocument();
+
+  // no hunt cards
+  expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+
+  const toast = (await import("react-hot-toast")).default;
+  expect(toast.success).toHaveBeenCalledWith("Hunts loaded", { id: "toast-id" });
+});
+
+it("clicking Edit on a hunt without id shows toast error and does not open form", async () => {
+  // simulate a bad row without id
+  mockFetch([{ name: "No ID Hunt", description: "x" }]);
+
+  render(<ManageHunts />);
+
+  const card = await screen.findByRole("heading", { level: 2, name: /no id hunt/i });
+  const toast = (await import("react-hot-toast")).default;
+
+  await userEvent.click(within(card.closest(".quest-card")).getByText(/edit/i));
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith("Invalid hunt selected");
+  });
+
+  // form never opens
+  expect(screen.queryByPlaceholderText(/hunt name/i)).not.toBeInTheDocument();
+});
+
+it("save sends timeLimit: null when left blank", async () => {
+  // load one hunt
+  mockFetch([HUNTS[0]]);
+  render(<ManageHunts />);
+
+  const card = await screen.findByRole("heading", { level: 2, name: /campus hunt/i });
+  await userEvent.click(within(card.closest(".quest-card")).getByText(/edit/i));
+
+  // blank out the time limit
+  const timeInput = await screen.findByPlaceholderText(/time limit/i);
+  await userEvent.clear(timeInput); // becomes ""
+
+  // keep other fields as-is and save
+  // PUT reply
+  mockFetch({ hunt: { ...HUNTS[0], timeLimit: null } });
+
+  await userEvent.click(screen.getByText(/save hunt/i));
+
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE}/hunts/1`,
+      expect.objectContaining({
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: HUNTS[0].name,
+          description: HUNTS[0].description,
+          question: HUNTS[0].question,
+          answer: HUNTS[0].answer,
+          timeLimit: null, // <- branch: empty string becomes null
+        }),
+      })
+    );
+  });
+});
+
+it("deleting the currently edited hunt also closes the form", async () => {
+  global.confirm.mockReturnValue(true);
+  mockFetch([HUNTS[0]]); // load
+
+  render(<ManageHunts />);
+
+  const card = await screen.findByRole("heading", { level: 2, name: /campus hunt/i });
+  const root = card.closest(".quest-card");
+
+  // open form
+  await userEvent.click(within(root).getByText(/edit/i));
+  expect(await screen.findByPlaceholderText(/hunt name/i)).toBeInTheDocument();
+
+  // delete same hunt
+  mockFetch("", 200); // DELETE reply
+  await userEvent.click(within(root).getByText(/delete/i));
+
+  await waitFor(() => {
+    // fetch delete called
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE}/hunts/1`,
+      expect.objectContaining({ method: "DELETE", credentials: "include" })
+    );
+  });
+
+  // form is closed as the edited hunt is removed
+  await waitFor(() => {
+    expect(screen.queryByPlaceholderText(/hunt name/i)).not.toBeInTheDocument();
+  });
+});
+
+it("Cancel button exits edit mode without saving", async () => {
+  mockFetch([HUNTS[0]]);
+  render(<ManageHunts />);
+
+  const card = await screen.findByRole("heading", { level: 2, name: /campus hunt/i });
+  await userEvent.click(within(card.closest(".quest-card")).getByText(/edit/i));
+
+  // form visible
+  expect(await screen.findByPlaceholderText(/hunt name/i)).toBeInTheDocument();
+
+  // cancel
+  await userEvent.click(screen.getByText(/^cancel$/i));
+
+  // form hidden, no PUT fired
+  expect(screen.queryByPlaceholderText(/hunt name/i)).not.toBeInTheDocument();
+  expect(global.fetch).not.toHaveBeenCalledWith(
+    expect.stringContaining("/hunts/1"),
+    expect.objectContaining({ method: "PUT" })
+  );
+});
+
 });

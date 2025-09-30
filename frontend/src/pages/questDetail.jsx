@@ -278,22 +278,26 @@ export default function QuestDetail() {
         now.getTime() + timeLimitMinutes * 60 * 1000
       ).toISOString();
 
-      const { error: updateError } = await supabase
+      const { error: upsertError } = await supabase
         .from("userHunts")
-        .update({
-          isActive: true,
-          startedAt: now.toISOString(),
-          closingAt,
-        })
-        .eq("userId", me.id)
-        .eq("huntId", quest.huntId);
+        .upsert(
+          {
+            userId: me.id,
+            huntId: quest.huntId,
+            isActive: true,
+            startedAt: now.toISOString(),
+            closingAt,
+          },
+          { onConflict: ["userId", "huntId"] } // ensure uniqueness
+        );
 
-      if (updateError) {
-        console.error("Error activating hunt:", updateError);
+      if (upsertError) {
+        console.error("Error activating hunt:", upsertError);
         toast.error("Quest completed, but hunt could not be activated.");
       } else {
         toast.success("Hunt activated!");
       }
+
 
       // 3) Award collectible (if any)
       if (quest.collectibleId != null) {
@@ -349,13 +353,13 @@ export default function QuestDetail() {
 
   const youIcon = isLoaded
     ? {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: "#1E90FF",
-        fillOpacity: 1,
-        strokeColor: "white",
-        strokeWeight: 2,
-        scale: 10,
-      }
+      path: window.google.maps.SymbolPath.CIRCLE,
+      fillColor: "#1E90FF",
+      fillOpacity: 1,
+      strokeColor: "white",
+      strokeWeight: 2,
+      scale: 10,
+    }
     : undefined;
 
   const hasRadius =
@@ -487,9 +491,8 @@ export default function QuestDetail() {
 
       <section className="actions">
         <div
-          className={` highlight radius-indicator ${
-            withinRadius ? "ok" : "far"
-          }`}
+          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
+            }`}
         >
           {withinRadius
             ? "You are inside the radius"

@@ -241,3 +241,77 @@
 .settings-buttons .icon-button:active {
   transform: translateY(1px);
 }
+
+.help-modal {
+  background: var(--background);
+  padding: 2rem;
+  border-radius: 1rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  position: relative;
+  animation: fadeInUp 0.25s ease-in-out;
+}
+
+.help-modal .modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.help-modal .modal-close:hover {
+  color: #eee;
+}
+
+/* Heading */
+.help-modal h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #eee;
+}
+
+/* Ordered list */
+.help-list {
+  padding-left: 1.5rem;
+  margin: 1rem 0 1.5rem 0;
+  line-height: 1.6;
+  color: #eee;
+}
+
+.help-list li {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.help-list strong {
+  color: #fff;
+}
+
+.help-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.modal-header {
+  padding: 1rem;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -68,7 +68,9 @@ const AdminDashboard = () => {
     const fetchOptions = async () => {
       try {
         const token = await getToken();
-        const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const authHeaders = token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined;
         const authedOptions = {
           credentials: "include",
           ...(authHeaders ? { headers: authHeaders } : {}),
@@ -173,7 +175,9 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!user) return toast.error("You must be logged in");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     if (!accessToken) {
       toast.error("Your session expired. Please sign in again.");
@@ -211,11 +215,10 @@ const AdminDashboard = () => {
     }
   };
 
-
-
   const handleLocationSubmit = async (e) => {
-
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     if (!accessToken) {
       toast.error("Your session expired. Please sign in again.");
@@ -244,7 +247,8 @@ const AdminDashboard = () => {
       const result = await res.json();
 
       if (!res.ok) {
-        const msg = result?.error || result?.message || "Failed to create location";
+        const msg =
+          result?.error || result?.message || "Failed to create location";
         throw new Error(msg);
       }
       toast.success(`Location created successfully!`);
@@ -353,12 +357,12 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Admin Privilege")}
               className="tile-button"
             />
-            <IconButton
+            {/* <IconButton
               icon="award_star"
               label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
               className="tile-button"
-            />
+            /> */}
             <IconButton
               icon="star"
               label="Manage Quests"
@@ -648,7 +652,7 @@ const AdminDashboard = () => {
                       onClick={() =>
                         handleToggleModerator(u.userId, !u.isModerator)
                       }
-                      className={`px-2 py-1 rounded text-white ${u.isModerator ? "btn-red" : "btn-green"
+                      className={`px-2 py-1 rounded text-white ${u.isModerator ? "make-red" : "make-green"
                         }`}
                     >
                       {u.isModerator ? "Remove Admin" : "Make Admin"}
@@ -687,6 +691,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-
-

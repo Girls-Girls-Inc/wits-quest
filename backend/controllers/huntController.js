@@ -1,4 +1,5 @@
 const HuntModel = require("../models/huntModel");
+const { sbFromReq } = require("../supabase/supabaseFromReq");
 
 const HuntController = {
   // POST /hunts
@@ -69,6 +70,112 @@ const HuntController = {
 
       return res.json({ message: "Hunt deleted successfully", hunt: data[0] });
     } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
+  // GET /user-hunts (only active)
+  mine: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const { data: who, error: authErr } = await sb.auth.getUser();
+      if (authErr) return res.status(401).json({ message: authErr.message });
+      const userId = who?.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthenticated" });
+
+      const { data, error } = await sb
+        .from("userHunts")
+        .select(`
+          id,
+          userId,
+          huntId,
+          isActive,
+          isComplete,
+          startedAt,
+          completedAt,
+          closingAt,
+          hunts (
+            id,
+            name,
+            description,
+            question,
+            answer
+          )
+        `)
+        .eq("userId", userId)
+        .eq("isActive", true)
+        .order("id", { ascending: true });
+
+      if (error) return res.status(400).json({ message: error.message });
+
+      const now = new Date();
+      const activeHunts = [];
+
+      for (const uh of data || []) {
+        let isExpired = false;
+
+        if (uh.closingAt) {
+          const closing = new Date(uh.closingAt);
+          if (closing < now) {
+            await sb.from("userHunts").update({ isActive: false }).eq("id", uh.id);
+            isExpired = true;
+          }
+        }
+
+        if (isExpired) continue;
+
+        let remainingTime = "N/A";
+        if (uh.closingAt) {
+          const closing = new Date(uh.closingAt);
+          const diff = closing - now;
+          const minutes = Math.floor(diff / 1000 / 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+          remainingTime = `${minutes}m ${seconds}s`;
+        }
+
+        activeHunts.push({ ...uh, remainingTime });
+      }
+
+      return res.json(activeHunts);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
+  // POST /user-hunts/:id/check
+  checkAnswer: async (req, res) => {
+    try {
+      const userHuntId = Number(req.params.id);
+      const { answer } = req.body;
+
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const { data: userHunt, error } = await sb
+        .from("userHunts")
+        .select("id, huntId, isActive, isComplete, hunts(*)")
+        .eq("id", userHuntId)
+        .single();
+
+      if (error || !userHunt) return res.status(400).json({ message: "User hunt not found" });
+      if (!userHunt.isActive) return res.json({ correct: false, message: "Hunt inactive" });
+
+      const correct =
+        userHunt.hunts?.answer?.trim().toLowerCase() === answer.trim().toLowerCase();
+
+      if (correct) {
+        const now = new Date().toISOString();
+        await sb
+          .from("userHunts")
+          .update({ isComplete: true, isActive: false, completedAt: now })
+          .eq("id", userHuntId);
+      }
+
+      return res.json({ correct });
+    } catch (err) {
+      console.error(err);
       return res.status(500).json({ message: err.message });
     }
   },

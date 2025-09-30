@@ -89,4 +89,6 @@ describe('privateLeaderboardRoutes', () => {
     expect(res.status).toBe(204);
     expect(controller.delete).toHaveBeenCalled();
   });
+
+  
 });

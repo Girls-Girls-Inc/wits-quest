@@ -5,6 +5,7 @@ import "../styles/quests.css";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
 import "../styles/button.css";
+import "../styles/profile.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +32,7 @@ export default function ManageQuizzes() {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuiz, setEditingQuiz] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState({
     questionText: "",
     questionType: "text",
@@ -41,9 +43,7 @@ export default function ManageQuizzes() {
   const availableAnswers = useMemo(() => {
     if (formData.questionType !== "mcq") return [];
     const unique = new Set(
-      (formData.options || [])
-        .map((opt) => opt.trim())
-        .filter(Boolean)
+      (formData.options || []).map((opt) => opt.trim()).filter(Boolean)
     );
     return Array.from(unique);
   }, [formData.options, formData.questionType]);
@@ -90,6 +90,7 @@ export default function ManageQuizzes() {
 
   const resetForm = () => {
     setEditingQuiz(null);
+    setShowEditModal(false);
     setFormData({
       questionText: "",
       questionType: "text",
@@ -112,6 +113,7 @@ export default function ManageQuizzes() {
           ? syncCorrectAnswer(options, questionType, quiz.correctAnswer || "")
           : quiz.correctAnswer || "",
     });
+    setShowEditModal(true);
   };
 
   const handleFieldChange = (key, value) => {
@@ -124,7 +126,11 @@ export default function ManageQuizzes() {
     setFormData((prev) => {
       if (nextType === "mcq") {
         const options = ensureOptionCount(prev.options, "mcq");
-        const correctAnswer = syncCorrectAnswer(options, "mcq", prev.correctAnswer);
+        const correctAnswer = syncCorrectAnswer(
+          options,
+          "mcq",
+          prev.correctAnswer
+        );
         return {
           ...prev,
           questionType: "mcq",
@@ -146,15 +152,26 @@ export default function ManageQuizzes() {
       const options = [...(prev.options || [])];
       options[index] = value;
       const padded = ensureOptionCount(options, prev.questionType);
-      const correctAnswer = syncCorrectAnswer(padded, prev.questionType, prev.correctAnswer);
+      const correctAnswer = syncCorrectAnswer(
+        padded,
+        prev.questionType,
+        prev.correctAnswer
+      );
       return { ...prev, options: padded, correctAnswer };
     });
   };
 
   const handleAddOption = () => {
     setFormData((prev) => {
-      const options = ensureOptionCount([...(prev.options || []), ""], prev.questionType);
-      const correctAnswer = syncCorrectAnswer(options, prev.questionType, prev.correctAnswer);
+      const options = ensureOptionCount(
+        [...(prev.options || []), ""],
+        prev.questionType
+      );
+      const correctAnswer = syncCorrectAnswer(
+        options,
+        prev.questionType,
+        prev.correctAnswer
+      );
       return { ...prev, options, correctAnswer };
     });
   };
@@ -164,7 +181,11 @@ export default function ManageQuizzes() {
       const options = [...(prev.options || [])];
       options.splice(index, 1);
       const padded = ensureOptionCount(options, prev.questionType);
-      const correctAnswer = syncCorrectAnswer(padded, prev.questionType, prev.correctAnswer);
+      const correctAnswer = syncCorrectAnswer(
+        padded,
+        prev.questionType,
+        prev.correctAnswer
+      );
       return { ...prev, options: padded, correctAnswer };
     });
   };
@@ -175,14 +196,16 @@ export default function ManageQuizzes() {
     const questionText = formData.questionText.trim();
     const questionType = (formData.questionType || "text").toLowerCase();
     if (!questionText) return toast.error("Question text is required");
-    if (!["text", "mcq"].includes(questionType)) return toast.error("Unsupported question type");
+    if (!["text", "mcq"].includes(questionType))
+      return toast.error("Unsupported question type");
 
     let options = [];
     if (questionType === "mcq") {
       options = (formData.options || [])
         .map((opt) => opt.trim())
         .filter(Boolean);
-      if (options.length < 2) return toast.error("Provide at least two options");
+      if (options.length < 2)
+        return toast.error("Provide at least two options");
     }
 
     const correctAnswer = (formData.correctAnswer || "").trim();
@@ -265,117 +288,147 @@ export default function ManageQuizzes() {
         <h1>Manage Quizzes</h1>
         <div className="flex gap-2">
           <IconButton icon="refresh" label="Refresh" onClick={loadQuizzes} />
-          <IconButton icon="add" label="New Quiz" onClick={() => navigate("/addQuiz")} />
+          <IconButton
+            icon="add"
+            label="New Quiz"
+            onClick={() => navigate("/addQuiz")}
+          />
         </div>
       </div>
 
-      {editingQuiz && (
-        <form
-          className="login-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSave();
-          }}
-        >
-          <InputField
-            type="text"
-            name="questionText"
-            placeholder="Question Text"
-            value={formData.questionText}
-            onChange={(event) => handleFieldChange("questionText", event.target.value)}
-            icon="help"
-            required
-          />
-
-          <div className="input-box">
-            <label htmlFor="questionType">Question Type</label>
-            <select
-              id="questionType"
-              name="questionType"
-              value={formData.questionType}
-              onChange={(event) => handleQuestionTypeChange(event.target.value)}
-            >
-              <option value="text">Text / Short Answer</option>
-              <option value="mcq">Multiple Choice</option>
-            </select>
-          </div>
-
-          {formData.questionType === "mcq" && (
-            <div className="input-box">
-              <label>Options</label>
-              {(formData.options || []).map((option, index) => (
-                <div key={index} className="flex gap-2 mb-2 items-center">
-                  <InputField
-                    type="text"
-                    name={`option-${index}`}
-                    placeholder={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(event) => handleOptionChange(index, event.target.value)}
-                    icon="list"
-                    required
-                  />
-                  {(formData.options || []).length > 2 && (
-                    <button
-                      type="button"
-                      className="icon-button btn-red"
-                      onClick={() => handleRemoveOption(index)}
-                    >
-                      <i className="material-symbols-outlined">delete</i>
-                    </button>
-                  )}
-                </div>
-              ))}
-              <IconButton
-                type="button"
-                icon="add"
-                label="Add Option"
-                onClick={handleAddOption}
-              />
-            </div>
-          )}
-
-          {formData.questionType === "mcq" ? (
-            <div className="input-box">
-              <label htmlFor="correctAnswer">Correct Answer</label>
-              <select
-                id="correctAnswer"
-                name="correctAnswer"
-                value={formData.correctAnswer}
-                onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
-              >
-                <option value="">Select correct option</option>
-                {availableAnswers.map((answer) => (
-                  <option key={answer} value={answer}>
-                    {answer}
-                  </option>
-                ))}
-              </select>
-              <small>Tip: Correct answer must match one of the options above.</small>
-            </div>
-          ) : (
-            <InputField
-              type="text"
-              name="correctAnswer"
-              placeholder="Correct Answer"
-              value={formData.correctAnswer}
-              onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
-              icon="check"
-              required
-            />
-          )}
-
-          <div className="btn flex gap-2">
-            <IconButton type="submit" icon="save" label="Save Quiz" />
-            <IconButton
-              type="button"
-              icon="arrow_back"
-              label="Cancel"
+      {/* Modal */}
+      {showEditModal && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <button
+              className="modal-close"
               onClick={resetForm}
-            />
+              aria-label="Close modal"
+            >
+              ✖
+            </button>
+
+            <form
+              className="login-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleSave();
+              }}
+            >
+              <InputField
+                type="text"
+                name="questionText"
+                placeholder="Question Text"
+                value={formData.questionText}
+                onChange={(event) =>
+                  handleFieldChange("questionText", event.target.value)
+                }
+                icon="help"
+                required
+              />
+
+              <div className="input-box">
+                <label htmlFor="questionType">Question Type</label>
+                <select
+                  id="questionType"
+                  name="questionType"
+                  value={formData.questionType}
+                  onChange={(event) =>
+                    handleQuestionTypeChange(event.target.value)
+                  }
+                >
+                  <option value="text">Text / Short Answer</option>
+                  <option value="mcq">Multiple Choice</option>
+                </select>
+              </div>
+
+              {formData.questionType === "mcq" && (
+                <div className="input-box">
+                  <label>Options</label>
+                  {(formData.options || []).map((option, index) => (
+                    <div key={index} className="flex gap-2 mb-2 items-center">
+                      <InputField
+                        type="text"
+                        name={`option-${index}`}
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(event) =>
+                          handleOptionChange(index, event.target.value)
+                        }
+                        icon="list"
+                        required
+                      />
+                      {(formData.options || []).length > 2 && (
+                        <button
+                          type="button"
+                          className="icon-button btn-red"
+                          onClick={() => handleRemoveOption(index)}
+                        >
+                          <i className="material-symbols-outlined">delete</i>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <IconButton
+                    type="button"
+                    icon="add"
+                    label="Add Option"
+                    onClick={handleAddOption}
+                  />
+                </div>
+              )}
+
+              {formData.questionType === "mcq" ? (
+                <div className="input-box">
+                  <label htmlFor="correctAnswer">Correct Answer</label>
+                  <select
+                    id="correctAnswer"
+                    name="correctAnswer"
+                    value={formData.correctAnswer}
+                    onChange={(event) =>
+                      handleFieldChange("correctAnswer", event.target.value)
+                    }
+                  >
+                    <option value="">Select correct option</option>
+                    {availableAnswers.map((answer) => (
+                      <option key={answer} value={answer}>
+                        {answer}
+                      </option>
+                    ))}
+                  </select>
+                  <small>
+                    Tip: Correct answer must match one of the options above.
+                  </small>
+                </div>
+              ) : (
+                <InputField
+                  type="text"
+                  name="correctAnswer"
+                  placeholder="Correct Answer"
+                  value={formData.correctAnswer}
+                  onChange={(event) =>
+                    handleFieldChange("correctAnswer", event.target.value)
+                  }
+                  icon="check"
+                  required
+                />
+              )}
+
+              <div className="btn flex gap-2">
+                <IconButton type="submit" icon="save" label="Save Quiz" />
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Cancel"
+                  onClick={resetForm}
+                />
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
+      {/* Quiz List */}
       <div className="quest-list">
         {quizzes.map((quiz) => (
           <div
@@ -384,17 +437,31 @@ export default function ManageQuizzes() {
           >
             <div className="quest-info flex-1">
               <h2 className="font-bold">{quiz.questionText}</h2>
-              <p><strong>Type:</strong> {(quiz.questionType || "text").toUpperCase()}</p>
+              <p>
+                <strong>Type:</strong>{" "}
+                {(quiz.questionType || "text").toUpperCase()}
+              </p>
               {quiz.questionType === "mcq" && (
                 <p>
-                  <strong>Options:</strong> {(quiz.options || []).join(", ") || "-"}
+                  <strong>Options:</strong>{" "}
+                  {(quiz.options || []).join(", ") || "-"}
                 </p>
               )}
-              <p><strong>Correct Answer:</strong> {quiz.correctAnswer || "-"}</p>
+              <p>
+                <strong>Correct Answer:</strong> {quiz.correctAnswer || "-"}
+              </p>
             </div>
             <div className="quest-action flex gap-2">
-              <IconButton icon="edit" label="Edit" onClick={() => handleEditClick(quiz)} />
-              <IconButton icon="delete" label="Delete" onClick={() => handleDelete(quiz.id)} />
+              <IconButton
+                icon="edit"
+                label="Edit"
+                onClick={() => handleEditClick(quiz)}
+              />
+              <IconButton
+                icon="delete"
+                label="Delete"
+                onClick={() => handleDelete(quiz.id)}
+              />
             </div>
           </div>
         ))}
@@ -410,6 +477,3 @@ export default function ManageQuizzes() {
     </div>
   );
 }
-
-
-

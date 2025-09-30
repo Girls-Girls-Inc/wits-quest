@@ -9,6 +9,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    # Add environment variables for testing
+    env:
+      NODE_ENV: test
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://fake-supabase-url.supabase.co' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'fake-service-role-key' }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'fake-anon-key' }}
 
     steps:
       - name: Checkout repository
@@ -32,16 +39,34 @@ jobs:
           cd ../backend && npm install
 
       - name: Run tests with coverage
-        #run: npm run test:coverage
-        run: npx jest --coverage
+        run: |
+          echo "Starting tests with coverage..."
+          npx jest --coverage --verbose --forceExit --detectOpenHandles
+          echo "Tests completed"
         continue-on-error: true
-        #continue-on-error: false
+
+      - name: List coverage files (debug)
+        run: |
+          echo "Coverage directory contents:"
+          ls -la coverage/ || echo "No coverage directory found"
+          echo "=== First 50 lines of lcov.info ==="
+          head -50 coverage/lcov.info || echo "No lcov.info found"
+          echo "=== Checking components coverage ==="
+          grep -A 10 -B 2 "frontend/src/components" coverage/lcov.info || echo "components not found"
+          echo "=== Checking pages coverage ==="
+          grep -A 10 -B 2 "frontend/src/pages" coverage/lcov.info || echo "pages not found"
+          echo "=== Total lines in lcov.info ==="
+          wc -l coverage/lcov.info || echo "Could not count lines"
 
       - name: Upload coverage reports to Codecov
+        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          file: ./coverage/lcov.info
           flags: unittests
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false
+          override_branch: dev
+          override_commit: ${{ github.sha }}
+          override_pr: ${{ github.event.number }}

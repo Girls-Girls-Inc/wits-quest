@@ -13,6 +13,18 @@ const HuntDetail = () => {
 
   const userHuntId = searchParams.get("uh");
 
+  // --- helper: calculate remaining time ---
+  const calcRemaining = (closingAt) => {
+    if (!closingAt) return "—";
+    const now = new Date();
+    const closing = new Date(closingAt);
+    const diff = closing - now;
+    if (diff <= 0) return "Expired";
+    const minutes = Math.floor(diff / 1000 / 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    return `${minutes}m ${seconds}s`;
+  };
+
   // Fetch session
   useEffect(() => {
     (async () => {
@@ -36,33 +48,21 @@ const HuntDetail = () => {
       setLoading(true);
       try {
         console.log("Fetching hunt for userHuntId:", userHuntId);
-        const res = await fetch(`${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
 
         console.log("Raw response:", res);
         const data = await res.json();
         console.log("Parsed hunt data:", data);
         setHunt(data);
 
-        // Countdown timer
+        // set initial remaining time right away
         if (data.closingAt) {
-          const updateRemaining = () => {
-            const now = new Date();
-            const closing = new Date(data.closingAt);
-            const diff = closing - now;
-
-            if (diff <= 0) {
-              setRemainingTime("Expired");
-            } else {
-              const minutes = Math.floor(diff / 1000 / 60);
-              const seconds = Math.floor((diff / 1000) % 60);
-              setRemainingTime(`${minutes}m ${seconds}s`);
-            }
-          };
-          updateRemaining();
-          const interval = setInterval(updateRemaining, 1000);
-          return () => clearInterval(interval);
+          setRemainingTime(calcRemaining(data.closingAt));
         }
       } catch (err) {
         console.error("Error loading hunt:", err);
@@ -73,6 +73,17 @@ const HuntDetail = () => {
 
     loadHunt();
   }, [accessToken, userHuntId]);
+
+  // Countdown updater
+  useEffect(() => {
+    if (!hunt?.closingAt) return;
+
+    const interval = setInterval(() => {
+      setRemainingTime(calcRemaining(hunt.closingAt));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [hunt?.closingAt]);
 
   if (loading) return <p>Loading hunt details…</p>;
   if (!hunt) return <p>Hunt not found</p>;

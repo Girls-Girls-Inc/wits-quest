@@ -31,6 +31,7 @@ router.get("/user-hunts/:id", async (req, res) => {
         isComplete,
         startedAt,
         completedAt,
+        closingAt,
         hunts (
           id,
           name,

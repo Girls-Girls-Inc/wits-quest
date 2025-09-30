@@ -1,3 +1,4 @@
+// src/pages/dashboard.jsx
 import React, { useEffect, useState } from "react";
 import supabase from "../supabase/supabaseClient";
 import toast from "react-hot-toast";
@@ -24,41 +25,68 @@ const Dashboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
-  // --- inside Dashboard component ---
-
+  // --- User Hunts ---
   const [hunts, setHunts] = useState([]);
   const [loadingHunts, setLoadingHunts] = useState(true);
 
-  // Fetch hunts
   const loadHunts = async () => {
+    if (!accessToken) {
+      setHunts([]);
+      setLoadingHunts(false);
+      return;
+    }
     try {
       setLoadingHunts(true);
-      const res = await fetch(`${API_BASE}/hunts`, {
-        headers: { Accept: "application/json" },
-        credentials: "include",
+      const res = await fetch(`${API_BASE}/user-hunts`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
-      setHunts(Array.isArray(json) ? json : []);
+
+      const rows = (Array.isArray(json) ? json : []).map((uh) => ({
+        ...uh,
+        remainingTime: uh.remainingTime || "N/A",
+      }));
+
+      setHunts(rows);
     } catch (e) {
-      console.error("Hunts fetch failed:", e.message);
+      console.error("User hunts fetch failed:", e.message);
       setHunts([]);
-      toast.error(e.message || "Failed to load hunts");
+      toast.error(e.message || "Failed to load your hunts");
     } finally {
       setLoadingHunts(false);
     }
   };
 
-  // call loadHunts together with other loaders
+  // --- Live countdown for hunts ---
   useEffect(() => {
-    if (accessToken) {
-      loadBadges();
-      loadOngoing();
-      loadLeaderboard();
-      loadHunts(); // 👈 added
-    }
-  }, [accessToken]);
+    const interval = setInterval(() => {
+      setHunts((prev) =>
+        prev.map((h) => {
+          if (!h.closingAt) return h;
+          const now = new Date();
+          const closing = new Date(h.closingAt);
+          const diff = closing - now;
 
+          if (diff <= 0 && h.isActive) {
+            return { ...h, isActive: false, remainingTime: "Expired" };
+          } else if (diff > 0) {
+            const minutes = Math.floor(diff / 1000 / 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+            return { ...h, remainingTime: `${minutes}m ${seconds}s` };
+          }
+          return h;
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Dashboard Stats ---
   const [dashboardData, setDashboardData] = useState({
     badgesCollected: 0,
     locationsVisited: 0,
@@ -69,6 +97,7 @@ const Dashboard = () => {
   });
 
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Fetch Supabase session
   useEffect(() => {
@@ -129,7 +158,6 @@ const Dashboard = () => {
     }
   };
 
-  const [showHelpModal, setShowHelpModal] = useState(false);
   // Fetch ongoing quests
   const loadOngoing = async () => {
     if (!accessToken) {
@@ -170,9 +198,7 @@ const Dashboard = () => {
       setOngoing(rows.filter((q) => !q.isComplete));
       const completedQuests = rows.filter((q) => q.isComplete);
       const uniqueLocations = new Set(
-        completedQuests
-          .map((q) => q.location)
-          .filter((loc) => loc && loc !== "—")
+        completedQuests.map((q) => q.location).filter((loc) => loc && loc !== "—")
       );
       const completedRows = rows.filter(
         (q) => q.isComplete && q.userId === me?.id
@@ -228,6 +254,7 @@ const Dashboard = () => {
       loadBadges();
       loadOngoing();
       loadLeaderboard();
+      loadHunts();
     }
   }, [accessToken]);
 
@@ -240,8 +267,7 @@ const Dashboard = () => {
     if (badges.length > 0)
       setCurrentSlide(
         (prev) =>
-          (prev - 1 + Math.ceil(badges.length / 4)) %
-          Math.ceil(badges.length / 4)
+          (prev - 1 + Math.ceil(badges.length / 4)) % Math.ceil(badges.length / 4)
       );
   };
 
@@ -267,10 +293,7 @@ const Dashboard = () => {
           </button>
         </header>
 
-        <section
-          className="dashboard-grid"
-          aria-label="User statistics and badges"
-        >
+        <section className="dashboard-grid" aria-label="User statistics and badges">
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -299,6 +322,10 @@ const Dashboard = () => {
                   ) : (
                     ongoing.map((q) => (
                       <tr key={q.id}>
+                        <td className="truncate">{q.name}</td>
+                        <td>{q.points}</td>
+                        <td className="truncate">{q.location}</td>
+                        <td>{q.isComplete ? "Completed" : "In progress"}</td>
                         <td>
                           <button
                             aria-label="Quests feature"
@@ -311,48 +338,6 @@ const Dashboard = () => {
                             View
                           </button>
                         </td>
-                        <td className="truncate">{q.name}</td>
-                        <td>{q.points}</td>
-                        <td className="truncate">{q.location}</td>
-                        <td>{q.isComplete ? "Completed" : "In progress"}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </article>
-          {/* Hunts */}
-          <article className="dashboard-card quests-card">
-            <h3>Available Hunts</h3>
-            <div className="table-wrapper">
-              <table className="leaderboard-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Question</th>
-                    <th>Time Limit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loadingHunts ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <tr key={i}>
-                        <td colSpan={4} className="skeleton-row"></td>
-                      </tr>
-                    ))
-                  ) : hunts.length === 0 ? (
-                    <tr>
-                      <td colSpan={4}>No hunts available</td>
-                    </tr>
-                  ) : (
-                    hunts.map((h) => (
-                      <tr key={h.id}>
-                        <td className="truncate">{h.name}</td>
-                        <td className="truncate">{h.description || "—"}</td>
-                        <td className="truncate">{h.question || "—"}</td>
-                        <td>{h.timeLimit ? `${h.timeLimit}s` : "—"}</td>
                       </tr>
                     ))
                   )}
@@ -361,7 +346,58 @@ const Dashboard = () => {
             </div>
           </article>
 
-          {/* Badges Card */}
+          {/* My Hunts */}
+          <article className="dashboard-card quests-card">
+            <h3>My Hunts</h3>
+            <div className="table-wrapper">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Question</th>
+                    <th>Status</th>
+                    <th>Time Remaining</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingHunts ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i}>
+                        <td colSpan={6} className="skeleton-row"></td>
+                      </tr>
+                    ))
+                  ) : hunts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>No hunts assigned to you</td>
+                    </tr>
+                  ) : (
+                    hunts.map((h) => (
+                      <tr key={h.id}>
+                        <td className="truncate">{h.hunts?.name ?? `Hunt ${h.huntId}`}</td>
+                        <td className="truncate">{h.hunts?.description ?? "—"}</td>
+                        <td className="truncate">{h.hunts?.question ?? "—"}</td>
+                        <td>{h.isActive ? "Active" : "Inactive"}</td>
+                        <td>{h.remainingTime}</td>
+                        <td>
+                          <button
+                            className="dash-btn"
+                            onClick={() => navigate(`/hunts/${h.huntId}?uh=${h.id}`)}
+                            disabled={!h.huntId || !h.isActive}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          {/* Badges, Leaderboard, Points, etc... (unchanged below) */}
           <article className="dashboard-card badges-card">
             <div className="card-header">
               <h3>Badges Collected</h3>
@@ -378,7 +414,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-
             <div className="badges-carousel">
               <div className="carousel-header">
                 <button className="view-badges-btn" aria-label="View badges">
@@ -401,7 +436,6 @@ const Dashboard = () => {
                   </button>
                 </div>
               </div>
-
               <div className="carousel-container">
                 {loadingBadges ? (
                   <div className="skeleton-badges">Loading…</div>
@@ -429,7 +463,6 @@ const Dashboard = () => {
             </div>
           </article>
 
-          {/* Leaderboard */}
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">
@@ -457,9 +490,7 @@ const Dashboard = () => {
                       <tr
                         key={person.rank}
                         className={
-                          person.name === me?.user_metadata?.username
-                            ? "me"
-                            : ""
+                          person.name === me?.user_metadata?.username ? "me" : ""
                         }
                       >
                         <td>{person.rank}</td>
@@ -473,18 +504,16 @@ const Dashboard = () => {
             </div>
           </article>
 
-          {/* Points */}
           <article className="dashboard-card small-card">
             <h3>Points</h3>
             <div className="stat-number">{dashboardData.points}</div>
           </article>
 
-          {/* Quests Completed */}
           <article className="dashboard-card small-card">
             <h3>Quests Completed</h3>
             <div className="stat-number">{dashboardData.questsCompleted}</div>
           </article>
-          {/* Locations Card */}
+
           <article className="dashboard-card">
             <h3>Locations Visited</h3>
             <div className="stat-number">{dashboardData.locationsVisited}</div>
@@ -496,60 +525,9 @@ const Dashboard = () => {
             </div>
           </article>
         </section>
-      </main>{" "}
-      {/* --- Modal --- */}
-      {showHelpModal && (
-        <div className="modal-backdrop">
-          <div className="modal help-modal">
-            <div className="modal-header">
-              <button
-                className="modal-close"
-                onClick={() => setShowHelpModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <h2>How to Complete a Quest</h2>
-            <ol className="help-list">
-              <li>
-                Go to the <strong>Quests</strong> page.
-              </li>
-              <li>
-                Browse the list and click <strong>View Details</strong> on a
-                quest that interests you.
-              </li>
-              <li>
-                Select <strong>Add to My Quests</strong> to save it.
-              </li>
-              <li>
-                Open your <strong>Dashboard</strong> and, in the Quests table,
-                click <strong>View</strong> next to the quest you want to
-                complete.
-              </li>
-              <li>
-                Travel to the quest’s location on the map (make sure you’re
-                within the marked radius).
-              </li>
-              <li>
-                Click <strong>Check In</strong> to finish the quest.
-              </li>
-              <li>Your points will be automatically added to your profile.</li>
-            </ol>
-            <div className="help-actions">
-              <IconButton
-                type="button"
-                icon="map"
-                label="View Quests"
-                onClick={() => {
-                  setShowHelpModal(false);
-                  navigate("/displayQuests");
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      </main>
     </div>
   );
 };
+
 export default Dashboard;

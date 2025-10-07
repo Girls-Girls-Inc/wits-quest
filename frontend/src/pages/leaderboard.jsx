@@ -12,7 +12,7 @@ const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in yo
 const BOARDS = {
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
   month: { label: "Monthly", id: "1234", icon: "calendar_month" },
-  week: { label: "Weekly", id: "week", icon: "calendar_view_week" },
+  week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
 };
 
 /* --------------------- helper utilities (unchanged) --------------------- */

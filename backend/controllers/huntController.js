@@ -36,6 +36,44 @@ const HuntController = {
     }
   },
 
+  // GET /user-hunts/:id
+  getUserHunt: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const id = Number(req.params.id);
+      if (!id) return res.status(400).json({ message: "Invalid ID" });
+
+      const { data, error } = await sb
+        .from("userHunts")
+        .select(`
+          id,
+          userId,
+          huntId,
+          isActive,
+          isComplete,
+          startedAt,
+          completedAt,
+          closingAt,
+          hunts (
+            id,
+            name,
+            description,
+            question,
+            answer
+          )
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) return res.status(400).json({ message: error.message });
+      return res.json(data);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
   // PUT /hunts/:id
   updateHunt: async (req, res) => {
     try {

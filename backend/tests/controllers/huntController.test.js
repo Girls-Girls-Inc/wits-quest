@@ -170,6 +170,85 @@ describe('HuntController', () => {
     });
   });
 
+  // ───────────────────────────── getUserHunt (GET /user-hunts/:id)
+  describe('getUserHunt', () => {
+    it('401 when bearer token missing', async () => {
+      mockSbFromReq.mockReturnValue(null);
+      const { req, res } = makeReqRes({ params: { id: '5' } });
+      await HuntController.getUserHunt(req, res);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Missing bearer token' });
+    });
+
+    it('400 when id is invalid', async () => {
+      mockSbFromReq.mockReturnValue({});
+      const { req, res } = makeReqRes({ params: { id: 'abc' } });
+      await HuntController.getUserHunt(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid ID' });
+    });
+
+    it('400 when supabase returns an error', async () => {
+      const single = jest.fn().mockResolvedValue({ data: null, error: { message: 'no row' } });
+      const sb = {
+        from: jest.fn(() => ({
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({ single })),
+          })),
+        })),
+      };
+      mockSbFromReq.mockReturnValue(sb);
+      const { req, res } = makeReqRes({ params: { id: '3' } });
+
+      await HuntController.getUserHunt(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: 'no row' });
+      expect(sb.from).toHaveBeenCalledWith('userHunts');
+      expect(single).toHaveBeenCalledTimes(1);
+    });
+
+    it('200 returns row when successful', async () => {
+      const single = jest.fn().mockResolvedValue({
+        data: { id: 7, huntId: 2, isActive: true },
+        error: null,
+      });
+      const eq = jest.fn(() => ({ single }));
+      const sb = {
+        from: jest.fn(() => ({
+          select: jest.fn(() => ({
+            eq,
+          })),
+        })),
+      };
+      mockSbFromReq.mockReturnValue(sb);
+
+      const { req, res } = makeReqRes({ params: { id: '7' } });
+      await HuntController.getUserHunt(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({ id: 7, huntId: 2, isActive: true });
+      expect(eq).toHaveBeenCalledWith('id', 7);
+    });
+
+    it('500 when supabase throws', async () => {
+      const single = jest.fn().mockRejectedValue(new Error('boom'));
+      const sb = {
+        from: jest.fn(() => ({
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({ single })),
+          })),
+        })),
+      };
+      mockSbFromReq.mockReturnValue(sb);
+      const { req, res } = makeReqRes({ params: { id: '4' } });
+
+      await HuntController.getUserHunt(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ message: 'boom' });
+    });
+  });
+
   // ───────────────────────────── updateHunt
   describe('updateHunt', () => {
     it('400 invalid id', async () => {

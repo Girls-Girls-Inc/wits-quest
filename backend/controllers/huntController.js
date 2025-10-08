@@ -36,6 +36,65 @@ const HuntController = {
     }
   },
 
+  // POST /hunts/:id/activate
+  activateHunt: async (req, res) => {
+    try {
+      const huntId = Number(req.params.id);
+      if (!huntId) return res.status(400).json({ message: "Invalid hunt ID" });
+
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const { data: userInfo, error: authErr } = await sb.auth.getUser();
+      if (authErr) return res.status(401).json({ message: authErr.message });
+      const userId = userInfo?.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthenticated" });
+
+      const { data: hunts, error: huntErr } = await HuntModel.getHunts({
+        id: huntId,
+      });
+      if (huntErr) return res.status(500).json({ message: huntErr.message });
+      const hunt = hunts?.[0];
+      if (!hunt) return res.status(404).json({ message: "Hunt not found" });
+
+      const startedAt = new Date();
+      const timeLimitMinutes = Number(hunt.timeLimit) || 0;
+
+      let closingAt = null;
+      if (timeLimitMinutes > 0) {
+        closingAt = new Date(
+          startedAt.getTime() + timeLimitMinutes * 60 * 1000
+        ).toISOString();
+      }
+
+      const payload = {
+        userId,
+        huntId,
+        isActive: true,
+        isComplete: false,
+        startedAt: startedAt.toISOString(),
+        closingAt,
+        completedAt: null,
+      };
+
+      const { data, error } = await sb
+        .from("userHunts")
+        .upsert(payload, { onConflict: ["userId", "huntId"] })
+        .select();
+
+      if (error) return res.status(400).json({ message: error.message });
+
+      const record = Array.isArray(data) ? data[0] : data;
+
+      return res.json({
+        message: "Hunt activated successfully",
+        userHunt: record,
+      });
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
   // GET /user-hunts/:id
   getUserHunt: async (req, res) => {
     try {

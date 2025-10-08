@@ -7,6 +7,7 @@ router.post("/hunts", HuntController.createHunt);
 router.get("/hunts", HuntController.getHunts);
 router.put("/hunts/:id", HuntController.updateHunt);
 router.delete("/hunts/:id", HuntController.deleteHunt);
+router.post("/hunts/:id/activate", HuntController.activateHunt);
 
 
 // User hunts

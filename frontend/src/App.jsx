@@ -21,6 +21,8 @@ const ManageQuizzes = lazy(() => import("./pages/manageQuizzes"));
 const AddQuiz = lazy(() => import("./pages/addQuiz"));
 const Settings = lazy(() => import("./pages/settings"));
 import HuntDetail from "./pages/huntDetail";
+const ManageCollectibles = lazy(() => import("./pages/manageCollectibles"));
+const AddBadge = lazy(() => import("./pages/addBadge"));
 
 const App = () => {
   return (
@@ -141,6 +143,22 @@ const App = () => {
               element={
                 <RequireSession>
                   <ManageQuests />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/manageCollectibles"
+              element={
+                <RequireSession>
+                  <ManageCollectibles />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addBadge"
+              element={
+                <RequireSession>
+                  <AddBadge />
                 </RequireSession>
               }
             />

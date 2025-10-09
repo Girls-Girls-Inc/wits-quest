@@ -357,12 +357,12 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Admin Privilege")}
               className="tile-button"
             />
-            {/* <IconButton
+            <IconButton
               icon="award_star"
-              label="Create Badge"
-              onClick={() => setSelectedTask("Badge Creation")}
+              label="Manage Badges"
+              onClick={() => navigate("/manageCollectibles")}
               className="tile-button"
-            /> */}
+            />
             <IconButton
               icon="star"
               label="Manage Quests"

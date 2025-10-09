@@ -57,9 +57,10 @@ jest.mock("react-hot-toast", () => {
 
 // Mock components
 jest.mock("../../components/InputField", () => (props) => {
-    const { name, placeholder, value, onChange, required, type, icon, step } = props;
+    const { id, name, placeholder, value, onChange, required, type, icon, step, readOnly } = props;
     return (
         <input
+            id={id}
             data-testid={name || `input-${placeholder?.toLowerCase().replace(/\s+/g, '-')}`}
             name={name}
             placeholder={placeholder}
@@ -68,6 +69,7 @@ jest.mock("../../components/InputField", () => (props) => {
             required={required}
             type={type}
             step={step}
+            readOnly={readOnly}
             data-icon={icon}
         />
     );
@@ -80,6 +82,15 @@ jest.mock("../../components/IconButton", () => (props) => (
     >
         {props.label || "Button"}
     </button>
+));
+
+jest.mock("../../components/LocationMapPicker", () => (props) => (
+    <div
+        data-testid="location-map-picker"
+        onClick={() => props.onChange?.({ lat: -26.190166, lng: 28.030172 })}
+    >
+        Map Picker
+    </div>
 ));
 
 // CSS imports
@@ -242,6 +253,9 @@ describe("AdminDashboard", () => {
 
         fireEvent.click(screen.getByTestId("icon-btn-manage-hunts"));
         expect(mockNavigate).toHaveBeenCalledWith("/manageHunts");
+
+        fireEvent.click(screen.getByTestId("icon-btn-manage-locations"));
+        expect(mockNavigate).toHaveBeenCalledWith("/manageLocations");
     });
 
     /* -------------------- Quest Creation -------------------- */
@@ -265,8 +279,13 @@ describe("AdminDashboard", () => {
         // Fill form
         await userEvent.type(screen.getByPlaceholderText("Quest Name"), "Test Quest");
         await userEvent.type(screen.getByPlaceholderText("Quest Description"), "A test quest");
-        await userEvent.selectOptions(screen.getByDisplayValue("Select a collectible"), "1");
-        await userEvent.selectOptions(screen.getByDisplayValue("Select a location"), "1");
+
+        fireEvent.change(screen.getByDisplayValue("Select a collectible"), {
+            target: { value: "1" },
+        });
+        fireEvent.change(screen.getByDisplayValue("Select a location"), {
+            target: { value: "1" },
+        });
         await userEvent.type(screen.getByPlaceholderText("Points Achievable"), "100");
 
         // Mock successful quest creation
@@ -280,27 +299,28 @@ describe("AdminDashboard", () => {
 
         const toast = (await import("react-hot-toast")).default;
         await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
-                `${API_BASE}/quests`,
+            const questCall = global.fetch.mock.calls.find(
+                ([url]) => url === `${API_BASE}/quests`
+            );
+            expect(questCall).toBeDefined();
+            const [, requestOptions] = questCall;
+            expect(requestOptions).toEqual(
                 expect.objectContaining({
                     method: "POST",
                     headers: expect.objectContaining({
                         "Content-Type": "application/json",
                         Authorization: "Bearer admin-token",
                     }),
-                    body: JSON.stringify({
-                        name: "Test Quest",
-                        description: "A test quest",
-                        collectibleId: 1,
-                        locationId: 1,
-                        huntId: null,
-                        quizId: null,
-                        pointsAchievable: 100,
-                        isActive: true,
-                        createdBy: "admin1",
-                    }),
                 })
             );
+            const payload = JSON.parse(requestOptions.body);
+            expect(payload).toMatchObject({
+                name: "Test Quest",
+                description: "A test quest",
+                pointsAchievable: 100,
+                isActive: true,
+                createdBy: "admin1",
+            });
             expect(toast.success).toHaveBeenCalledWith("Quest created successfully!");
         });
 
@@ -348,6 +368,13 @@ describe("AdminDashboard", () => {
         });
 
         fireEvent.click(screen.getByTestId("icon-btn-create-quest"));
+
+        await userEvent.type(screen.getByPlaceholderText("Quest Name"), "Quest");
+        await userEvent.type(screen.getByPlaceholderText("Quest Description"), "Desc");
+        fireEvent.change(screen.getByDisplayValue("Select a location"), {
+            target: { value: "1" },
+        });
+
         fireEvent.click(screen.getByTestId("icon-btn-create-quest"));
 
         const toast = (await import("react-hot-toast")).default;
@@ -475,8 +502,7 @@ describe("AdminDashboard", () => {
 
         // Fill location form
         await userEvent.type(screen.getByPlaceholderText("Location Name"), "Test Location");
-        await userEvent.type(screen.getByPlaceholderText("Latitude"), "40.7128");
-        await userEvent.type(screen.getByPlaceholderText("Longitude"), "-74.0060");
+        fireEvent.click(screen.getByTestId("location-map-picker"));
         await userEvent.type(screen.getByPlaceholderText("Radius"), "50");
 
         // Mock successful creation
@@ -495,8 +521,8 @@ describe("AdminDashboard", () => {
                     method: "POST",
                     body: JSON.stringify({
                         name: "Test Location",
-                        latitude: 40.7128,
-                        longitude: -74.0060,
+                        latitude: -26.190166,
+                        longitude: 28.030172,
                         radius: 50,
                     }),
                 })
@@ -517,8 +543,7 @@ describe("AdminDashboard", () => {
         fireEvent.click(screen.getByTestId("icon-btn-add-location"));
 
         await userEvent.type(screen.getByPlaceholderText("Location Name"), "Test Location");
-        await userEvent.type(screen.getByPlaceholderText("Latitude"), "40.7128");
-        await userEvent.type(screen.getByPlaceholderText("Longitude"), "-74.0060");
+        fireEvent.click(screen.getByTestId("location-map-picker"));
         await userEvent.type(screen.getByPlaceholderText("Radius"), "50");
 
         // Mock failure with error field
@@ -787,7 +812,7 @@ describe("AdminDashboard", () => {
 
     it("handles quest creation without auth token", async () => {
         // Mock no session for quest creation attempt
-        mockGetSession.mockResolvedValueOnce({ data: { session: null } });
+        mockGetSession.mockResolvedValue({ data: { session: null } });
 
         await act(async () => {
             render(

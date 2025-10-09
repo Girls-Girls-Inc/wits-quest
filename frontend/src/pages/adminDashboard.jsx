@@ -8,8 +8,12 @@ import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import LocationMapPicker from "../components/LocationMapPicker";
 
-const API_BASE = import.meta.env.VITE_WEB_URL;
+const API_BASE =
+  import.meta.env.VITE_WEB_URL ||
+  process.env.VITE_WEB_URL ||
+  "http://localhost:3000";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -171,6 +175,15 @@ const AdminDashboard = () => {
     setLocationData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleLocationPositionChange = ({ lat, lng }) => {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    setLocationData((prev) => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6),
+    }));
+  };
+
   const handleQuestSubmit = async (e) => {
     e.preventDefault();
     if (!user) return toast.error("You must be logged in");
@@ -233,6 +246,19 @@ const AdminDashboard = () => {
       longitude: parseFloat(locationData.longitude),
       radius: parseFloat(locationData.radius),
     };
+
+    if (
+      !Number.isFinite(locationInsert.latitude) ||
+      !Number.isFinite(locationInsert.longitude)
+    ) {
+      toast.error("Please drop a pin on the map to set the coordinates.");
+      return;
+    }
+
+    if (!Number.isFinite(locationInsert.radius) || locationInsert.radius <= 0) {
+      toast.error("Radius must be a positive number.");
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/locations`, {
@@ -357,12 +383,12 @@ const AdminDashboard = () => {
               onClick={() => setSelectedTask("Admin Privilege")}
               className="tile-button"
             />
-            {/* <IconButton
+            <IconButton
               icon="award_star"
               label="Create Badge"
               onClick={() => setSelectedTask("Badge Creation")}
               className="tile-button"
-            /> */}
+            />
             <IconButton
               icon="star"
               label="Manage Quests"
@@ -377,6 +403,11 @@ const AdminDashboard = () => {
               icon="stars"
               label="Manage Hunts"
               onClick={() => navigate("/manageHunts")}
+            />
+            <IconButton
+              icon="location_on"
+              label="Manage Locations"
+              onClick={() => navigate("/manageLocations")}
             />
           </div>
         </div>
@@ -577,6 +608,17 @@ const AdminDashboard = () => {
           {selectedTask === "Location Creation" && (
             <form className="login-form" onSubmit={handleLocationSubmit}>
               <div className="input-box">
+                <label htmlFor="location-map" className="map-label">
+                  Drop a pin to set latitude & longitude
+                </label>
+                <LocationMapPicker
+                  latitude={locationData.latitude}
+                  longitude={locationData.longitude}
+                  onChange={handleLocationPositionChange}
+                  height="300px"
+                />
+              </div>
+              <div className="input-box">
                 <InputField
                   type="text"
                   name="name"
@@ -588,40 +630,53 @@ const AdminDashboard = () => {
                 />
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="latitude"
-                  step="any"
-                  placeholder="Latitude"
-                  value={locationData.latitude}
-                  onChange={handleLocationChange}
-                  icon="globe_location_pin"
-                  required
-                />
+                <label htmlFor="location-latitude">Latitude</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-latitude"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    placeholder="Latitude"
+                    value={locationData.latitude}
+                    readOnly
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">globe_location_pin</i>
+                </div>
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="longitude"
-                  step="any"
-                  placeholder="Longitude"
-                  value={locationData.longitude}
-                  onChange={handleLocationChange}
-                  icon="globe_location_pin"
-                  required
-                />
+                <label htmlFor="location-longitude">Longitude</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-longitude"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    placeholder="Longitude"
+                    value={locationData.longitude}
+                    readOnly
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">globe_location_pin</i>
+                </div>
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="radius"
-                  step="any"
-                  placeholder="Radius"
-                  value={locationData.radius}
-                  onChange={handleLocationChange}
-                  icon="lens_blur"
-                  required
-                />
+                <label htmlFor="location-radius">Radius</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-radius"
+                    name="radius"
+                    type="number"
+                    step="any"
+                    placeholder="Radius"
+                    value={locationData.radius}
+                    onChange={handleLocationChange}
+                    required
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">lens_blur</i>
+                </div>
               </div>
               <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Location" />

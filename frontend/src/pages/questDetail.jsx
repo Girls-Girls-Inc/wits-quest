@@ -277,7 +277,6 @@ export default function QuestDetail() {
         toast.success("Hunt activated!");
       }
 
-
       // 3) Award collectible (if any)
       if (quest.collectibleId != null) {
         const award = await fetch(
@@ -332,13 +331,13 @@ export default function QuestDetail() {
 
   const youIcon = isLoaded
     ? {
-      path: window.google.maps.SymbolPath.CIRCLE,
-      fillColor: "#1E90FF",
-      fillOpacity: 1,
-      strokeColor: "white",
-      strokeWeight: 2,
-      scale: 10,
-    }
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: "#1E90FF",
+        fillOpacity: 1,
+        strokeColor: "white",
+        strokeWeight: 2,
+        scale: 10,
+      }
     : undefined;
 
   const hasRadius =
@@ -470,8 +469,9 @@ export default function QuestDetail() {
 
       <section className="actions">
         <div
-          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
-            }`}
+          className={` highlight radius-indicator ${
+            withinRadius ? "ok" : "far"
+          }`}
         >
           {withinRadius
             ? "You are inside the radius"

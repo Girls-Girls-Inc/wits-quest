@@ -7,7 +7,9 @@ import "../index.css";
 import "../styles/leaderboard.css";
 import "../styles/quests.css"; // reuse quests classes for the private-list look
 
+
 const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in your .env
+
 
 const BOARDS = {
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
@@ -15,7 +17,9 @@ const BOARDS = {
   week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
 };
 
+
 /* --------------------- helper utilities (unchanged) --------------------- */
+
 
 function detectAccessTokenFromLocalStorage() {
   try {
@@ -73,11 +77,14 @@ function detectAccessTokenFromLocalStorage() {
   return null;
 }
 
+
 async function safeFetchJson(url, opts = {}) {
   console.log("[safeFetchJson] ", opts.method ?? "GET", url, opts);
 
+
   const { includeAuth = false, ...fetchOpts } = opts;
   fetchOpts.headers = fetchOpts.headers ? { ...fetchOpts.headers } : {};
+
 
   if (includeAuth) {
     const token = detectAccessTokenFromLocalStorage();
@@ -88,10 +95,12 @@ async function safeFetchJson(url, opts = {}) {
     }
   }
 
+
   const res = await fetch(url, fetchOpts);
   const ct = res.headers.get("content-type") || "";
   const text = await res.text();
   const trimmed = text == null ? "" : String(text).trim();
+
 
   if (!trimmed) {
     if (!res.ok) {
@@ -103,10 +112,12 @@ async function safeFetchJson(url, opts = {}) {
     return null;
   }
 
+
   const xssiPrefix = ")]}',";
   const content = trimmed.startsWith(xssiPrefix)
     ? trimmed.slice(xssiPrefix.length).trim()
     : trimmed;
+
 
   if (
     ct.includes("application/json") ||
@@ -132,6 +143,7 @@ async function safeFetchJson(url, opts = {}) {
     }
   }
 
+
   const snippet = content.slice(0, 2000);
   const e = new Error(
     `Expected JSON but got HTML/text. HTTP ${res.status}. Response snippet: ${snippet}`
@@ -141,18 +153,23 @@ async function safeFetchJson(url, opts = {}) {
   throw e;
 }
 
+
 /* --------------------- main component --------------------- */
+
 
 const Leaderboard = () => {
   const [boardKey, setBoardKey] = useState("year");
+
 
   const [rows, setRows] = useState([]);
   const [scope, setScope] = useState("public");
   const latestReqId = useRef(0);
   const abortRef = useRef(null);
 
+
   const [privateLeaderboards, setPrivateLeaderboards] = useState([]);
   const [loadingPrivate, setLoadingPrivate] = useState(false);
+
 
   const [selectedPrivateId, setSelectedPrivateId] = useState(null);
   const [selectedPrivateDetails, setSelectedPrivateDetails] = useState(null);
@@ -161,21 +178,27 @@ const Leaderboard = () => {
   const [detailPeriodKey, setDetailPeriodKey] = useState("year");
   const [detailShowCode, setDetailShowCode] = useState(false);
 
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createName, setCreateName] = useState("");
   const [creating, setCreating] = useState(false);
+
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
 
+
   const periodDropdownRef = useRef(null);
   const scopeDropdownRef = useRef(null);
+
 
   const makePublicUrl = (key) =>
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
 
+
   /* ---------------- public board loader ---------------- */
+
 
   const loadBoard = async (key = boardKey, currentScope = scope) => {
     const reqId = ++latestReqId.current;
@@ -186,10 +209,12 @@ const Leaderboard = () => {
     const ac = new AbortController();
     abortRef.current = ac;
 
+
     if (currentScope === "private") {
       await loadPrivateLeaderboards();
       return;
     }
+
 
     try {
       const url = makePublicUrl(key);
@@ -199,6 +224,7 @@ const Leaderboard = () => {
         credentials: "include",
         includeAuth: true,
       });
+
 
       if (reqId !== latestReqId.current) return;
       if (!Array.isArray(data))
@@ -217,10 +243,12 @@ const Leaderboard = () => {
     }
   };
 
+
   useEffect(() => {
     loadBoard("year", "public");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const switchBoard = async (key) => {
     setBoardKey(key);
@@ -231,6 +259,7 @@ const Leaderboard = () => {
       await loadBoard(key, scope);
     }
   };
+
 
   const switchScope = async (newScope) => {
     setScope(newScope);
@@ -247,6 +276,7 @@ const Leaderboard = () => {
     }
   };
 
+
   const togglePeriodDropdown = () => {
     const el = periodDropdownRef.current;
     if (!el) return;
@@ -258,7 +288,9 @@ const Leaderboard = () => {
     el.classList.toggle("open");
   };
 
+
   /* ---------------- private list & member counts ---------------- */
+
 
   const loadPrivateLeaderboards = async () => {
     setLoadingPrivate(true);
@@ -267,6 +299,7 @@ const Leaderboard = () => {
     setSelectedPrivateDetails(null);
     setSelectedStandings([]);
     setDetailShowCode(false);
+
 
     try {
       const url = `${API_BASE}/private-leaderboards`;
@@ -277,6 +310,7 @@ const Leaderboard = () => {
       });
       if (!Array.isArray(data))
         throw new Error("Private leaderboards API returned a non-array");
+
 
       const enriched = await Promise.all(
         data.map(async (lb) => {
@@ -311,6 +345,7 @@ const Leaderboard = () => {
         })
       );
 
+
       setPrivateLeaderboards(enriched);
     } catch (e) {
       toast.error(
@@ -325,7 +360,9 @@ const Leaderboard = () => {
     }
   };
 
+
   /* ---------------- private detail / standings ---------------- */
+
 
   const loadPrivateStandings = async (
     leaderboardId,
@@ -337,6 +374,7 @@ const Leaderboard = () => {
     setSelectedStandings([]);
     setDetailShowCode(false);
 
+
     try {
       const details = await safeFetchJson(
         `${API_BASE}/private-leaderboards/${encodeURIComponent(leaderboardId)}`,
@@ -347,7 +385,9 @@ const Leaderboard = () => {
         }
       );
 
+
       setSelectedPrivateDetails(details || null);
+
 
       const standingsUrl = `${API_BASE}/private-leaderboards/${encodeURIComponent(
         leaderboardId
@@ -357,6 +397,7 @@ const Leaderboard = () => {
         credentials: "include",
         includeAuth: true,
       });
+
 
       if (Array.isArray(standings)) {
         setSelectedStandings(standings);
@@ -401,9 +442,11 @@ const Leaderboard = () => {
     }
   };
 
+
   const handleViewPrivateLeaderboard = async (leaderboardId) => {
     await loadPrivateStandings(leaderboardId, detailPeriodKey);
   };
+
 
   const toggleShowCode = async () => {
     const newState = !detailShowCode;
@@ -418,7 +461,9 @@ const Leaderboard = () => {
     }
   };
 
+
   /* ---------------- create / join flows ---------------- */
+
 
   const createLeaderboard = async () => {
     if (!createName.trim()) return toast.error("Please enter a leaderboard name");
@@ -435,10 +480,12 @@ const Leaderboard = () => {
         body: JSON.stringify({ name: createName.trim() }),
       });
 
+
       toast.success("Leaderboard created!");
       setShowCreateModal(false);
       setCreateName("");
       await loadPrivateLeaderboards();
+
 
       if (res?.id) {
         await loadPrivateStandings(res.id, detailPeriodKey);
@@ -455,6 +502,7 @@ const Leaderboard = () => {
     }
   };
 
+
   const joinLeaderboard = async () => {
     if (!joinCode.trim()) return toast.error("Please enter an invite code");
     setJoining(true);
@@ -470,10 +518,12 @@ const Leaderboard = () => {
         body: JSON.stringify({ code: joinCode.trim() }),
       });
 
+
       toast.success("Joined leaderboard!");
       setShowJoinModal(false);
       setJoinCode("");
       await loadPrivateLeaderboards();
+
 
       const joinedId =
         res?.member?.leaderboardId || res?.id || res?.leaderboardId;
@@ -490,7 +540,9 @@ const Leaderboard = () => {
     }
   };
 
+
   /* ---------------- UI rendering ---------------- */
+
 
   return (
     <div className="leaderboard-container">
@@ -501,47 +553,53 @@ const Leaderboard = () => {
         </h2>
       </div>
 
-      <div className="leaderboard-controls" style={{ gap: 12 }}>
-        <div className="dropdown" ref={periodDropdownRef}>
-          <button
-            className="dropdown-toggle"
-            onClick={togglePeriodDropdown}
-          >
-            <span className="material-symbols-outlined">
-              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
-            </span>
-            {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
-            <span className="material-symbols-outlined caret">expand_more</span>
-          </button>
 
-          <ul className="dropdown-menu">
-            {Object.keys(BOARDS).map((key) => (
-              <li key={key}>
-                <button
-                  className={`dropdown-item ${(selectedPrivateId ? detailPeriodKey : boardKey) === key
-                      ? "active"
-                      : ""
-                    }`}
-                  onClick={async () => {
-                    if (selectedPrivateId) {
-                      setDetailPeriodKey(key);
-                      await loadPrivateStandings(selectedPrivateId, key);
-                    } else {
-                      await switchBoard(key);
-                    }
-                    if (periodDropdownRef.current)
-                      periodDropdownRef.current.classList.remove("open");
-                  }}
-                >
-                  <span className="material-symbols-outlined">
-                    {BOARDS[key].icon}
-                  </span>
-                  {BOARDS[key].label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="leaderboard-controls" style={{ gap: 12 }}>
+        {/* Only show period dropdown when scope is "public" */}
+        {scope === "public" && (
+          <div className="dropdown" ref={periodDropdownRef}>
+            <button
+              className="dropdown-toggle"
+              onClick={togglePeriodDropdown}
+            >
+              <span className="material-symbols-outlined">
+                {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
+              </span>
+              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
+              <span className="material-symbols-outlined caret">expand_more</span>
+            </button>
+
+
+            <ul className="dropdown-menu">
+              {Object.keys(BOARDS).map((key) => (
+                <li key={key}>
+                  <button
+                    className={`dropdown-item ${(selectedPrivateId ? detailPeriodKey : boardKey) === key
+                        ? "active"
+                        : ""
+                      }`}
+                    onClick={async () => {
+                      if (selectedPrivateId) {
+                        setDetailPeriodKey(key);
+                        await loadPrivateStandings(selectedPrivateId, key);
+                      } else {
+                        await switchBoard(key);
+                      }
+                      if (periodDropdownRef.current)
+                        periodDropdownRef.current.classList.remove("open");
+                    }}
+                  >
+                    <span className="material-symbols-outlined">
+                      {BOARDS[key].icon}
+                    </span>
+                    {BOARDS[key].label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
 
         <div className="dropdown" ref={scopeDropdownRef}>
           <button className="dropdown-toggle" onClick={toggleScopeDropdown}>
@@ -551,6 +609,7 @@ const Leaderboard = () => {
             {scope === "public" ? "Public" : "Private"}
             <span className="material-symbols-outlined caret">expand_more</span>
           </button>
+
 
           <ul className="dropdown-menu">
             <li>
@@ -575,7 +634,9 @@ const Leaderboard = () => {
           </ul>
         </div>
 
+
         <div style={{ flex: 1 }} />
+
 
         <div className="btn">
           <IconButton
@@ -590,6 +651,7 @@ const Leaderboard = () => {
           />
         </div>
       </div>
+
 
       {/* ---------- PUBLIC TABLE ---------- */}
       {scope === "public" && !selectedPrivateId && (
@@ -610,6 +672,7 @@ const Leaderboard = () => {
                   </Td>
                 </tr>
               )}
+
 
               {rows.map((r, i) => (
                 <tr key={r.id ?? `${i}`}>
@@ -635,6 +698,7 @@ const Leaderboard = () => {
         </div>
       )}
 
+
       {/* ---------- PRIVATE: list or detail ---------- */}
       {scope === "private" && (
         <div className="leaderboard-table-wrapper">
@@ -645,6 +709,7 @@ const Leaderboard = () => {
                 : "PRIVATE LEADERBOARDS"}
             </h1>
           </div>
+
 
           {selectedPrivateId ? (
             <div>
@@ -668,6 +733,7 @@ const Leaderboard = () => {
                     ← Back
                   </button>
 
+
                   <div
                     style={{
                       fontSize: 14,
@@ -678,12 +744,14 @@ const Leaderboard = () => {
                   </div>
                 </div>
 
+
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <button className="btn primary" onClick={toggleShowCode}>
                     {detailShowCode ? "Hide Code" : "Show Code"}
                   </button>
                 </div>
               </div>
+
 
               {detailShowCode && (
                 <div style={{ marginBottom: 12 }}>
@@ -726,6 +794,7 @@ const Leaderboard = () => {
                   </div>
                 </div>
               )}
+
 
               <div style={{ marginTop: 8 }}>
                 {detailLoading ? (
@@ -830,6 +899,7 @@ const Leaderboard = () => {
                     </div>
                   )}
 
+
                   {privateLeaderboards.length === 0 && (
                     <div
                       style={{
@@ -842,6 +912,7 @@ const Leaderboard = () => {
                       or join with a code.
                     </div>
                   )}
+
 
                   <div
                     style={{
@@ -872,6 +943,7 @@ const Leaderboard = () => {
                       </div>
                     </div>
 
+
                     <div style={{ textAlign: "center", width: 260 }}>
                       <IconButton
                         icon="group_add"
@@ -898,6 +970,7 @@ const Leaderboard = () => {
           )}
         </div>
       )}
+
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -939,6 +1012,7 @@ const Leaderboard = () => {
           </div>
         </div>
       )}
+
 
       {/* Join Modal */}
       {showJoinModal && (
@@ -984,8 +1058,10 @@ const Leaderboard = () => {
   );
 };
 
+
 /* --------------------- small helpers --------------------- */
 const Th = ({ children }) => <th>{children}</th>;
 const Td = ({ children, ...rest }) => <td {...rest}>{children}</td>;
+
 
 export default Leaderboard;

@@ -12,7 +12,7 @@ const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in yo
 const BOARDS = {
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
   month: { label: "Monthly", id: "1234", icon: "calendar_month" },
-  week: { label: "Weekly", id: "week", icon: "calendar_view_week" },
+  week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
 };
 
 /* --------------------- helper utilities (unchanged) --------------------- */
@@ -514,44 +514,49 @@ const Leaderboard = () => {
       </div>
 
       <div className="leaderboard-controls" style={{ gap: 12 }}>
-        <div className="dropdown" ref={periodDropdownRef}>
-          <button className="dropdown-toggle" onClick={togglePeriodDropdown}>
-            <span className="material-symbols-outlined">
-              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
-            </span>
-            {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
-            <span className="material-symbols-outlined caret">expand_more</span>
-          </button>
+        {/* Only show period dropdown when scope is "public" */}
+        {scope === "public" && (
+          <div className="dropdown" ref={periodDropdownRef}>
+            <button className="dropdown-toggle" onClick={togglePeriodDropdown}>
+              <span className="material-symbols-outlined">
+                {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
+              </span>
+              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
+              <span className="material-symbols-outlined caret">
+                expand_more
+              </span>
+            </button>
 
-          <ul className="dropdown-menu">
-            {Object.keys(BOARDS).map((key) => (
-              <li key={key}>
-                <button
-                  className={`dropdown-item ${
-                    (selectedPrivateId ? detailPeriodKey : boardKey) === key
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={async () => {
-                    if (selectedPrivateId) {
-                      setDetailPeriodKey(key);
-                      await loadPrivateStandings(selectedPrivateId, key);
-                    } else {
-                      await switchBoard(key);
-                    }
-                    if (periodDropdownRef.current)
-                      periodDropdownRef.current.classList.remove("open");
-                  }}
-                >
-                  <span className="material-symbols-outlined">
-                    {BOARDS[key].icon}
-                  </span>
-                  {BOARDS[key].label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <ul className="dropdown-menu">
+              {Object.keys(BOARDS).map((key) => (
+                <li key={key}>
+                  <button
+                    className={`dropdown-item ${
+                      (selectedPrivateId ? detailPeriodKey : boardKey) === key
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={async () => {
+                      if (selectedPrivateId) {
+                        setDetailPeriodKey(key);
+                        await loadPrivateStandings(selectedPrivateId, key);
+                      } else {
+                        await switchBoard(key);
+                      }
+                      if (periodDropdownRef.current)
+                        periodDropdownRef.current.classList.remove("open");
+                    }}
+                  >
+                    <span className="material-symbols-outlined">
+                      {BOARDS[key].icon}
+                    </span>
+                    {BOARDS[key].label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="dropdown" ref={scopeDropdownRef}>
           <button className="dropdown-toggle" onClick={toggleScopeDropdown}>

@@ -118,7 +118,7 @@ const HuntDetail = () => {
 
       if (data.correct) {
         setFeedback("✅ Correct! Hunt completed.");
-        setHunt((prev) => ({ ...prev, isComplete: true, isActive: false }));
+        //setHunt((prev) => ({ ...prev, isComplete: true, isActive: false }));
       } else {
         setFeedback("❌ Incorrect answer, try again.");
       }

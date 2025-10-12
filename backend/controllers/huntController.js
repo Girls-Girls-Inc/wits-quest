@@ -1,4 +1,5 @@
 const HuntModel = require("../models/huntModel");
+const LeaderboardModel = require("../models/leaderboardModel");
 const { sbFromReq } = require("../supabase/supabaseFromReq");
 
 const HuntController = {
@@ -7,17 +8,44 @@ const HuntController = {
     try {
       const huntData = req.body;
 
-      if (!huntData.name || !huntData.description || !huntData.question || !huntData.answer) {
+      // --- Validate required fields
+      if (
+        !huntData.name ||
+        !huntData.description ||
+        !huntData.question ||
+        !huntData.answer
+      ) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      huntData.created_at = new Date().toISOString();
-      huntData.timeLimit = huntData.timeLimit ? parseInt(huntData.timeLimit, 10) : null;
+      // optional but allows hunts to link with collectibles
+      if (!huntData.collectibleId) {
+        return res.status(400).json({ message: "Missing collectibleId" });
+      }
 
+      // ✅ Add pointsAchievable check
+      if (
+        huntData.pointsAchievable === undefined ||
+        huntData.pointsAchievable === null
+      ) {
+        return res.status(400).json({ message: "Missing pointsAchievable" });
+      }
+
+      huntData.pointsAchievable = Number(huntData.pointsAchievable);
+
+      // --- Process fields
+      huntData.created_at = new Date().toISOString();
+      huntData.timeLimit = huntData.timeLimit
+        ? parseInt(huntData.timeLimit, 10)
+        : null;
+
+      // --- Insert into DB
       const { data, error } = await HuntModel.createHunt(huntData);
       if (error) return res.status(500).json({ message: error.message });
 
-      return res.status(201).json({ message: "Hunt created successfully", hunt: data[0] });
+      return res
+        .status(201)
+        .json({ message: "Hunt created successfully", hunt: data[0] });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }
@@ -120,7 +148,8 @@ const HuntController = {
             name,
             description,
             question,
-            answer
+            answer,
+            pointsAchievable
           )
         `)
         .eq("id", id)
@@ -137,14 +166,30 @@ const HuntController = {
   updateHunt: async (req, res) => {
     try {
       const huntId = Number(req.params.id);
-      if (isNaN(huntId)) return res.status(400).json({ message: "Hunt ID is invalid" });
+      if (isNaN(huntId))
+        return res.status(400).json({ message: "Hunt ID is invalid" });
 
       let huntData = req.body;
-      if (huntData.timeLimit !== undefined && huntData.timeLimit !== null && huntData.timeLimit !== "") {
+
+      if (
+        huntData.timeLimit !== undefined &&
+        huntData.timeLimit !== null &&
+        huntData.timeLimit !== ""
+      ) {
         huntData.timeLimit = Number(huntData.timeLimit);
         if (isNaN(huntData.timeLimit)) huntData.timeLimit = null;
       } else {
         huntData.timeLimit = null;
+      }
+
+      if (
+        huntData.pointsAchievable !== undefined &&
+        huntData.pointsAchievable !== null &&
+        huntData.pointsAchievable !== ""
+      ) {
+        huntData.pointsAchievable = Number(huntData.pointsAchievable);
+        if (isNaN(huntData.pointsAchievable))
+          huntData.pointsAchievable = 0;
       }
 
       const { data, error } = await HuntModel.updateHunt(huntId, huntData);
@@ -160,12 +205,16 @@ const HuntController = {
   deleteHunt: async (req, res) => {
     try {
       const huntId = Number(req.params.id);
-      if (!huntId) return res.status(400).json({ message: "Hunt ID is required" });
+      if (!huntId)
+        return res.status(400).json({ message: "Hunt ID is required" });
 
       const { data, error } = await HuntModel.deleteHunt(huntId);
       if (error) return res.status(500).json({ message: error.message });
 
-      return res.json({ message: "Hunt deleted successfully", hunt: data[0] });
+      return res.json({
+        message: "Hunt deleted successfully",
+        hunt: data[0],
+      });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }
@@ -198,7 +247,8 @@ const HuntController = {
             name,
             description,
             question,
-            answer
+            answer,
+            pointsAchievable
           )
         `)
         .eq("userId", userId)
@@ -216,7 +266,10 @@ const HuntController = {
         if (uh.closingAt) {
           const closing = new Date(uh.closingAt);
           if (closing < now) {
-            await sb.from("userHunts").update({ isActive: false }).eq("id", uh.id);
+            await sb
+              .from("userHunts")
+              .update({ isActive: false })
+              .eq("id", uh.id);
             isExpired = true;
           }
         }
@@ -256,11 +309,14 @@ const HuntController = {
         .eq("id", userHuntId)
         .single();
 
-      if (error || !userHunt) return res.status(400).json({ message: "User hunt not found" });
-      if (!userHunt.isActive) return res.json({ correct: false, message: "Hunt inactive" });
+      if (error || !userHunt)
+        return res.status(400).json({ message: "User hunt not found" });
+      if (!userHunt.isActive)
+        return res.json({ correct: false, message: "Hunt inactive" });
 
       const correct =
-        userHunt.hunts?.answer?.trim().toLowerCase() === answer.trim().toLowerCase();
+        userHunt.hunts?.answer?.trim().toLowerCase() ===
+        answer.trim().toLowerCase();
 
       if (correct) {
         const now = new Date().toISOString();
@@ -276,6 +332,40 @@ const HuntController = {
       return res.status(500).json({ message: err.message });
     }
   },
+
+  complete: async (req, res) => {
+    try {
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const who = await sb.auth.getUser();
+      const userId = who.data?.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthenticated" });
+
+      const userHuntId = Number(req.params.id);
+      if (!userHuntId)
+        return res.status(400).json({ message: "Invalid userHunt id" });
+
+      const { data: uh, error: uhErr } = await HuntModel.getUserHuntById(userHuntId, sb);
+      if (uhErr) return res.status(400).json({ message: uhErr.message });
+      if (!uh) return res.status(404).json({ message: "userHunt not found" });
+      if (uh.userId !== userId) return res.status(403).json({ message: "Forbidden" });
+
+      const { data: hunt, error: hErr } = await HuntModel.getHuntById(uh.huntId, sb);
+      if (hErr) return res.status(400).json({ message: hErr.message });
+
+      const points = parseInt(hunt.pointsAchievable, 10) || 0;
+
+      const { data: upd, error: updErr } = await HuntModel.setCompleteById(userHuntId, sb);
+      if (updErr) return res.status(400).json({ message: updErr.message });
+
+      await LeaderboardModel.addPointsAtomic({ userId, points });
+
+      return res.json({ ok: true, userHunt: upd, awarded: points });
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  }
 };
 
 module.exports = HuntController;

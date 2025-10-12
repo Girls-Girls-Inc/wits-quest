@@ -13,6 +13,7 @@ const API_BASE = import.meta.env.VITE_WEB_URL;
 export default function ManageHunts() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState([]);
+  const [collectibles, setCollectibles] = useState([]);
   const [editingHunt, setEditingHunt] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -20,6 +21,8 @@ export default function ManageHunts() {
     question: "",
     answer: "",
     timeLimit: "",
+    collectibleId: "",
+    pointsAchievable: "", 
   });
 
   const loadHunts = async () => {
@@ -36,8 +39,24 @@ export default function ManageHunts() {
     }
   };
 
+  const loadCollectibles = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/collectibles`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch collectibles");
+      const data = await res.json();
+      setCollectibles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setCollectibles([]);
+    }
+  };
+
+
   useEffect(() => {
     loadHunts();
+    loadCollectibles();
   }, []);
 
   const handleEditClick = (hunt) => {
@@ -49,6 +68,8 @@ export default function ManageHunts() {
       question: hunt.question || "",
       answer: hunt.answer || "",
       timeLimit: hunt.timeLimit || "",
+      collectibleId: hunt.collectibleId || "",
+      pointsAchievable: hunt.pointsAchievable || "",
     });
   };
 
@@ -62,6 +83,12 @@ export default function ManageHunts() {
         question: formData.question,
         answer: formData.answer,
         timeLimit: formData.timeLimit ? Number(formData.timeLimit) : null,
+        collectibleId: formData.collectibleId
+          ? Number(formData.collectibleId)
+          : null,
+        pointsAchievable: formData.pointsAchievable
+          ? Number(formData.pointsAchievable)
+          : 0,
       };
       const huntId = Number(editingHunt.id);
       const resp = await fetch(`${API_BASE}/hunts/${huntId}`, {
@@ -152,7 +179,6 @@ export default function ManageHunts() {
                     }
                   />
                 </div>
-
                 <div className="form-row">
                   <label htmlFor="question">Question</label>
                   <InputField
@@ -182,6 +208,26 @@ export default function ManageHunts() {
                 </div>
 
                 <div className="form-row">
+                  <label htmlFor="collectibleId">Collectible</label>
+                  <select
+                    id="collectibleId"
+                    name="collectibleId"
+                    value={formData.collectibleId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, collectibleId: e.target.value })
+                    }
+                  >
+                    <option value="">Select a collectible</option>
+                    {collectibles.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+
+                <div className="form-row">
                   <label htmlFor="timeLimit">Time Limit (seconds)</label>
                   <InputField
                     type="number"
@@ -191,6 +237,20 @@ export default function ManageHunts() {
                     value={formData.timeLimit}
                     onChange={(e) =>
                       setFormData({ ...formData, timeLimit: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="pointsAchievable">Points Achievable</label>
+                  <InputField
+                    type="number"
+                    id="pointsAchievable"
+                    name="pointsAchievable"
+                    placeholder="Points Achievable"
+                    value={formData.pointsAchievable}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pointsAchievable: e.target.value })
                     }
                   />
                 </div>
@@ -216,6 +276,17 @@ export default function ManageHunts() {
             key={h.id}
             className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
           >
+            <div className="quest-profile">
+              <img
+                src={
+                  collectibles.find((c) => c.id === h.collectibleId)?.imageUrl ||
+                  "https://via.placeholder.com/100"
+                }
+                alt={h.name}
+                className="w-16 h-16 object-cover rounded"
+              />
+            </div>
+
             <div className="quest-info flex-1">
               <h2 className="font-bold">{h.name}</h2>
               <p>{h.description || "-"}</p>
@@ -227,6 +298,13 @@ export default function ManageHunts() {
               </p>
               <p>
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
+              </p>
+              <p>
+                <strong>Points:</strong> {h.pointsAchievable ?? "-"}
+              </p>
+              <p>
+                <strong>Collectible:</strong>{" "}
+                {collectibles.find((c) => c.id === h.collectibleId)?.name || "-"}
               </p>
             </div>
             <div className="quest-action flex gap-2">

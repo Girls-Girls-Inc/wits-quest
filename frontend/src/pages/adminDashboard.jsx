@@ -53,6 +53,8 @@ const AdminDashboard = () => {
     question: "",
     answer: "",
     timeLimit: "",
+    collectibleId: "",
+    pointsAchievable: "",
   });
 
   // Signed-in Supabase user
@@ -302,7 +304,11 @@ const AdminDashboard = () => {
 
     const huntInsert = {
       ...huntData,
+      collectibleId: huntData.collectibleId
+        ? Number(huntData.collectibleId)
+        : null,
       timeLimit: huntData.timeLimit ? Number(huntData.timeLimit) : null,
+      pointsAchievable: Number(huntData.pointsAchievable) || 0, // ✅ added
     };
 
     try {
@@ -552,6 +558,24 @@ const AdminDashboard = () => {
                   required
                 />
               </div>
+
+              {/* New Collectible Dropdown */}
+              <div className="input-box">
+                <label>Collectible</label>
+                <select
+                  name="collectibleId"
+                  value={huntData.collectibleId || ""}
+                  onChange={handleHuntChange}
+                >
+                  <option value="">Select a collectible</option>
+                  {collectibles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="input-box">
                 <InputField
                   icon="timer"
@@ -559,6 +583,17 @@ const AdminDashboard = () => {
                   name="timeLimit"
                   placeholder="Time Limit (seconds, optional)"
                   value={huntData.timeLimit}
+                  onChange={handleHuntChange}
+                />
+              </div>
+
+              <div className="input-box">
+                <InputField
+                  icon="star"
+                  type="number"
+                  name="pointsAchievable"
+                  placeholder="Points Achievable"
+                  value={huntData.pointsAchievable}
                   onChange={handleHuntChange}
                 />
               </div>

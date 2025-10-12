@@ -913,10 +913,11 @@ const Leaderboard = () => {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
+        <div className="modal-backdrop">
+          <div className="modal">
             <h3>Create a leaderboard</h3>
             <input
+              className="invite-input"
               autoFocus
               placeholder="Leaderboard name"
               value={createName}
@@ -954,10 +955,11 @@ const Leaderboard = () => {
 
       {/* Join Modal */}
       {showJoinModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
+        <div className=".modal-backdrop">
+          <div className="modal">
             <h3>Join a leaderboard</h3>
             <input
+              className="invite-input"
               autoFocus
               placeholder="Paste invite code"
               value={joinCode}

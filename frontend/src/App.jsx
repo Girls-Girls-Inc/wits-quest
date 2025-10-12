@@ -18,6 +18,7 @@ const ManageQuests = lazy(() => import("./pages/manageQuests"));
 const ManageHunts = lazy(() => import("./pages/manageHunts"));
 import Hunts from "./pages/hunts";
 const ManageQuizzes = lazy(() => import("./pages/manageQuizzes"));
+const ManageLocations = lazy(() => import("./pages/manageLocations"));
 const AddQuiz = lazy(() => import("./pages/addQuiz"));
 const Settings = lazy(() => import("./pages/settings"));
 import HuntDetail from "./pages/huntDetail";
@@ -167,6 +168,14 @@ const App = () => {
               element={
                 <RequireSession>
                   <ManageHunts />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/manageLocations"
+              element={
+                <RequireSession>
+                  <ManageLocations />
                 </RequireSession>
               }
             />

@@ -33,6 +33,7 @@ export default function ManageQuizzes() {
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState({
     questionText: "",
     questionType: "text",
@@ -257,7 +258,7 @@ export default function ManageQuizzes() {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (!confirm("Delete this quiz?")) return;
+    setPendingDelete(null);
     const toastId = toast.loading("Deleting quiz...");
     try {
       const token = await getToken();
@@ -279,6 +280,13 @@ export default function ManageQuizzes() {
     } catch (err) {
       toast.error(err.message || "Failed to delete quiz", { id: toastId });
     }
+  };
+
+  const requestDelete = (quiz) => setPendingDelete(quiz);
+  const cancelDeletePrompt = () => setPendingDelete(null);
+  const confirmDelete = () => {
+    if (!pendingDelete?.id) return;
+    handleDelete(pendingDelete.id);
   };
 
   return (
@@ -428,6 +436,30 @@ export default function ManageQuizzes() {
         </div>
       )}
 
+      {pendingDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-quiz-title"
+          onClick={cancelDeletePrompt}
+        >
+          <div className="modal login-required" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-quiz-title">Delete Quiz?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDelete.questionText}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton icon="delete" label="Delete Quiz" onClick={confirmDelete} />
+                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quiz List */}
       <div className="quest-list">
         {quizzes.map((quiz) => (
@@ -460,7 +492,7 @@ export default function ManageQuizzes() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(quiz.id)}
+                onClick={() => requestDelete(quiz)}
               />
             </div>
           </div>

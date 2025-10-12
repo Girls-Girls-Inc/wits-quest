@@ -13,8 +13,8 @@ const API_BASE = import.meta.env.VITE_WEB_URL;
 export default function ManageHunts() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState([]);
-  const [collectibles, setCollectibles] = useState([]);
   const [editingHunt, setEditingHunt] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -22,7 +22,7 @@ export default function ManageHunts() {
     answer: "",
     timeLimit: "",
     collectibleId: "",
-    pointsAchievable: "", 
+    pointsAchievable: "",
   });
 
   const loadHunts = async () => {
@@ -109,7 +109,8 @@ export default function ManageHunts() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this hunt?")) return;
+    if (!id) return;
+    setPendingDelete(null);
     const t = toast.loading("Deleting hunt...");
     try {
       const resp = await fetch(`${API_BASE}/hunts/${id}`, {
@@ -123,6 +124,13 @@ export default function ManageHunts() {
     } catch (err) {
       toast.error(err.message, { id: t });
     }
+  };
+
+  const requestDelete = (hunt) => setPendingDelete(hunt);
+  const cancelDeletePrompt = () => setPendingDelete(null);
+  const confirmDelete = () => {
+    if (!pendingDelete?.id) return;
+    handleDelete(pendingDelete.id);
   };
 
   return (
@@ -270,6 +278,30 @@ export default function ManageHunts() {
         </div>
       )}
 
+      {pendingDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-hunt-title"
+          onClick={cancelDeletePrompt}
+        >
+          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-hunt-title">Delete Hunt?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton icon="delete" label="Delete Hunt" onClick={confirmDelete} />
+                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="quest-list">
         {hunts.map((h) => (
           <div
@@ -316,7 +348,7 @@ export default function ManageHunts() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(h.id)}
+                onClick={() => requestDelete(h)}
               />
             </div>
           </div>

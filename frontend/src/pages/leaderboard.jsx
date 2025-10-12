@@ -598,7 +598,6 @@ const Leaderboard = () => {
         <div className="btn">
           <IconButton
             type="button"
-            label="Refresh"
             icon="refresh"
             onClick={() => {
               if (selectedPrivateId)

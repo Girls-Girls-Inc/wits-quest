@@ -6,7 +6,7 @@
   flex-direction: column;
   width: 90%;
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: 1300px;
 }
 
 .dashboard-grid {
@@ -212,7 +212,8 @@
   font-size: 0.875rem;
   min-width: 60px;
   white-space: nowrap;
-  border: none;
+  border: 2px solid white;
+  border-radius: 20px;
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -250,8 +251,8 @@
 .carousel-btn {
   width: 2rem;
   height: 2rem;
-  border: 1px solid #333;
-  border-radius: 50%;
+  border: 1px solid white;
+  border-radius: 20%;
   background: #131f24;
   cursor: pointer;
   display: flex;
@@ -418,7 +419,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: #1a2a32;
+  background-color: var(--wits-blue);
   color: #aaa;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -428,10 +429,6 @@
 
 .leaderboard-table tbody tr {
   transition: background-color 0.2s ease;
-}
-
-.leaderboard-table tbody tr:hover {
-  background-color: #1a2a32;
 }
 
 .leaderboard-table tbody tr:last-child td {
@@ -495,18 +492,18 @@
 
 .leaderboard-scroll::-webkit-scrollbar-thumb,
 .table-wrapper::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--wits-blue);
   border-radius: 4px;
 }
 
 .leaderboard-scroll::-webkit-scrollbar-thumb:hover,
 .table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--wits-blue);
 }
 
 .leaderboard-scroll::-webkit-scrollbar-corner,
 .table-wrapper::-webkit-scrollbar-corner {
-  background: #131f24;
+  background: var(--wits-blue);
 }
 
 /* Firefox */

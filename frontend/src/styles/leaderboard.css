@@ -71,10 +71,12 @@
 }
 
 .leaderboard-table tbody tr:nth-child(odd) {
-  background: #f2f5f7;
+  background: #b5c5d0;
+  color: #030d1f;
 }
 .leaderboard-table tbody tr:nth-child(even) {
-  background: #b5c5d0;
+  background: var(--wits-blue);
+  color: white;
 }
 
 .trophy {
@@ -117,7 +119,7 @@ td code {
   display: flex;
   align-items: center;
   gap: 8px;
-
+  color: white;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -139,24 +141,25 @@ td code {
   position: absolute;
   top: 110%;
   left: 0;
-  background: #fff;
+  background: var(--background);
   border: 1px solid #000;
   border-radius: 15px;
   list-style: none;
   padding: 5px;
   margin: 0;
   width: 160px;
-
+  color: white;
   z-index: 1000;
 }
 
 .dropdown.open .dropdown-menu {
   display: block;
   animation: pop 0.2s ease-out;
+  color: white;
 }
 
 .dropdown-item {
-  color: #333;
+  color: white;
   width: 100%;
   text-align: left;
   padding: 8px 12px;
@@ -228,6 +231,10 @@ td code {
 .btn.primary:focus {
   filter: brightness(0.97);
   transform: translateY(0);
+}
+
+.btn {
+  font-size: 10px;
 }
 
 /* If you want a ghost/outline version that still uses the wits blue */

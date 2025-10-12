@@ -198,7 +198,9 @@ const Dashboard = () => {
       setOngoing(rows.filter((q) => !q.isComplete));
       const completedQuests = rows.filter((q) => q.isComplete);
       const uniqueLocations = new Set(
-        completedQuests.map((q) => q.location).filter((loc) => loc && loc !== "—")
+        completedQuests
+          .map((q) => q.location)
+          .filter((loc) => loc && loc !== "—")
       );
       const completedRows = rows.filter(
         (q) => q.isComplete && q.userId === me?.id
@@ -267,7 +269,8 @@ const Dashboard = () => {
     if (badges.length > 0)
       setCurrentSlide(
         (prev) =>
-          (prev - 1 + Math.ceil(badges.length / 4)) % Math.ceil(badges.length / 4)
+          (prev - 1 + Math.ceil(badges.length / 4)) %
+          Math.ceil(badges.length / 4)
       );
   };
 
@@ -293,7 +296,10 @@ const Dashboard = () => {
           </button>
         </header>
 
-        <section className="dashboard-grid" aria-label="User statistics and badges">
+        <section
+          className="dashboard-grid"
+          aria-label="User statistics and badges"
+        >
           {/* Ongoing Quests */}
           <article className="dashboard-card quests-card">
             <h3>Ongoing Quests</h3>
@@ -375,15 +381,21 @@ const Dashboard = () => {
                   ) : (
                     hunts.map((h) => (
                       <tr key={h.id}>
-                        <td className="truncate">{h.hunts?.name ?? `Hunt ${h.huntId}`}</td>
-                        <td className="truncate">{h.hunts?.description ?? "—"}</td>
+                        <td className="truncate">
+                          {h.hunts?.name ?? `Hunt ${h.huntId}`}
+                        </td>
+                        <td className="truncate">
+                          {h.hunts?.description ?? "—"}
+                        </td>
                         <td className="truncate">{h.hunts?.question ?? "—"}</td>
                         <td>{h.isActive ? "Active" : "Inactive"}</td>
                         <td>{h.remainingTime}</td>
                         <td>
                           <button
                             className="dash-btn"
-                            onClick={() => navigate(`/hunts/${h.huntId}?uh=${h.id}`)}
+                            onClick={() =>
+                              navigate(`/hunts/${h.huntId}?uh=${h.id}`)
+                            }
                             disabled={!h.huntId || !h.isActive}
                           >
                             View
@@ -463,6 +475,26 @@ const Dashboard = () => {
             </div>
           </article>
 
+          <article className="dashboard-card small-card">
+            <h3>Points</h3>
+            <div className="stat-number">{dashboardData.points}</div>
+          </article>
+
+          <article className="dashboard-card small-card">
+            <h3>Quests Completed</h3>
+            <div className="stat-number">{dashboardData.questsCompleted}</div>
+          </article>
+
+          <article className="dashboard-card">
+            <h3>Locations Visited</h3>
+            <div className="stat-number">{dashboardData.locationsVisited}</div>
+            <div className="latest-info">
+              <div className="latest-box">
+                <span>Latest Location</span>
+                <div className="truncate">{dashboardData.latestLocation}</div>
+              </div>
+            </div>
+          </article>
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">
@@ -490,7 +522,9 @@ const Dashboard = () => {
                       <tr
                         key={person.rank}
                         className={
-                          person.name === me?.user_metadata?.username ? "me" : ""
+                          person.name === me?.user_metadata?.username
+                            ? "me"
+                            : ""
                         }
                       >
                         <td>{person.rank}</td>
@@ -501,27 +535,6 @@ const Dashboard = () => {
                   )}
                 </tbody>
               </table>
-            </div>
-          </article>
-
-          <article className="dashboard-card small-card">
-            <h3>Points</h3>
-            <div className="stat-number">{dashboardData.points}</div>
-          </article>
-
-          <article className="dashboard-card small-card">
-            <h3>Quests Completed</h3>
-            <div className="stat-number">{dashboardData.questsCompleted}</div>
-          </article>
-
-          <article className="dashboard-card">
-            <h3>Locations Visited</h3>
-            <div className="stat-number">{dashboardData.locationsVisited}</div>
-            <div className="latest-info">
-              <div className="latest-box">
-                <span>Latest Location</span>
-                <div className="truncate">{dashboardData.latestLocation}</div>
-              </div>
             </div>
           </article>
         </section>

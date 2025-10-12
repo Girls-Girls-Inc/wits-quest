@@ -38,6 +38,7 @@ export default function ManageLocations() {
   const navigate = useNavigate();
   const [locations, setLocations] = useState([]);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     latitude: "",
@@ -144,7 +145,8 @@ export default function ManageLocations() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this location?")) return;
+    if (!id) return;
+    setPendingDelete(null);
     const token = await getToken();
     if (!token) {
       toast.error("Session expired. Please sign in again.");
@@ -167,6 +169,13 @@ export default function ManageLocations() {
     } catch (err) {
       toast.error(err.message || "Failed to delete location", { id: toastId });
     }
+  };
+
+  const requestDelete = (location) => setPendingDelete(location);
+  const cancelDeletePrompt = () => setPendingDelete(null);
+  const confirmDelete = () => {
+    if (!pendingDelete?.id) return;
+    handleDelete(pendingDelete.id);
   };
 
   return (
@@ -289,6 +298,30 @@ export default function ManageLocations() {
         </div>
       )}
 
+      {pendingDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-location-title"
+          onClick={cancelDeletePrompt}
+        >
+          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-location-title">Delete Location?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton icon="delete" label="Delete Location" onClick={confirmDelete} />
+                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="quest-list">
         {locations.map((location) => (
           <div
@@ -319,7 +352,7 @@ export default function ManageLocations() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(location.id)}
+                onClick={() => requestDelete(location)}
               />
             </div>
           </div>

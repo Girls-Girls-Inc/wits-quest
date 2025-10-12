@@ -48,6 +48,7 @@ export default function ManageBadges() {
       
       const payload = await res.json();
       setBadges(Array.isArray(payload) ? payload : []);
+      toast.dismiss(toastId);
     } catch (err) {
       toast.error(err.message || "Failed to load badges", { id: toastId });
       setBadges([]);

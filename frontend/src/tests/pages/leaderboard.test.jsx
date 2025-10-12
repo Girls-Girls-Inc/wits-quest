@@ -446,5 +446,450 @@ describe("Leaderboard page", () => {
       expect(msg).toContain("unauthorized");
     });
   });
-});
 
+  it("switches between Weekly/Monthly/Yearly periods in public view", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([{ id: "u1", username: "Alice", points: 1 }]));
+    addRoute("GET", "/leaderboard?id=1234", jsonRes([{ id: "u2", username: "Bob", points: 2 }]));
+    addRoute("GET", "/leaderboard?id=123", jsonRes([{ id: "u3", username: "Charlie", points: 3 }]));
+
+    render(<Leaderboard />);
+    await screen.findByText("Alice");
+
+    const periodToggle = getDropdownToggleByLabel(/yearly/i);
+    await openDropdownAndChoose(periodToggle, /monthly/i);
+    expect(await screen.findByText("Bob")).toBeInTheDocument();
+
+    const monthlyToggle = getDropdownToggleByLabel(/monthly/i);
+    await openDropdownAndChoose(monthlyToggle, /weekly/i);
+    expect(await screen.findByText("Charlie")).toBeInTheDocument();
+  });
+
+  it("handles empty private leaderboard list with fallback message", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    expect(await screen.findByText(/you don't have any private leaderboards yet/i)).toBeInTheDocument();
+  });
+
+  it("handles memberCount fallback via standings when members endpoint fails", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", textRes("Not Found", { status: 404 }));
+    addRoute("GET", "/private-leaderboards/p1/standings", jsonRes([{ userId: "u1" }, { userId: "u2" }]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    expect(await screen.findByText(/2 members/i)).toBeInTheDocument();
+  });
+
+  it("handles memberCount fallback when both members and standings fail", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", textRes("Not Found", { status: 404 }));
+    addRoute("GET", "/private-leaderboards/p1/standings", textRes("Not Found", { status: 404 }));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    expect(await screen.findByText(/—/)).toBeInTheDocument();
+  });
+
+  it("shows error toast when private leaderboards endpoint fails with 401", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute(
+      "GET",
+      "/private-leaderboards",
+      textRes(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("unauthorized");
+    });
+  });
+
+  it("handles non-401 error when loading private leaderboards", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute(
+      "GET",
+      "/private-leaderboards",
+      textRes(JSON.stringify({ error: "Server Error" }), {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("server error");
+    });
+  });
+
+  it("handles standings fallback to members when standings endpoint returns non-array", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A" }));
+    addRoute("GET", /\/private-leaderboards\/p1\/standings\?period=year$/, jsonRes({ error: "bad format" }));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([
+      { userId: "u1", username: "Alice", points: 5 },
+      { userId: "u2", username: "Bob", points: 3 }
+    ]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("handles standings fallback when members endpoint also fails", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A" }));
+    addRoute("GET", /\/private-leaderboards\/p1\/standings\?period=year$/, jsonRes({ error: "bad" }));
+    addRoute("GET", "/private-leaderboards/p1/members", textRes("Not Found", { status: 404 }));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    expect(await screen.findByText(/no entries yet/i)).toBeInTheDocument();
+  });
+
+  it("shows error toast when loading private leaderboard details fails with 401", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute(
+      "GET",
+      "/private-leaderboards/p1",
+      textRes(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("unauthorized");
+    });
+  });
+
+  it("hides code after showing it", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A", inviteCode: "INV-123" }));
+    addRoute("GET", /\/private-leaderboards\/p1\/standings\?period=year$/, jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    await userEvent.click(screen.getByRole("button", { name: /show code/i }));
+    expect(await screen.findByText("INV-123")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /hide code/i }));
+    await waitFor(() => {
+      expect(screen.queryByText("INV-123")).not.toBeInTheDocument();
+    });
+  });
+
+  it("manually copies code via Copy button", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A", inviteCode: "INV-456" }));
+    addRoute("GET", /\/private-leaderboards\/p1\/standings\?period=year$/, jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    await userEvent.click(screen.getByRole("button", { name: /show code/i }));
+    const copyButtons = screen.getAllByRole("button", { name: /copy/i });
+    await userEvent.click(copyButtons[0]);
+
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("INV-456");
+      expect(toast.success).toHaveBeenCalledWith("Code copied");
+    });
+  });
+
+  it("cancels create modal without creating", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    expect(await screen.findByPlaceholderText(/leaderboard name/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/leaderboard name/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("cancels join modal without joining", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    expect(await screen.findByPlaceholderText(/paste invite code/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/paste invite code/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows error when creating without a name", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    const createBtns = screen.getAllByRole("button", { name: /^create$/i });
+    await userEvent.click(createBtns[createBtns.length - 1]);
+
+    expect(toast.error).toHaveBeenCalledWith("Please enter a leaderboard name");
+  });
+
+  it("shows error when joining without a code", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    const joinBtns = screen.getAllByRole("button", { name: /^join$/i });
+    await userEvent.click(joinBtns[joinBtns.length - 1]);
+
+    expect(toast.error).toHaveBeenCalledWith("Please enter an invite code");
+  });
+
+  it("handles create error with 401", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+    addRoute(
+      "POST",
+      "/private-leaderboards",
+      textRes(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    const nameInput = await screen.findByPlaceholderText(/leaderboard name/i);
+    await userEvent.type(nameInput, "Test Club");
+    const createBtns = screen.getAllByRole("button", { name: /^create$/i });
+    await userEvent.click(createBtns[createBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("unauthorized");
+    });
+  });
+
+  it("handles join error with 401", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+    addRoute(
+      "POST",
+      "/private-leaderboards/join",
+      textRes(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    const input = await screen.findByPlaceholderText(/paste invite code/i);
+    await userEvent.type(input, "BAD-CODE");
+    const joinBtns = screen.getAllByRole("button", { name: /^join$/i });
+    await userEvent.click(joinBtns[joinBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+      const msg = toast.error.mock.calls
+        .map((c) => c[0])
+        .join(" ")
+        .toLowerCase();
+      expect(msg).toContain("unauthorized");
+    });
+  });
+
+  it("submits create form with Enter key", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+    addRoute("POST", "/private-leaderboards", jsonRes({ id: "p4", name: "Enter Club" }));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p4", name: "Enter Club" }]));
+    addRoute("GET", "/private-leaderboards/p4/members", jsonRes([]));
+    addRoute("GET", "/private-leaderboards/p4", jsonRes({ id: "p4", name: "Enter Club" }));
+    addRoute("GET", /\/private-leaderboards\/p4\/standings\?period=year$/, jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    const nameInput = await screen.findByPlaceholderText(/leaderboard name/i);
+    await userEvent.type(nameInput, "Enter Club{Enter}");
+
+    expect(await screen.findByRole("heading", { level: 1, name: /enter club/i })).toBeInTheDocument();
+  });
+
+  it("submits join form with Enter key", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([]));
+    addRoute("POST", "/private-leaderboards/join", jsonRes({ member: { leaderboardId: "p5" } }));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p5", name: "Enter Join Club" }]));
+    addRoute("GET", "/private-leaderboards/p5/members", jsonRes([]));
+    addRoute("GET", "/private-leaderboards/p5", jsonRes({ id: "p5", name: "Enter Join Club" }));
+    addRoute("GET", /\/private-leaderboards\/p5\/standings\?period=year$/, jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    const input = await screen.findByPlaceholderText(/paste invite code/i);
+    await userEvent.type(input, "ENTER-CODE{Enter}");
+
+    expect(await screen.findByRole("heading", { level: 1, name: /enter join club/i })).toBeInTheDocument();
+  });
+
+  it("displays trophy icon for top 3 ranks", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([
+      { id: "u1", username: "First", points: 100 },
+      { id: "u2", username: "Second", points: 90 },
+      { id: "u3", username: "Third", points: 80 },
+      { id: "u4", username: "Fourth", points: 70 }
+    ]));
+
+    render(<Leaderboard />);
+
+    const trophies = await screen.findAllByTitle("Top rank");
+    expect(trophies).toHaveLength(3);
+  });
+
+  it("navigates back from private details to list", async () => {
+    addRoute("GET", "/leaderboard?id=12345", jsonRes([]));
+    addRoute("GET", "/private-leaderboards", jsonRes([{ id: "p1", name: "Club A" }]));
+    addRoute("GET", "/private-leaderboards/p1/members", jsonRes([{ userId: "u1" }]));
+    addRoute("GET", "/private-leaderboards/p1", jsonRes({ id: "p1", name: "Club A" }));
+    addRoute("GET", /\/private-leaderboards\/p1\/standings\?period=year$/, jsonRes([]));
+
+    render(<Leaderboard />);
+
+    const scopeToggle = getDropdownToggleByLabel(/public/i);
+    await openDropdownAndChoose(scopeToggle, /private/i);
+    await userEvent.click(screen.getByRole("button", { name: /view details/i }));
+
+    expect(await screen.findByRole("heading", { level: 1, name: /club a/i })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /← back/i }));
+    expect(await screen.findByRole("heading", { level: 1, name: /private leaderboards/i })).toBeInTheDocument();
+  });
+});

@@ -11,26 +11,47 @@
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   width: 100%;
 }
 
 @media (min-width: 1024px) {
   .dashboard-grid {
-    grid-template-columns: 1.5fr 1fr 1fr;
-    grid-template-areas:
-      "quests locations points"
-      "badges badges completed";
+    grid-template-columns: repeat(3, 1fr);
   }
 
+  /* Ongoing Quests - Full row */
+  .quests-card:nth-of-type(1) {
+    grid-column: 1 / -1;
+  }
+
+  /* My Hunts - Full row */
+  .quests-card:nth-of-type(2) {
+    grid-column: 1 / -1;
+  }
+
+  /* Badges - Full row */
   .badges-card {
-    grid-area: badges;
+    grid-column: 1 / -1;
   }
 
-  .quests-card {
-    grid-area: quests;
-    grid-column: span 2;
+  /* Three small cards in one row - each takes 1/3 */
+  .small-card:nth-of-type(1) {
+    grid-column: span 1;
+  }
+
+  .small-card:nth-of-type(2) {
+    grid-column: span 1;
+  }
+
+  .leaderboard-card {
+    grid-column: span 1;
+  }
+
+  /* Locations Visited - Full row */
+  .dashboard-card:last-child {
+    grid-column: 1 / -1;
   }
 }
 
@@ -38,12 +59,11 @@
   .dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    width: 100%;
   }
 
-  .badges-card,
-  .quests-card {
-    grid-column: span 1;
+  .quests-card,
+  .badges-card {
+    grid-column: 1 / -1;
   }
 
   .carousel-track {
@@ -64,8 +84,6 @@
 
   .dashboard-card {
     padding: 1rem;
-
-    min-width: 0;
   }
 
   .carousel-track {
@@ -105,8 +123,7 @@
   padding: 1.5rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 12px 0px rgba(0, 0, 0, 0.4);
   color: #e0e0e0;
-
-  min-width: 0;
+  max-height: 500px;
   overflow: auto;
 }
 
@@ -194,8 +211,20 @@
   margin: 1px;
   font-size: 0.875rem;
   min-width: 60px;
-  /* Prevent button overflow */
   white-space: nowrap;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dash-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.dash-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .view-badges-btn {
@@ -222,7 +251,7 @@
   width: 2rem;
   height: 2rem;
   border: 1px solid #333;
-  border-radius: 50%px;
+  border-radius: 50%;
   background: #131f24;
   cursor: pointer;
   display: flex;
@@ -357,7 +386,7 @@
   align-items: center;
   text-align: center;
   justify-content: center;
-  min-height: 140px;
+  min-height: 180px;
   background-color: #131f24;
 }
 
@@ -371,19 +400,17 @@
 
 .leaderboard-table {
   width: 100%;
-  border-radius: 20rem;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
   min-width: 500px;
 }
 
 .leaderboard-table th,
 .leaderboard-table td {
-  padding: 0.5rem 0.25rem;
+  padding: 0.875rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #333;
-  white-space: nowrap;
-  min-width: 60px;
+  border-bottom: 1px solid #2a3a42;
 }
 
 .leaderboard-table th {
@@ -391,11 +418,34 @@
   position: sticky;
   top: 0;
   z-index: 1;
+  background-color: #1a2a32;
+  color: #aaa;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--wits-blue);
+}
+
+.leaderboard-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+  background-color: #1a2a32;
+}
+
+.leaderboard-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .leaderboard-table tr.me td {
+  background-color: var(--wits-yellow);
   color: #000;
   font-weight: 600;
+}
+
+.leaderboard-table tr.me:hover td {
+  background-color: #f0c040;
 }
 
 .leaderboard-table.compact th,
@@ -416,23 +466,14 @@
   }
 }
 
-.dash-btn {
-  border-radius: 0.5rem;
-  background-color: var(--wits-blue);
-  padding: 6px 10px;
-  margin: 1px;
-  font-size: 0.75rem;
-  min-width: 50px;
-  white-space: nowrap;
-}
-
 .leaderboard-scroll,
 .table-wrapper {
   max-height: 300px;
   overflow-y: auto;
   overflow-x: auto;
-  border-radius: 0.75rem;
-  border: 1px solid #333;
+  border-radius: 0.5rem;
+  border: 1px solid #2a3a42;
+  background-color: #131f24;
 }
 
 .table-wrapper {
@@ -443,44 +484,36 @@
 .leaderboard-scroll::-webkit-scrollbar,
 .table-wrapper::-webkit-scrollbar {
   width: 8px;
-  /* Vertical scrollbar width */
   height: 8px;
-  /* Horizontal scrollbar height */
 }
 
 .leaderboard-scroll::-webkit-scrollbar-track,
 .table-wrapper::-webkit-scrollbar-track {
   background: #131f24;
-  /* Track background color */
   border-radius: 4px;
 }
 
 .leaderboard-scroll::-webkit-scrollbar-thumb,
 .table-wrapper::-webkit-scrollbar-thumb {
   background: #333;
-  /* Scrollbar thumb color */
   border-radius: 4px;
 }
 
 .leaderboard-scroll::-webkit-scrollbar-thumb:hover,
 .table-wrapper::-webkit-scrollbar-thumb:hover {
   background: #555;
-  /* Hover color */
 }
 
 .leaderboard-scroll::-webkit-scrollbar-corner,
 .table-wrapper::-webkit-scrollbar-corner {
   background: #131f24;
-  /* Corner where scrollbars meet */
 }
 
 /* Firefox */
 .leaderboard-scroll,
 .table-wrapper {
   scrollbar-width: thin;
-  /* Options: auto, thin, none */
   scrollbar-color: var(--wits-blue) #131f24;
-  /* thumb-color track-color */
 }
 
 /* Optional: Hide scrollbars but keep functionality */
@@ -514,7 +547,18 @@
 /* Skeleton loaders */
 .skeleton-row {
   height: 40px;
-  background: #eee;
+  background: linear-gradient(90deg, #1a2a32 25%, #233a42 50%, #1a2a32 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .skeleton-badges {
@@ -522,14 +566,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f3f3;
-}
-
-/* Fonts: in your CSS @font-face add */
-@font-face {
-  font-family: "YourFont";
-  src: url("/fonts/YourFont.woff2") format("woff2");
-  font-display: swap;
+  color: #aaa;
 }
 
 .modal-header {
@@ -581,6 +618,7 @@
   cursor: pointer;
   border: 1px solid #eee;
   border-radius: 20%;
+  padding: 0.5rem 0.75rem;
 }
 
 .help-btn:hover {

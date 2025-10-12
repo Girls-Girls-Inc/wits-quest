@@ -55,7 +55,8 @@ module.exports = {
   coveragePathIgnorePatterns: [
     "/node_modules/",
     "/coverage/",
-    "/src/pages/Layout.jsx"
+    "/src/pages/Layout.jsx",
+    "/src/App.jsx",                    // Pure routing config
   ],
 
   verbose: true

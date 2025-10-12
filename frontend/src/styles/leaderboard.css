@@ -251,6 +251,10 @@ td code {
   padding: 20px;
 }
 
+div {
+  color: white !important;
+}
+
 .private-action {
   text-align: center;
   width: 100%;

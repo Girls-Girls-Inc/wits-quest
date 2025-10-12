@@ -855,16 +855,25 @@ const Leaderboard = () => {
                     </div>
                   )}
 
-                  <div
+                  <section
                     style={{
                       display: "flex",
-                      gap: 20,
-                      alignItems: "flex-start",
+                      flexDirection: "column",
+                      alignItems: "center",
                       justifyContent: "center",
                       padding: "12px 0 40px",
+                      gap: 12,
                     }}
                   >
-                    <div style={{ textAlign: "center", width: 260 }}>
+                    {/* Buttons side by side */}
+                    <section
+                      style={{
+                        display: "flex",
+                        gap: 20,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
                       <IconButton
                         icon="login"
                         label="Join"
@@ -873,18 +882,7 @@ const Leaderboard = () => {
                           setShowJoinModal(true);
                         }}
                       />
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted, #98a0aa)",
-                          marginTop: 8,
-                        }}
-                      >
-                        Enter an invite code to join a private leaderboard.
-                      </div>
-                    </div>
 
-                    <div style={{ textAlign: "center", width: 260 }}>
                       <IconButton
                         icon="group_add"
                         label="Create"
@@ -893,17 +891,23 @@ const Leaderboard = () => {
                           setShowCreateModal(true);
                         }}
                       />
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted, #98a0aa)",
-                          marginTop: 8,
-                        }}
-                      >
-                        Create a private leaderboard and invite friends.
-                      </div>
-                    </div>
-                  </div>
+                    </section>
+
+                    {/* Shared description */}
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--muted, #98a0aa)",
+                        textAlign: "center",
+                        marginTop: 8,
+                        maxWidth: 340,
+                      }}
+                    >
+                      Click <b>“Join”</b> to enter an invite code and join a
+                      private leaderboard, or <b>“Create”</b> to start one and
+                      invite your friends.
+                    </p>
+                  </section>
                 </>
               )}
             </>
@@ -932,22 +936,22 @@ const Leaderboard = () => {
                 marginTop: 12,
               }}
             >
-              <button
-                className="btn ghost"
+              <IconButton
+                icon="close"
+                label="Cancel"
+                className="ghost"
                 onClick={() => {
                   setShowCreateModal(false);
                   setCreateName("");
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn"
+              />
+
+              <IconButton
+                icon="add_circle"
+                label={creating ? "Creating…" : "Create"}
                 onClick={createLeaderboard}
                 disabled={creating}
-              >
-                {creating ? "Creating…" : "Create"}
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -955,7 +959,7 @@ const Leaderboard = () => {
 
       {/* Join Modal */}
       {showJoinModal && (
-        <div className=".modal-backdrop">
+        <div className="modal-backdrop">
           <div className="modal">
             <h3>Join a leaderboard</h3>
             <input
@@ -974,22 +978,22 @@ const Leaderboard = () => {
                 marginTop: 12,
               }}
             >
-              <button
-                className="btn ghost"
+              <IconButton
+                icon="close"
+                label="Cancel"
+                className="ghost"
                 onClick={() => {
                   setShowJoinModal(false);
                   setJoinCode("");
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn"
+              />
+
+              <IconButton
+                icon="group_add"
+                label="Join"
                 onClick={joinLeaderboard}
                 disabled={joining}
-              >
-                {joining ? "Joining…" : "Join"}
-              </button>
+              />
             </div>
           </div>
         </div>

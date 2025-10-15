@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import "../styles/leaderboard.css";
-import "../styles/quests.css"; // reuse quests classes for the private-list look
+import Logo from "../assets/Logo.png";
 
 const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in your .env
 
@@ -674,16 +674,15 @@ const Leaderboard = () => {
                 }}
               >
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button
-                    className="btn primary"
+                  <IconButton
+                    icon="arrow_back"
+                    label="Back"
                     onClick={() => {
                       setSelectedPrivateId(null);
                       setSelectedPrivateDetails(null);
                       setSelectedStandings([]);
                     }}
-                  >
-                    ← Back
-                  </button>
+                  />
 
                   <div
                     style={{
@@ -696,9 +695,11 @@ const Leaderboard = () => {
                 </div>
 
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button className="btn primary" onClick={toggleShowCode}>
-                    {detailShowCode ? "Hide Code" : "Show Code"}
-                  </button>
+                  <IconButton
+                    icon="code"
+                    label={detailShowCode ? "Hide Code" : "Show Code"}
+                    onClick={toggleShowCode}
+                  />
                 </div>
               </div>
 
@@ -726,8 +727,9 @@ const Leaderboard = () => {
                     >
                       {selectedPrivateDetails?.inviteCode ?? "—"}
                     </div>
-                    <button
-                      className="btn primary"
+                    <IconButton
+                      icon="content_copy"
+                      label="Copy"
                       onClick={() => {
                         const code = selectedPrivateDetails?.inviteCode ?? "";
                         if (!code) return;
@@ -736,9 +738,7 @@ const Leaderboard = () => {
                           .then(() => toast.success("Code copied"))
                           .catch(() => toast("Copy failed"));
                       }}
-                    >
-                      Copy
-                    </button>
+                    />
                   </div>
                 </div>
               )}
@@ -811,7 +811,10 @@ const Leaderboard = () => {
                               alignItems: "center",
                               justifyContent: "center",
                             }}
-                          />
+                          >
+                            <img src={Logo} alt="Logo" />
+                          </div>
+
                           <div className="quest-info" style={{ flex: 1 }}>
                             <h2 style={{ marginBottom: 6 }}>{b.name}</h2>
                             <p
@@ -833,7 +836,7 @@ const Leaderboard = () => {
                           >
                             <IconButton
                               icon="find_in_page"
-                              label="View Details"
+                              label="View Leaderboard"
                               onClick={() => handleViewPrivateLeaderboard(b.id)}
                             />
                           </div>

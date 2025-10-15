@@ -6,7 +6,7 @@
   color: #333;
   display: flex;
   flex-direction: column;
-  max-width: fit-content;
+  max-width: 100% !important;
 }
 
 .leaderboard-header h2 {
@@ -25,6 +25,7 @@
 }
 
 .leaderboard-controls .btn {
+  font-size: 10px;
   max-width: 20%;
   border-radius: 12px;
   transition: all 0.2s ease;
@@ -177,7 +178,7 @@ td code {
 }
 
 .dropdown-item:hover {
-  background: #ffecb3;
+  background: var(--wits-yellow);
 }
 
 .dropdown-item.active {
@@ -227,7 +228,6 @@ td code {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* hover / active / focus */
 .btn.primary:hover,
 .btn.primary:focus {
   filter: brightness(0.97);
@@ -238,7 +238,6 @@ td code {
   font-size: 15px;
 }
 
-/* If you want a ghost/outline version that still uses the wits blue */
 .btn.ghost.primary {
   background-color: transparent;
   color: var(--wits-blue);
@@ -367,12 +366,6 @@ td code {
   gap: 10px;
 }
 
-.quest-buttons {
-  display: flex;
-  flex-direction: row;
-  color: white;
-}
-
 .quest-list {
   display: flex;
   flex-direction: column;
@@ -407,9 +400,7 @@ td code {
 
 .quest-profile img {
   max-width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 1px solid #555;
+  height: auto;
   object-fit: cover;
   margin-bottom: 5px;
 }
@@ -421,7 +412,8 @@ td code {
 
 .quest-info h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 25px;
+  color: var(--wits-yellow);
 }
 
 @media (max-width: 768px) {
@@ -433,7 +425,7 @@ td code {
   }
 
   .quest-profile {
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     margin-right: 0;
     gap: 10px;
@@ -453,7 +445,7 @@ td code {
     align-self: flex-end;
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .quest-action button {

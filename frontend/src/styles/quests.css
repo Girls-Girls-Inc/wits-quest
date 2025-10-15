@@ -49,15 +49,6 @@
   flex-shrink: 0;
 }
 
-.quest-profile img {
-  max-width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 1px solid #555;
-  object-fit: cover;
-  margin-bottom: 5px;
-}
-
 .quest-info {
   flex: 1;
   padding: 0 10px;

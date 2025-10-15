@@ -654,7 +654,7 @@ const Leaderboard = () => {
 
       {/* ---------- PRIVATE: list or detail ---------- */}
       {scope === "private" && (
-        <div className="leaderboard-table-wrapper">
+        <div>
           <div className="quests-header" style={{ marginBottom: 18 }}>
             <h1 style={{ margin: 0 }}>
               {selectedPrivateId
@@ -719,6 +719,7 @@ const Leaderboard = () => {
                       style={{
                         fontFamily: "monospace",
                         padding: "6px 10px",
+                        color: "black !important",
                         background: "var(--surface, #f6f7f8)",
                         borderRadius: 6,
                       }}
@@ -742,7 +743,7 @@ const Leaderboard = () => {
                 </div>
               )}
 
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 8, color: "white" }}>
                 {detailLoading ? (
                   <div>Loading standings…</div>
                 ) : (

@@ -9,6 +9,30 @@ import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 
 const AddBadge = () => {
   const navigate = useNavigate();
@@ -99,7 +123,7 @@ const AddBadge = () => {
       resetForm();
       navigate("/manageCollectibles");
     } catch (err) {
-      toast.error(err.message || "Failed to create badge");
+      toast.error(err?.message || "Failed to create badge");
     } finally {
       setSubmitting(false);
     }
@@ -107,10 +131,11 @@ const AddBadge = () => {
 
   return (
     <div className="admin-container">
-      <Toaster />
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="admin-header">
         <h1 className="heading">Create Badge</h1>
         <IconButton
+          type="button"
           icon="arrow_back"
           label="Back to Badges"
           onClick={() => navigate("/manageCollectibles")}

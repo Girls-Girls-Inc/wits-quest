@@ -7,16 +7,50 @@ import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import LocationMapPicker from "../components/LocationMapPicker";
 
 const API_BASE =
   import.meta.env.VITE_WEB_URL ||
   process.env.VITE_WEB_URL ||
   "http://localhost:3000";
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
+
+const getErrorMessage = (err, fallback = "Unexpected error") => {
+  if (!err) return fallback;
+  if (typeof err === "string") return err;
+  if (typeof err.message === "string" && err.message.trim()) {
+    return err.message;
+  }
+  return fallback;
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedTask, setSelectedTask] = useState(null);
   const [quests, setQuests] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -60,6 +94,14 @@ const AdminDashboard = () => {
     collectibleId: "",
     pointsAchievable: "",
   });
+
+  useEffect(() => {
+    const taskFromState = location.state?.selectedTask;
+    if (taskFromState && selectedTask !== taskFromState) {
+      setSelectedTask(taskFromState);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state?.selectedTask, navigate, selectedTask]);
 
   // Signed-in Supabase user
   useEffect(() => {
@@ -139,7 +181,7 @@ const AdminDashboard = () => {
         const data = await res.json();
         setUsers(data);
       } catch (err) {
-        toast.error(`Failed to load users: ${err.message}`);
+        toast.error(`Failed to load users: ${getErrorMessage(err)}`);
       }
     };
 
@@ -226,7 +268,7 @@ const AdminDashboard = () => {
       toast.success(`Quest created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create quest: ${err.message}`);
+      toast.error(`Failed to create quest: ${getErrorMessage(err)}`);
     }
   };
 
@@ -282,7 +324,7 @@ const AdminDashboard = () => {
       toast.success(`Location created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create location: ${err.message}`);
+      toast.error(`Failed to create location: ${getErrorMessage(err)}`);
     }
   };
 
@@ -314,7 +356,7 @@ const AdminDashboard = () => {
       }
       toast.success("User updated!");
     } catch (err) {
-      toast.error(`Failed to update user: ${err.message}`);
+      toast.error(`Failed to update user: ${getErrorMessage(err)}`);
       console.error("DEBUG PATCH error:", err);
     }
   };
@@ -349,12 +391,13 @@ const AdminDashboard = () => {
       toast.success(`Hunt created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create hunt: ${err.message}`);
+      toast.error(`Failed to create hunt: ${getErrorMessage(err)}`);
     }
   };
 
   return (
     <div className="admin-container">
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       {!selectedTask ? (
         <div className="admin-header">
           <h1 className="heading">Admin Dashboard</h1>
@@ -379,20 +422,8 @@ const AdminDashboard = () => {
             />
             <IconButton
               icon="edit_location"
-              label="Add Location"
+              label="Create Location"
               onClick={() => setSelectedTask("Location Creation")}
-              className="tile-button"
-            />
-            <IconButton
-              icon="admin_panel_settings"
-              label="Adjust Admins"
-              onClick={() => setSelectedTask("Admin Privilege")}
-              className="tile-button"
-            />
-            <IconButton
-              icon="award_star"
-              label="Manage Badges"
-              onClick={() => navigate("/manageCollectibles")}
               className="tile-button"
             />
             <IconButton
@@ -401,19 +432,25 @@ const AdminDashboard = () => {
               onClick={() => navigate("/manageQuests")}
             />
             <IconButton
-              icon="quiz"
-              label="Manage Quizzes"
-              onClick={() => navigate("/manageQuizzes")}
-            />
-            <IconButton
               icon="stars"
               label="Manage Hunts"
               onClick={() => navigate("/manageHunts")}
             />
             <IconButton
+              icon="quiz"
+              label="Manage Quizzes"
+              onClick={() => navigate("/manageQuizzes")}
+            />
+            <IconButton
               icon="location_on"
               label="Manage Locations"
               onClick={() => navigate("/manageLocations")}
+            />
+            <IconButton
+              icon="admin_panel_settings"
+              label="Manage Admins"
+              onClick={() => setSelectedTask("Admin Privilege")}
+              className="tile-button"
             />
           </div>
         </div>

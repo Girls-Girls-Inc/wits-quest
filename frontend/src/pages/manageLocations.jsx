@@ -15,6 +15,30 @@ const API_BASE =
   import.meta.env.VITE_WEB_URL ||
   process.env.VITE_WEB_URL ||
   "http://localhost:3000";
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 
 const getToken = async () => {
   const {
@@ -180,10 +204,27 @@ export default function ManageLocations() {
 
   return (
     <div className="quests-container">
-      <Toaster />
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Locations</h1>
-        <IconButton icon="refresh" label="Refresh" onClick={loadLocations} />
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
+          <IconButton icon="refresh" label="Refresh" onClick={loadLocations} />
+          <IconButton
+            icon="add"
+            label="New Location"
+            onClick={() =>
+              navigate("/adminDashboard", {
+                state: { selectedTask: "Location Creation" },
+              })
+            }
+          />
+        </div>
       </div>
 
       {editingLocation && (
@@ -357,14 +398,6 @@ export default function ManageLocations() {
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

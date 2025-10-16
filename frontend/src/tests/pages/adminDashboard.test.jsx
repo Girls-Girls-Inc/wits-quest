@@ -191,12 +191,12 @@ describe("AdminDashboard", () => {
         expect(screen.getByTestId("icon-btn-create-quest")).toBeInTheDocument();
         expect(screen.getByTestId("icon-btn-create-hunt")).toBeInTheDocument();
         expect(screen.getByTestId("icon-btn-create-quiz")).toBeInTheDocument();
-        expect(screen.getByTestId("icon-btn-add-location")).toBeInTheDocument();
-        expect(screen.getByTestId("icon-btn-adjust-admins")).toBeInTheDocument();
-        expect(screen.getByTestId("icon-btn-create-badge")).toBeInTheDocument();
+        expect(screen.getByTestId("icon-btn-create-location")).toBeInTheDocument();
+        expect(screen.getByTestId("icon-btn-manage-admins")).toBeInTheDocument();
         expect(screen.getByTestId("icon-btn-manage-quests")).toBeInTheDocument();
-        expect(screen.getByTestId("icon-btn-manage-quizzes")).toBeInTheDocument();
         expect(screen.getByTestId("icon-btn-manage-hunts")).toBeInTheDocument();
+        expect(screen.getByTestId("icon-btn-manage-quizzes")).toBeInTheDocument();
+        expect(screen.getByTestId("icon-btn-manage-locations")).toBeInTheDocument();
     });
 
     it("loads options data on mount", async () => {
@@ -448,6 +448,8 @@ describe("AdminDashboard", () => {
                         question: "Find the treasure",
                         answer: "Under the tree",
                         timeLimit: 300,
+                        collectibleId: null,
+                        pointsAchievable: 0,
                     }),
                 })
             );
@@ -496,7 +498,7 @@ describe("AdminDashboard", () => {
             );
         });
 
-        fireEvent.click(screen.getByTestId("icon-btn-add-location"));
+        fireEvent.click(screen.getByTestId("icon-btn-create-location"));
         
         expect(screen.getByText("Location Creation")).toBeInTheDocument();
 
@@ -540,7 +542,7 @@ describe("AdminDashboard", () => {
             );
         });
 
-        fireEvent.click(screen.getByTestId("icon-btn-add-location"));
+        fireEvent.click(screen.getByTestId("icon-btn-create-location"));
 
         await userEvent.type(screen.getByPlaceholderText("Location Name"), "Test Location");
         fireEvent.click(screen.getByTestId("location-map-picker"));
@@ -571,7 +573,7 @@ describe("AdminDashboard", () => {
             );
         });
 
-        fireEvent.click(screen.getByTestId("icon-btn-adjust-admins"));
+        fireEvent.click(screen.getByTestId("icon-btn-manage-admins"));
         
         expect(screen.getByText("Manage Admin Privileges")).toBeInTheDocument();
         
@@ -616,7 +618,7 @@ describe("AdminDashboard", () => {
             );
         });
 
-        fireEvent.click(screen.getByTestId("icon-btn-adjust-admins"));
+        fireEvent.click(screen.getByTestId("icon-btn-manage-admins"));
 
         await waitFor(() => {
             expect(screen.getByText("user@example.com")).toBeInTheDocument();
@@ -668,23 +670,6 @@ describe("AdminDashboard", () => {
         });
     });
 
-    /* -------------------- Badge Creation -------------------- */
-
-    it("shows badge creation placeholder", async () => {
-        await act(async () => {
-            render(
-                <MemoryRouter>
-                    <AdminDashboard />
-                </MemoryRouter>
-            );
-        });
-
-        fireEvent.click(screen.getByTestId("icon-btn-create-badge"));
-        
-        expect(screen.getByText("Badge Creation (Coming Soon)")).toBeInTheDocument();
-        expect(screen.getByTestId("icon-btn-back")).toBeInTheDocument();
-    });
-
     /* -------------------- Back Navigation -------------------- */
 
     it("navigates back to main view from forms", async () => {
@@ -704,14 +689,14 @@ describe("AdminDashboard", () => {
         expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
 
         // Test location creation back
-        fireEvent.click(screen.getByTestId("icon-btn-add-location"));
+        fireEvent.click(screen.getByTestId("icon-btn-create-location"));
         expect(screen.getByText("Location Creation")).toBeInTheDocument();
 
         fireEvent.click(screen.getByTestId("icon-btn-back"));
         expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
 
         // Test admin privilege back
-        fireEvent.click(screen.getByTestId("icon-btn-adjust-admins"));
+        fireEvent.click(screen.getByTestId("icon-btn-manage-admins"));
         expect(screen.getByText("Manage Admin Privileges")).toBeInTheDocument();
 
         fireEvent.click(screen.getByTestId("icon-btn-back"));

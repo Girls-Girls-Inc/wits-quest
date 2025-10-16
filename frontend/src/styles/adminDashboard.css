@@ -24,6 +24,30 @@
   text-align: center;
 }
 
+.admin-header--with-actions {
+  align-items: stretch;
+}
+
+.admin-header__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.admin-header__row .heading {
+  margin: 0;
+  text-align: left;
+}
+
+.admin-header__actions {
+  display: flex;
+  gap: 12px;
+}
+
 .admin-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

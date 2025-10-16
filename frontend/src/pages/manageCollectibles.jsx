@@ -11,6 +11,30 @@ import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 
 export default function ManageBadges() {
   const navigate = useNavigate();
@@ -156,10 +180,16 @@ export default function ManageBadges() {
 
   return (
     <div className="quests-container">
-      <Toaster />
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Badges</h1>
-        <div className="flex gap-2">
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
           <IconButton icon="refresh" label="Refresh" onClick={loadBadges} />
           <IconButton
             icon="add"
@@ -286,14 +316,6 @@ export default function ManageBadges() {
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

@@ -10,6 +10,30 @@ import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 
 const getToken = async () => {
   const {
@@ -285,10 +309,27 @@ export default function ManageQuests() {
 
   return (
     <div className="quests-container">
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Quests</h1>
-        {/* <button onClick={loadQuests}>Refresh</button> */}
-        <IconButton icon="refresh" label="Refresh" onClick={loadQuests} />
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
+          <IconButton icon="refresh" label="Refresh" onClick={loadQuests} />
+          <IconButton
+            icon="add"
+            label="New Quest"
+            onClick={() =>
+              navigate("/adminDashboard", {
+                state: { selectedTask: "Quest Creation" },
+              })
+            }
+          />
+        </div>
       </div>
 
       {editingQuest && (
@@ -557,14 +598,6 @@ export default function ManageQuests() {
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

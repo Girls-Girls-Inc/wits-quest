@@ -4,11 +4,36 @@ import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 const DEFAULT_OPTIONS = ["", ""];
 
 const cloneDefaultOptions = () => [...DEFAULT_OPTIONS];
@@ -189,7 +214,7 @@ const AddQuiz = () => {
       toast.success("Quiz created successfully");
       resetForm();
     } catch (err) {
-      toast.error(err.message || "Failed to create quiz");
+      toast.error(err?.message || "Failed to create quiz");
     } finally {
       setSubmitting(false);
     }
@@ -197,14 +222,19 @@ const AddQuiz = () => {
 
   return (
     <div className="admin-container">
-      <Toaster />
-      <div className="admin-header">
-        <h1 className="heading">Create Quiz</h1>
-        <IconButton
-          icon="arrow_back"
-          label="Back to Admin"
-          onClick={() => navigate("/adminDashboard")}
-        />
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
+      <div className="admin-header admin-header--with-actions">
+        <div className="admin-header__row">
+          <h1 className="heading">Create Quiz</h1>
+          <div className="admin-header__actions">
+            <IconButton
+              type="button"
+              icon="arrow_back"
+              label="Back to Admin"
+              onClick={() => navigate("/adminDashboard")}
+            />
+          </div>
+        </div>
       </div>
 
       <form className="login-form" onSubmit={handleSubmit}>

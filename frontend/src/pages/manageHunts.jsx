@@ -15,6 +15,7 @@ export default function ManageHunts() {
   const [hunts, setHunts] = useState([]);
   const [editingHunt, setEditingHunt] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [collectibles, setCollectibles] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -104,7 +105,7 @@ export default function ManageHunts() {
       toast.success("Hunt updated", { id: t });
       setEditingHunt(null);
     } catch (err) {
-      toast.error(err.message, { id: t });
+      toast.error(err?.message || "Failed to update hunt", { id: t });
     }
   };
 
@@ -122,7 +123,7 @@ export default function ManageHunts() {
       if (editingHunt?.id === id) setEditingHunt(null);
       toast.success("Hunt deleted", { id: t });
     } catch (err) {
-      toast.error(err.message, { id: t });
+      toast.error(err?.message || "Failed to delete hunt", { id: t });
     }
   };
 
@@ -135,10 +136,53 @@ export default function ManageHunts() {
 
   return (
     <div className="quests-container">
-      <Toaster />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#002d73",
+            color: "#ffb819",
+          },
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+          loading: {
+            style: {
+              background: "#002d73",
+              color: "#ffb819",
+            },
+          },
+        }}
+      />
       <div className="quests-header">
         <h1>Manage Hunts</h1>
-        <IconButton icon="refresh" label="Refresh" onClick={loadHunts} />
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
+          <IconButton icon="refresh" label="Refresh" onClick={loadHunts} />
+          <IconButton
+            icon="add"
+            label="New Hunt"
+            onClick={() =>
+              navigate("/adminDashboard", {
+                state: { selectedTask: "Hunt Creation" },
+              })
+            }
+          />
+        </div>
       </div>
 
       {editingHunt && (
@@ -353,14 +397,6 @@ export default function ManageHunts() {
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

@@ -194,7 +194,7 @@ export default function ManageBadges() {
           <IconButton
             icon="add"
             label="New Badge"
-            onClick={() => navigate("/addBadge")}
+            onClick={() => navigate("/addCollectiable")}
           />
         </div>
       </div>

@@ -218,11 +218,7 @@ export default function ManageLocations() {
           <IconButton
             icon="add"
             label="New Location"
-            onClick={() =>
-              navigate("/adminDashboard", {
-                state: { selectedTask: "Location Creation" },
-              })
-            }
+            onClick={() => navigate("/addLocation")}
           />
         </div>
       </div>

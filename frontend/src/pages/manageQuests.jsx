@@ -323,11 +323,7 @@ export default function ManageQuests() {
           <IconButton
             icon="add"
             label="New Quest"
-            onClick={() =>
-              navigate("/adminDashboard", {
-                state: { selectedTask: "Quest Creation" },
-              })
-            }
+            onClick={() => navigate("/addQuest")}
           />
         </div>
       </div>

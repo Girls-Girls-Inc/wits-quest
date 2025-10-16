@@ -453,7 +453,7 @@ describe("ManageBadges page", () => {
     expect(await screen.findByText("Badge 2")).toBeInTheDocument();
   });
 
-  it("navigates to addBadge page when New Badge button is clicked", async () => {
+  it("navigates to addCollectiable page when New Badge button is clicked", async () => {
     addRoute("GET", "/collectibles", jsonRes([]));
 
     render(<ManageBadges />);
@@ -461,7 +461,7 @@ describe("ManageBadges page", () => {
     const newBadgeButton = await screen.findByRole("button", { name: /new badge/i });
     await userEvent.click(newBadgeButton);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/addBadge");
+    expect(mockNavigate).toHaveBeenCalledWith("/addCollectiable");
   });
 
   it("navigates to adminDashboard when Back button is clicked", async () => {

@@ -176,11 +176,7 @@ export default function ManageHunts() {
           <IconButton
             icon="add"
             label="New Hunt"
-            onClick={() =>
-              navigate("/adminDashboard", {
-                state: { selectedTask: "Hunt Creation" },
-              })
-            }
+            onClick={() => navigate("/addHunt")}
           />
         </div>
       </div>

@@ -685,21 +685,21 @@ describe("AdminDashboard", () => {
         fireEvent.click(screen.getByTestId("icon-btn-create-quest"));
         expect(screen.getByText("Quest Creation")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByTestId("icon-btn-back"));
+        fireEvent.click(screen.getByTestId("icon-btn-back-to-admin"));
         expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
 
         // Test location creation back
         fireEvent.click(screen.getByTestId("icon-btn-create-location"));
         expect(screen.getByText("Location Creation")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByTestId("icon-btn-back"));
+        fireEvent.click(screen.getByTestId("icon-btn-back-to-admin"));
         expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
 
         // Test admin privilege back
         fireEvent.click(screen.getByTestId("icon-btn-manage-admins"));
         expect(screen.getByText("Manage Admin Privileges")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByTestId("icon-btn-back"));
+        fireEvent.click(screen.getByTestId("icon-btn-back-to-admin"));
         expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
     });
 
@@ -719,7 +719,7 @@ describe("AdminDashboard", () => {
         await userEvent.type(screen.getByPlaceholderText("Quest Name"), "Test Quest");
 
         // Go back and return
-        fireEvent.click(screen.getByTestId("icon-btn-back"));
+        fireEvent.click(screen.getByTestId("icon-btn-back-to-admin"));
         fireEvent.click(screen.getByTestId("icon-btn-create-quest"));
 
         // Form should be reset

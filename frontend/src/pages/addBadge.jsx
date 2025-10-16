@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import supabase from "../supabase/supabaseClient";
 import "../styles/layout.css";
 import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
@@ -132,14 +133,18 @@ const AddBadge = () => {
   return (
     <div className="admin-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
-      <div className="admin-header">
-        <h1 className="heading">Create Badge</h1>
-        <IconButton
-          type="button"
-          icon="arrow_back"
-          label="Back to Badges"
-          onClick={() => navigate("/manageCollectibles")}
-        />
+      <div className="admin-header admin-header--with-actions">
+        <div className="admin-header__row">
+          <h1 className="heading">Create Badge</h1>
+          <div className="admin-header__actions">
+            <IconButton
+              type="button"
+              icon="arrow_back"
+              label="Back to Badges"
+              onClick={() => navigate("/manageCollectibles")}
+            />
+          </div>
+        </div>
       </div>
 
       <form className="login-form" onSubmit={handleSubmit}>

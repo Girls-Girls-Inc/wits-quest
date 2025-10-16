@@ -48,6 +48,34 @@ const getErrorMessage = (err, fallback = "Unexpected error") => {
   return fallback;
 };
 
+const createQuestDefaults = () => ({
+  name: "",
+  description: "",
+  collectibleId: "",
+  locationId: "",
+  huntId: "",
+  quizId: "",
+  pointsAchievable: "",
+  isActive: true,
+});
+
+const createLocationDefaults = () => ({
+  name: "",
+  latitude: "",
+  longitude: "",
+  radius: "",
+});
+
+const createHuntDefaults = () => ({
+  name: "",
+  description: "",
+  question: "",
+  answer: "",
+  timeLimit: "",
+  collectibleId: "",
+  pointsAchievable: "",
+});
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,33 +95,11 @@ const AdminDashboard = () => {
     return session?.access_token;
   };
 
-  const [questData, setQuestData] = useState({
-    name: "",
-    description: "",
-    collectibleId: "",
-    locationId: "",
-    huntId: "",
-    quizId: "",
-    pointsAchievable: "",
-    isActive: true,
-  });
+  const [questData, setQuestData] = useState(createQuestDefaults);
 
-  const [locationData, setLocationData] = useState({
-    name: "",
-    latitude: "",
-    longitude: "",
-    radius: "",
-  });
+  const [locationData, setLocationData] = useState(createLocationDefaults);
 
-  const [huntData, setHuntData] = useState({
-    name: "",
-    description: "",
-    question: "",
-    answer: "",
-    timeLimit: "",
-    collectibleId: "",
-    pointsAchievable: "",
-  });
+  const [huntData, setHuntData] = useState(createHuntDefaults);
 
   useEffect(() => {
     const taskFromState = location.state?.selectedTask;
@@ -189,25 +195,16 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
-  const handleBack = () => {
-    setSelectedTask(null);
-    setQuestData({
-      name: "",
-      description: "",
-      collectibleId: "",
-      locationId: "",
-      huntId: "",
-      quizId: "",
-      pointsAchievable: "",
-      isActive: true,
-    });
-    setLocationData({
-      name: "",
-      latitude: "",
-      longitude: "",
-      radius: "",
-    });
-  };
+  const resetQuestForm = () => setQuestData(createQuestDefaults());
+  const resetLocationForm = () => setLocationData(createLocationDefaults());
+  const resetHuntForm = () => setHuntData(createHuntDefaults());
+
+const handleBack = () => {
+  setSelectedTask(null);
+  resetQuestForm();
+  resetLocationForm();
+  resetHuntForm();
+};
 
   const handleQuestChange = (e) => {
     const { name, value } = e.target;
@@ -456,7 +453,19 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <div>
-          <h1>{selectedTask}</h1>
+          <div className="admin-header admin-header--with-actions">
+            <div className="admin-header__row">
+              <h1 className="heading">{selectedTask}</h1>
+              <div className="admin-header__actions">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back to Admin"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          </div>
 
           {selectedTask === "Quest Creation" && (
             <form className="login-form" onSubmit={handleQuestSubmit}>
@@ -568,13 +577,13 @@ const AdminDashboard = () => {
                   Active
                 </label>
               </div>
-              <div className="flex gap-2">
+              <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Quest" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetQuestForm}
                 />
               </div>
             </form>
@@ -665,13 +674,13 @@ const AdminDashboard = () => {
                   onChange={handleHuntChange}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Hunt" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetHuntForm}
                 />
               </div>
             </form>
@@ -754,9 +763,9 @@ const AdminDashboard = () => {
                 <IconButton type="submit" icon="save" label="Create Location" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetLocationForm}
                 />
               </div>
             </form>
@@ -764,7 +773,11 @@ const AdminDashboard = () => {
 
           {selectedTask === "Admin Privilege" && (
             <div className="quest-list">
-              <h2>Manage Admin Privileges</h2>
+              <div className="quest-section-header">
+                <h2 className="quest-section-header__title">
+                  Manage Admin Privileges
+                </h2>
+              </div>
               {users.map((u) => (
                 <div
                   key={u.userId}
@@ -788,28 +801,12 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               ))}
-              <div className="btn flex gap-2 mt-2">
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
-                />
-              </div>
             </div>
           )}
 
           {selectedTask === "Badge Creation" && (
             <div className="quest-list">
               <h2>Badge Creation (Coming Soon)</h2>
-              <div className="btn flex gap-2 mt-2">
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
-                />
-              </div>
             </div>
           )}
         </div>

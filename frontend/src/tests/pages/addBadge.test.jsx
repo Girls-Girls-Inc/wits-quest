@@ -68,6 +68,7 @@ jest.mock("../../components/InputField", () => ({ value, onChange, placeholder, 
 
 jest.mock("../../styles/layout.css", () => ({}));
 jest.mock("../../styles/login-signup.css", () => ({}));
+jest.mock("../../styles/adminDashboard.css", () => ({}));
 jest.mock("../../styles/button.css", () => ({}));
 
 /* =============== fetch router + helpers =============== */

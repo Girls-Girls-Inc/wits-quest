@@ -454,7 +454,12 @@ const Dashboard = () => {
                 ) : (
                   <div className="carousel-track">
                     {getBadgesToShow().map((badge) => (
-                      <div key={badge.id} className="badge-item">
+                      <div
+                        key={badge.id}
+                        className="badge-item"
+                        onClick={() => setSelectedBadge(badge)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <img
                           src={badge.imageUrl || placeholder}
                           alt={badge.name || "badge"}
@@ -537,6 +542,73 @@ const Dashboard = () => {
           </article>
         </section>
       </main>
+      {selectedBadge && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setSelectedBadge(null)}
+        >
+          <div
+            style={{
+              background: "#131f24",
+              padding: "2rem",
+              borderRadius: "1rem",
+              maxWidth: "400px",
+              width: "90%",
+              color: "white",
+              textAlign: "center",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedBadge(null)}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "none",
+                border: "none",
+                color: "white",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+
+            <img
+              src={selectedBadge.imageUrl || placeholder}
+              alt={selectedBadge.name}
+              style={{
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                marginBottom: "1rem",
+                border: "2px solid white",
+              }}
+            />
+
+            <h2 style={{ margin: "0 0 1rem 0" }}>{selectedBadge.name}</h2>
+
+            <p
+              style={{ color: "#aaa", fontSize: "0.95rem", lineHeight: "1.6" }}
+            >
+              {selectedBadge.description}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

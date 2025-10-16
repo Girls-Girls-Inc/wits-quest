@@ -49,6 +49,7 @@ describe("ComboBox", () => {
     const select = screen.getByRole("combobox");
     expect(select).toBeInTheDocument();
     expect(select).toHaveValue("");
+    expect(select).toHaveAttribute("aria-label", "Select a collectible");
     expect(
       screen.getByRole("option", { name: "Select a collectible" })
     ).toBeInTheDocument();

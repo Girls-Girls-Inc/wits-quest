@@ -35,6 +35,7 @@ const ComboBox = forwardRef(
       id,
       name,
       value,
+      icon,
       onChange,
       options = [],
       placeholder,
@@ -43,16 +44,26 @@ const ComboBox = forwardRef(
       className = "",
       disabled = false,
       required = false,
+      ariaLabel,
       children,
       ...rest
     },
     ref
   ) => {
-    const wrapperClass = ["combo-box-wrapper", className]
+    const wrapperClass = [
+      "combo-box-wrapper",
+      icon ? "combo-box-wrapper--with-icon" : "",
+      className,
+    ]
       .filter(Boolean)
       .join(" ");
     const normalizedValue =
       value === null || value === undefined ? "" : String(value);
+    const resolvedPlaceholderValue = String(placeholderValue);
+    const isPlaceholderSelected =
+      placeholder !== null &&
+      placeholder !== undefined &&
+      normalizedValue === resolvedPlaceholderValue;
 
     const normalizedOptions = options.map((option, index) => {
       const normalized = toOption(option, index);
@@ -73,6 +84,14 @@ const ComboBox = forwardRef(
 
     return (
       <div className={wrapperClass}>
+        {icon && (
+          <span
+            className="combo-box-leading-icon material-symbols-outlined"
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+        )}
         <select
           id={id}
           name={name}
@@ -82,11 +101,13 @@ const ComboBox = forwardRef(
           className="combo-box-select"
           disabled={disabled}
           required={required}
+          data-placeholder-selected={isPlaceholderSelected ? "true" : "false"}
+          aria-label={ariaLabel ?? placeholder ?? undefined}
           {...rest}
         >
           {shouldRenderPlaceholder && (
             <option
-              value={String(placeholderValue)}
+              value={resolvedPlaceholderValue}
               disabled={placeholderDisabled}
             >
               {placeholder}

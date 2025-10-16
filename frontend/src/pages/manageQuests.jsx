@@ -376,7 +376,6 @@ export default function ManageQuests() {
               </div>
 
               <div className="input-box">
-                <label htmlFor="locationId">Location</label>
                 <ComboBox
                   id="locationId"
                   name="locationId"
@@ -388,6 +387,7 @@ export default function ManageQuests() {
                     })
                   }
                   placeholder="Select a location"
+                  ariaLabel="Location"
                   options={locations.map((loc) => ({
                     value: loc.id,
                     label: loc.name,
@@ -397,7 +397,6 @@ export default function ManageQuests() {
               </div>
 
               <div className="input-box">
-                <label htmlFor="collectibleId">Collectible</label>
                 <ComboBox
                   id="collectibleId"
                   name="collectibleId"
@@ -409,6 +408,7 @@ export default function ManageQuests() {
                     })
                   }
                   placeholder="Select a collectible"
+                  ariaLabel="Collectible"
                   options={collectibles.map((col) => ({
                     value: col.id,
                     label: col.name,
@@ -417,7 +417,6 @@ export default function ManageQuests() {
               </div>
 
               <div className="input-box">
-                <label htmlFor="huntId">Hunt</label>
                 <ComboBox
                   id="huntId"
                   name="huntId"
@@ -426,6 +425,7 @@ export default function ManageQuests() {
                     setFormData({ ...formData, huntId: e.target.value || "" })
                   }
                   placeholder="Select a hunt"
+                  ariaLabel="Hunt"
                   options={hunts.map((hunt) => ({
                     value: hunt.id,
                     label: hunt.name,
@@ -434,7 +434,6 @@ export default function ManageQuests() {
               </div>
 
               <div className="input-box">
-                <label htmlFor="quizId">Quiz</label>
                 <ComboBox
                   id="quizId"
                   name="quizId"
@@ -443,6 +442,7 @@ export default function ManageQuests() {
                     setFormData({ ...formData, quizId: e.target.value || "" })
                   }
                   placeholder="None (no quiz)"
+                  ariaLabel="Quiz"
                   options={quizzes.map((quiz) => ({
                     value: quiz.id,
                     label: quiz.questionText,
@@ -465,9 +465,16 @@ export default function ManageQuests() {
                 />
               </div>
 
-              <div className="input-box">
-                <label>
+              <div className="input-box checkbox">
+                <label
+                  htmlFor="manageQuestIsActive"
+                  className={`checkbox-label${
+                    formData.isActive ? " checkbox-label--checked" : ""
+                  }`}
+                >
+                  <span>Active</span>
                   <input
+                    id="manageQuestIsActive"
                     type="checkbox"
                     name="isActive"
                     checked={formData.isActive}
@@ -475,7 +482,6 @@ export default function ManageQuests() {
                       setFormData({ ...formData, isActive: e.target.checked })
                     }
                   />
-                  Active
                 </label>
               </div>
 

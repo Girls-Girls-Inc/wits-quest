@@ -257,11 +257,11 @@ export default function ManageHunts() {
                 </div>
 
                 <div className="form-row">
-                  <label htmlFor="collectibleId">Collectible</label>
                   <ComboBox
                     id="collectibleId"
                     name="collectibleId"
                     value={formData.collectibleId}
+                    icon="redeem"
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -269,6 +269,7 @@ export default function ManageHunts() {
                       })
                     }
                     placeholder="Select a collectible"
+                    ariaLabel="Collectible"
                     options={collectibles.map((c) => ({
                       value: c.id,
                       label: c.name,

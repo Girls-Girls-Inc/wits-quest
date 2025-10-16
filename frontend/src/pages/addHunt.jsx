@@ -197,13 +197,14 @@ const AddHunt = () => {
           />
         </div>
         <div className="input-box">
-          <label htmlFor="collectibleId">Collectible</label>
           <ComboBox
             id="collectibleId"
             name="collectibleId"
             value={huntData.collectibleId}
+            icon="redeem"
             onChange={handleHuntChange}
             placeholder="Select a collectible"
+            ariaLabel="Collectible"
             options={collectibles.map((collectible) => ({
               value: collectible.id,
               label: collectible.name,

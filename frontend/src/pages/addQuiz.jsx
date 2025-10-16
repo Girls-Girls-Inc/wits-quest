@@ -250,16 +250,17 @@ const AddQuiz = () => {
         />
 
         <div className="input-box">
-          <label htmlFor="questionType">Question Type</label>
           <ComboBox
             id="questionType"
             name="questionType"
             value={form.questionType}
+            icon="quiz"
             onChange={(event) => handleQuestionTypeChange(event.target.value)}
             options={[
               { value: "text", label: "Text / Short Answer" },
               { value: "mcq", label: "Multiple Choice" },
             ]}
+            ariaLabel="Question Type"
           />
         </div>
 
@@ -299,13 +300,14 @@ const AddQuiz = () => {
 
         {form.questionType === "mcq" ? (
           <div className="input-box">
-            <label htmlFor="correctAnswer">Correct Answer</label>
             <ComboBox
               id="correctAnswer"
               name="correctAnswer"
               value={form.correctAnswer}
+              icon="check_circle"
               onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
               placeholder="Select correct option"
+              ariaLabel="Correct Answer"
               options={availableAnswers.map((answer) => ({
                 value: answer,
                 label: answer,

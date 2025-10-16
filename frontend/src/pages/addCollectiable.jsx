@@ -153,8 +153,8 @@ const AddCollectiable = () => {
             <IconButton
               type="button"
               icon="arrow_back"
-              label="Back to Collectibles"
-              onClick={() => navigate("/manageCollectibles")}
+              label="Back to Admin"
+              onClick={() => navigate("/adminDashboard")}
             />
           </div>
         </div>

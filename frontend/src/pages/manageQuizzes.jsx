@@ -367,7 +367,6 @@ export default function ManageQuizzes() {
               />
 
               <div className="input-box">
-              <label htmlFor="questionType">Question Type</label>
               <ComboBox
                 id="questionType"
                 name="questionType"
@@ -379,8 +378,9 @@ export default function ManageQuizzes() {
                   { value: "text", label: "Text / Short Answer" },
                   { value: "mcq", label: "Multiple Choice" },
                 ]}
+                ariaLabel="Question Type"
               />
-              </div>
+            </div>
 
               {formData.questionType === "mcq" && (
                 <div className="input-box">
@@ -420,20 +420,20 @@ export default function ManageQuizzes() {
 
               {formData.questionType === "mcq" ? (
                 <div className="input-box">
-                  <label htmlFor="correctAnswer">Correct Answer</label>
-                  <ComboBox
-                    id="correctAnswer"
-                    name="correctAnswer"
-                    value={formData.correctAnswer}
-                    onChange={(event) =>
-                      handleFieldChange("correctAnswer", event.target.value)
-                    }
-                    placeholder="Select correct option"
-                    options={availableAnswers.map((answer) => ({
-                      value: answer,
-                      label: answer,
-                    }))}
-                  />
+                <ComboBox
+                  id="correctAnswer"
+                  name="correctAnswer"
+                  value={formData.correctAnswer}
+                  onChange={(event) =>
+                    handleFieldChange("correctAnswer", event.target.value)
+                  }
+                  placeholder="Select correct option"
+                  options={availableAnswers.map((answer) => ({
+                    value: answer,
+                    label: answer,
+                  }))}
+                  ariaLabel="Correct Answer"
+                />
                   <small>
                     Tip: Correct answer must match one of the options above.
                   </small>

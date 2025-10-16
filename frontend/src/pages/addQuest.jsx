@@ -233,13 +233,14 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box">
-          <label htmlFor="collectibleId">Collectible</label>
           <ComboBox
             id="collectibleId"
             name="collectibleId"
             value={questData.collectibleId}
+            icon="redeem"
             onChange={handleQuestChange}
             placeholder="Select a collectible"
+            ariaLabel="Collectible"
             options={collectibles.map((collectible) => ({
               value: collectible.id,
               label: collectible.name,
@@ -247,13 +248,14 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box">
-          <label htmlFor="locationId">Location</label>
           <ComboBox
             id="locationId"
             name="locationId"
             value={questData.locationId}
+            icon="location_on"
             onChange={handleQuestChange}
             placeholder="Select a location"
+            ariaLabel="Location"
             options={locations.map((location) => ({
               value: location.id,
               label: location.name,
@@ -261,13 +263,14 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box">
-          <label htmlFor="huntId">Hunt</label>
           <ComboBox
             id="huntId"
             name="huntId"
             value={questData.huntId}
+            icon="map"
             onChange={handleQuestChange}
             placeholder="Select a hunt"
+            ariaLabel="Hunt"
             options={hunts.map((hunt) => ({
               value: hunt.id,
               label: hunt.name,
@@ -275,13 +278,14 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box">
-          <label htmlFor="quizId">Quiz</label>
           <ComboBox
             id="quizId"
             name="quizId"
             value={questData.quizId}
+            icon="quiz"
             onChange={handleQuestChange}
             placeholder="Select a quiz"
+            ariaLabel="Quiz"
             options={quizzes.map((quiz) => ({
               value: quiz.id,
               label: quiz.questionText || `Quiz ${quiz.id}`,
@@ -298,14 +302,18 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box checkbox">
-          <label>
+          <label
+            htmlFor="isActive"
+            className={`checkbox-label${questData.isActive ? " checkbox-label--checked" : ""}`}
+          >
+            <span>Active</span>
             <input
+              id="isActive"
               type="checkbox"
               name="isActive"
               checked={questData.isActive}
               onChange={handleQuestChange}
             />
-            Active
           </label>
         </div>
         <div className="btn flex gap-2">

@@ -8,7 +8,6 @@ const HuntController = {
     try {
       const huntData = req.body;
 
-      // --- Validate required fields
       if (
         !huntData.name ||
         !huntData.description ||
@@ -18,12 +17,10 @@ const HuntController = {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // optional but allows hunts to link with collectibles
       if (!huntData.collectibleId) {
         return res.status(400).json({ message: "Missing collectibleId" });
       }
 
-      // ✅ Add pointsAchievable check
       if (
         huntData.pointsAchievable === undefined ||
         huntData.pointsAchievable === null
@@ -32,14 +29,11 @@ const HuntController = {
       }
 
       huntData.pointsAchievable = Number(huntData.pointsAchievable);
-
-      // --- Process fields
       huntData.created_at = new Date().toISOString();
       huntData.timeLimit = huntData.timeLimit
         ? parseInt(huntData.timeLimit, 10)
         : null;
 
-      // --- Insert into DB
       const { data, error } = await HuntModel.createHunt(huntData);
       if (error) return res.status(500).json({ message: error.message });
 
@@ -57,7 +51,6 @@ const HuntController = {
       const filter = req.query || {};
       const { data, error } = await HuntModel.getHunts(filter);
       if (error) return res.status(500).json({ message: error.message });
-
       return res.json(data);
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -78,9 +71,7 @@ const HuntController = {
       const userId = userInfo?.user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthenticated" });
 
-      const { data: hunts, error: huntErr } = await HuntModel.getHunts({
-        id: huntId,
-      });
+      const { data: hunts, error: huntErr } = await HuntModel.getHunts({ id: huntId });
       if (huntErr) return res.status(500).json({ message: huntErr.message });
       const hunt = hunts?.[0];
       if (!hunt) return res.status(404).json({ message: "Hunt not found" });
@@ -149,7 +140,8 @@ const HuntController = {
             description,
             question,
             answer,
-            pointsAchievable
+            pointsAchievable,
+            collectibleId
           )
         `)
         .eq("id", id)
@@ -365,7 +357,54 @@ const HuntController = {
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }
-  }
+  },
+
+  // ✅ POST /users/:id/collectibles/:collectibleId
+  addCollectibleToUser: async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const collectibleId = Number(req.params.collectibleId);
+
+      if (!userId || !collectibleId) {
+        return res.status(400).json({ message: "Missing userId or collectibleId" });
+      }
+
+      const sb = sbFromReq(req);
+      if (!sb) return res.status(401).json({ message: "Missing bearer token" });
+
+      const { data: authUser, error: authErr } = await sb.auth.getUser();
+      if (authErr) return res.status(401).json({ message: authErr.message });
+      if (authUser?.user?.id !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Prevent duplicates
+      const { data: existing } = await sb
+        .from("userInventory")
+        .select("id")
+        .eq("userId", userId)
+        .eq("collectibleId", collectibleId)
+        .maybeSingle();
+
+      if (existing)
+        return res.status(409).json({ message: "Collectible already earned" });
+
+      const earnedAt = new Date().toISOString();
+      const { data, error } = await sb
+        .from("userInventory")
+        .insert([{ userId, collectibleId, earnedAt }])
+        .select();
+
+      if (error) return res.status(400).json({ message: error.message });
+
+      return res.status(201).json({
+        message: "Collectible added to user inventory",
+        inventoryItem: data[0],
+      });
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  },
 };
 
 module.exports = HuntController;

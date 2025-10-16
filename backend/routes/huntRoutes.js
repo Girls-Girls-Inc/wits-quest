@@ -17,5 +17,6 @@ router.get("/user-hunts/:id", HuntController.getUserHunt);
 // POST to check answer
 router.post("/user-hunts/:id/check", HuntController.checkAnswer);
 router.post("/user-hunts/:id/complete", HuntController.complete);
+router.post("/users/:id/collectibles/:collectibleId", HuntController.addCollectibleToUser);
 
 module.exports = router;

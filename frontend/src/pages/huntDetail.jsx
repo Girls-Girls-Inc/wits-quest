@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { toast, Toaster } from "react-hot-toast";
 import supabase from "../supabase/supabaseClient";
 
 const HuntDetail = () => {
@@ -12,8 +13,9 @@ const HuntDetail = () => {
   const [accessToken, setAccessToken] = useState(null);
 
   const userHuntId = searchParams.get("uh");
+  const navigate = useNavigate();
 
-  // --- helper: calculate remaining time ---
+  // helper: calculate remaining time
   const calcRemaining = (closingAt) => {
     if (!closingAt) return "—";
     const now = new Date();
@@ -28,15 +30,8 @@ const HuntDetail = () => {
   // Fetch session
   useEffect(() => {
     (async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        console.log("Supabase session:", session);
-        setAccessToken(session?.access_token || null);
-      } catch (err) {
-        console.error("Error fetching session:", err);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      setAccessToken(session?.access_token || null);
     })();
   }, []);
 
@@ -47,23 +42,14 @@ const HuntDetail = () => {
     const loadHunt = async () => {
       setLoading(true);
       try {
-        console.log("Fetching hunt for userHuntId:", userHuntId);
         const res = await fetch(
           `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
-
-        console.log("Raw response:", res);
         const data = await res.json();
-        console.log("Parsed hunt data:", data);
         setHunt(data);
 
-        // set initial remaining time right away
-        if (data.closingAt) {
-          setRemainingTime(calcRemaining(data.closingAt));
-        }
+        if (data.closingAt) setRemainingTime(calcRemaining(data.closingAt));
       } catch (err) {
         console.error("Error loading hunt:", err);
       } finally {
@@ -74,14 +60,12 @@ const HuntDetail = () => {
     loadHunt();
   }, [accessToken, userHuntId]);
 
-  // Countdown updater
+  // Countdown timer
   useEffect(() => {
     if (!hunt?.closingAt) return;
-
     const interval = setInterval(() => {
       setRemainingTime(calcRemaining(hunt.closingAt));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [hunt?.closingAt]);
 
@@ -89,15 +73,13 @@ const HuntDetail = () => {
   if (!hunt) return <p>Hunt not found</p>;
 
   const h = hunt.hunts || {};
-  console.log("Current hunt object:", h);
 
-  // Submit answer to backend
+  // Submit answer
   const checkAnswer = async () => {
     setFeedback("");
     if (!answer) return;
 
     try {
-      console.log("Submitting answer:", answer);
       const res = await fetch(
         `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}/check`,
         {
@@ -110,15 +92,55 @@ const HuntDetail = () => {
         }
       );
 
-      console.log("Check answer response:", res);
       const data = await res.json();
-      console.log("Check answer parsed data:", data);
-
       if (!res.ok) throw new Error(data?.message || "Error checking answer");
 
       if (data.correct) {
         setFeedback("✅ Correct! Hunt completed.");
-        //setHunt((prev) => ({ ...prev, isComplete: true, isActive: false }));
+
+        try {
+          // Step 1: Mark hunt as complete
+          await fetch(
+            `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}/complete`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          // Step 2: Award collectible (if any)
+          const collectibleId = h.collectibleId;
+          if (collectibleId != null) {
+            await fetch(
+              `${import.meta.env.VITE_WEB_URL}/users/${encodeURIComponent(
+                hunt.userId
+              )}/collectibles/${encodeURIComponent(collectibleId)}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+          }
+
+          // ✅ Toast message
+          toast.success("✅ Correct! Collectible awarded 🎉", {
+            duration: 4000,
+          });
+
+          // Delay before redirect
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 2000);
+        } catch (err) {
+          console.error("Error awarding collectible:", err);
+          toast.error("Hunt completed, but collectible award failed.");
+        }
       } else {
         setFeedback("❌ Incorrect answer, try again.");
       }
@@ -132,9 +154,10 @@ const HuntDetail = () => {
 
   return (
     <div>
-      <h2>{h.name || "fillerOne"}</h2>
+      <Toaster position="top-center" />
+      <h2>{h.name || "Hunt"}</h2>
       <p>
-        <strong>Description:</strong> {h.description || "to be replaced"}
+        <strong>Description:</strong> {h.description || "N/A"}
       </p>
       <p>
         <strong>Question:</strong> {h.question || "?"}

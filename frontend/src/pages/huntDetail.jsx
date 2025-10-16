@@ -1,6 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { toast, Toaster } from "react-hot-toast";
 import supabase from "../supabase/supabaseClient";
+import "../styles/layout.css";
+import "../styles/login-signup.css";
+import "../styles/adminDashboard.css";
+import "../styles/button.css";
+import InputField from "../components/InputField";
+import IconButton from "../components/IconButton";
+
+const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: { background: "green", color: "white" },
+  },
+  error: {
+    style: { background: "red", color: "white" },
+  },
+  loading: {
+    style: { background: "#002d73", color: "#ffb819" },
+  },
+};
 
 const HuntDetail = () => {
   const [searchParams] = useSearchParams();
@@ -10,10 +34,11 @@ const HuntDetail = () => {
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [accessToken, setAccessToken] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
+  const navigate = useNavigate();
   const userHuntId = searchParams.get("uh");
 
-  // --- helper: calculate remaining time ---
   const calcRemaining = (closingAt) => {
     if (!closingAt) return "—";
     const now = new Date();
@@ -25,47 +50,32 @@ const HuntDetail = () => {
     return `${minutes}m ${seconds}s`;
   };
 
-  // Fetch session
+  // --- Fetch user session
   useEffect(() => {
     (async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        console.log("Supabase session:", session);
-        setAccessToken(session?.access_token || null);
-      } catch (err) {
-        console.error("Error fetching session:", err);
-      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setAccessToken(session?.access_token || null);
     })();
   }, []);
 
-  // Fetch hunt
+  // --- Fetch hunt details
   useEffect(() => {
     if (!accessToken || !userHuntId) return;
 
     const loadHunt = async () => {
       setLoading(true);
       try {
-        console.log("Fetching hunt for userHuntId:", userHuntId);
-        const res = await fetch(
-          `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
-
-        console.log("Raw response:", res);
+        const res = await fetch(`${API_BASE}/user-hunts/${userHuntId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         const data = await res.json();
-        console.log("Parsed hunt data:", data);
         setHunt(data);
-
-        // set initial remaining time right away
-        if (data.closingAt) {
-          setRemainingTime(calcRemaining(data.closingAt));
-        }
+        if (data.closingAt) setRemainingTime(calcRemaining(data.closingAt));
       } catch (err) {
         console.error("Error loading hunt:", err);
+        toast.error("Failed to load hunt details");
       } finally {
         setLoading(false);
       }
@@ -74,89 +84,195 @@ const HuntDetail = () => {
     loadHunt();
   }, [accessToken, userHuntId]);
 
-  // Countdown updater
+  // --- Countdown timer
   useEffect(() => {
     if (!hunt?.closingAt) return;
-
     const interval = setInterval(() => {
       setRemainingTime(calcRemaining(hunt.closingAt));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [hunt?.closingAt]);
 
-  if (loading) return <p>Loading hunt details…</p>;
-  if (!hunt) return <p>Hunt not found</p>;
-
-  const h = hunt.hunts || {};
-  console.log("Current hunt object:", h);
-
-  // Submit answer to backend
+  // --- Handle answer submission
   const checkAnswer = async () => {
+    if (!answer.trim()) {
+      toast.error("Please enter an answer");
+      return;
+    }
+
+    setSubmitting(true);
     setFeedback("");
-    if (!answer) return;
 
     try {
-      console.log("Submitting answer:", answer);
-      const res = await fetch(
-        `${import.meta.env.VITE_WEB_URL}/user-hunts/${userHuntId}/check`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ answer }),
-        }
-      );
+      const res = await fetch(`${API_BASE}/user-hunts/${userHuntId}/check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ answer }),
+      });
 
-      console.log("Check answer response:", res);
       const data = await res.json();
-      console.log("Check answer parsed data:", data);
-
       if (!res.ok) throw new Error(data?.message || "Error checking answer");
 
       if (data.correct) {
-        setFeedback("✅ Correct! Hunt completed.");
-        //setHunt((prev) => ({ ...prev, isComplete: true, isActive: false }));
+        toast.success("✅ Correct! Collectible awarded 🎉", { duration: 4000 });
+
+        // Mark hunt complete + award collectible
+        try {
+          await fetch(`${API_BASE}/user-hunts/${userHuntId}/complete`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          const collectibleId = hunt?.hunts?.collectibleId;
+          if (collectibleId != null) {
+            await fetch(
+              `${API_BASE}/users/${encodeURIComponent(
+                hunt.userId
+              )}/collectibles/${encodeURIComponent(collectibleId)}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+          }
+
+          setTimeout(() => navigate("/dashboard"), 2000);
+        } catch (err) {
+          console.error("Error awarding collectible:", err);
+          toast.error("Hunt completed, but collectible award failed.");
+        }
       } else {
         setFeedback("❌ Incorrect answer, try again.");
       }
     } catch (err) {
       console.error("Error checking answer:", err);
-      setFeedback("Error checking answer, try again later.");
+      toast.error("Failed to check answer");
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="page flex justify-center items-center h-screen text-lg">
+        <p>Loading hunt details…</p>
+      </div>
+    );
+  }
+
+  if (!hunt) return <p>Hunt not found</p>;
+  const h = hunt.hunts || {};
   const isExpiredOrCompleted = hunt.isComplete || remainingTime === "Expired";
 
   return (
-    <div>
-      <h2>{h.name || "fillerOne"}</h2>
-      <p>
-        <strong>Description:</strong> {h.description || "to be replaced"}
-      </p>
-      <p>
-        <strong>Question:</strong> {h.question || "?"}
-      </p>
-      <p>
-        <strong>Time Remaining:</strong> {remainingTime || "Calculating..."}
-      </p>
+    <div className="admin-container">
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
 
-      {!isExpiredOrCompleted ? (
-        <div>
-          <input
-            type="text"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Your answer"
-          />
-          <button onClick={checkAnswer}>Check</button>
-          {feedback && <p>{feedback}</p>}
+      <div className="admin-header admin-header--with-actions">
+        <div className="admin-header__row">
+          <h1 className="heading">{hunt?.hunts?.name || "Hunt"}</h1>
+          <div className="admin-header__actions">
+            <IconButton
+              type="button"
+              icon="arrow_back"
+              label="Back to Dashboard"
+              onClick={() => navigate("/dashboard")}
+            />
+          </div>
         </div>
-      ) : (
-        <p>✅ This hunt is completed or expired.</p>
-      )}
+      </div>
+
+
+      <form
+        className="login-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          checkAnswer();
+        }}
+      >
+
+
+        <InputField
+          type="text"
+          name="description"
+          placeholder="Description"
+          value={h.description || "No description provided."}
+          icon="description"
+          readOnly
+        />
+
+        <InputField
+          type="text"
+          name="question"
+          placeholder="Question"
+          value={h.question || "?"}
+          icon="help"
+          readOnly
+        />
+
+        <div className="input-box">
+          <label>Time Remaining</label>
+          <div className="text-sm font-semibold text-blue-600">
+            {remainingTime || "Calculating..."}
+          </div>
+        </div>
+
+        {!isExpiredOrCompleted ? (
+          <>
+            <div className="input-box">
+              <label>Your Answer</label>
+              <input
+                type="text"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Enter your answer"
+                className="input"
+              />
+            </div>
+
+            {feedback && (
+              <p
+                className={`text-center font-medium ${
+                  feedback.includes("✅")
+                    ? "text-green-600"
+                    : "text-red-500"
+                }`}
+              >
+                {feedback}
+              </p>
+            )}
+
+            <div className="btn flex gap-2 mt-4">
+              <IconButton
+                type="submit"
+                icon={submitting ? "hourglass_bottom" : "send"}
+                label={submitting ? "Checking..." : "Submit Answer"}
+                disabled={submitting}
+              />
+              <IconButton
+                type="button"
+                icon="restart_alt"
+                label="Clear"
+                onClick={() => setAnswer("")}
+                disabled={submitting}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-green-600 font-semibold text-center mt-6">
+            ✅ This hunt is completed or expired.
+          </p>
+        )}
+      </form>
     </div>
   );
 };

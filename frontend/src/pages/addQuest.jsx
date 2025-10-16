@@ -8,6 +8,7 @@ import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 
 const API_BASE =
   import.meta.env.VITE_WEB_URL ||
@@ -232,64 +233,60 @@ const AddQuest = () => {
           />
         </div>
         <div className="input-box">
-          <label>Collectible</label>
-          <select
+          <label htmlFor="collectibleId">Collectible</label>
+          <ComboBox
+            id="collectibleId"
             name="collectibleId"
             value={questData.collectibleId}
             onChange={handleQuestChange}
-          >
-            <option value="">Select a collectible</option>
-            {collectibles.map((collectible) => (
-              <option key={collectible.id} value={collectible.id}>
-                {collectible.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Select a collectible"
+            options={collectibles.map((collectible) => ({
+              value: collectible.id,
+              label: collectible.name,
+            }))}
+          />
         </div>
         <div className="input-box">
-          <label>Location</label>
-          <select
+          <label htmlFor="locationId">Location</label>
+          <ComboBox
+            id="locationId"
             name="locationId"
             value={questData.locationId}
             onChange={handleQuestChange}
-          >
-            <option value="">Select a location</option>
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Select a location"
+            options={locations.map((location) => ({
+              value: location.id,
+              label: location.name,
+            }))}
+          />
         </div>
         <div className="input-box">
-          <label>Hunt</label>
-          <select
+          <label htmlFor="huntId">Hunt</label>
+          <ComboBox
+            id="huntId"
             name="huntId"
             value={questData.huntId}
             onChange={handleQuestChange}
-          >
-            <option value="">Select a hunt</option>
-            {hunts.map((hunt) => (
-              <option key={hunt.id} value={hunt.id}>
-                {hunt.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Select a hunt"
+            options={hunts.map((hunt) => ({
+              value: hunt.id,
+              label: hunt.name,
+            }))}
+          />
         </div>
         <div className="input-box">
-          <label>Quiz</label>
-          <select
+          <label htmlFor="quizId">Quiz</label>
+          <ComboBox
+            id="quizId"
             name="quizId"
             value={questData.quizId}
             onChange={handleQuestChange}
-          >
-            <option value="">Select a quiz</option>
-            {quizzes.map((quiz) => (
-              <option key={quiz.id} value={quiz.id}>
-                {quiz.questionText || `Quiz ${quiz.id}`}
-              </option>
-            ))}
-          </select>
+            placeholder="Select a quiz"
+            options={quizzes.map((quiz) => ({
+              value: quiz.id,
+              label: quiz.questionText || `Quiz ${quiz.id}`,
+            }))}
+          />
         </div>
         <div className="input-box">
           <InputField

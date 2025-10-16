@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import supabase from "../supabase/supabaseClient";
 import "../styles/quests.css";
@@ -12,28 +12,10 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const TOAST_OPTIONS = {
-  style: {
-    background: "#002d73",
-    color: "#ffb819",
-  },
-  success: {
-    style: {
-      background: "green",
-      color: "white",
-    },
-  },
-  error: {
-    style: {
-      background: "red",
-      color: "white",
-    },
-  },
-  loading: {
-    style: {
-      background: "#002d73",
-      color: "#ffb819",
-    },
-  },
+  style: { background: "#002d73", color: "#ffb819" },
+  success: { style: { background: "green", color: "white" } },
+  error: { style: { background: "red", color: "white" } },
+  loading: { style: { background: "#002d73", color: "#ffb819" } },
 };
 
 export default function ManageBadges() {
@@ -46,11 +28,10 @@ export default function ManageBadges() {
     description: "",
     imageUrl: "",
   });
+  const [uploading, setUploading] = useState(false);
 
   const getToken = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token || null;
   };
 
@@ -59,17 +40,14 @@ export default function ManageBadges() {
     try {
       const token = await getToken();
       if (!token) throw new Error("Session expired. Please sign in again.");
-      
+
       const res = await fetch(`${API_BASE}/collectibles`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
-      
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || "Failed to fetch badges");
-      }
-      
+
+      if (!res.ok) throw new Error(await res.text() || "Failed to fetch badges");
+
       const payload = await res.json();
       setBadges(Array.isArray(payload) ? payload : []);
       toast.dismiss(toastId);
@@ -86,11 +64,7 @@ export default function ManageBadges() {
   const resetForm = () => {
     setEditingBadge(null);
     setShowEditModal(false);
-    setFormData({
-      name: "",
-      description: "",
-      imageUrl: "",
-    });
+    setFormData({ name: "", description: "", imageUrl: "" });
   };
 
   const handleEditClick = (badge) => {
@@ -106,6 +80,38 @@ export default function ManageBadges() {
 
   const handleFieldChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // ✅ Handle image file upload to Supabase "badges" bucket
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const toastId = toast.loading("Uploading image...");
+
+    try {
+      const filePath = `badge-${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("badges") // your storage bucket name
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from("badges")
+        .getPublicUrl(filePath);
+
+      if (!publicData?.publicUrl)
+        throw new Error("Failed to retrieve image URL");
+
+      setFormData((prev) => ({ ...prev, imageUrl: publicData.publicUrl }));
+      toast.success("Image uploaded successfully", { id: toastId });
+    } catch (err) {
+      toast.error(err.message || "Image upload failed", { id: toastId });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -151,28 +157,23 @@ export default function ManageBadges() {
   const handleDelete = async (id) => {
     if (!id) return;
     if (!confirm("Delete this badge?")) return;
-    
+
     const toastId = toast.loading("Deleting badge...");
     try {
       const token = await getToken();
       if (!token) throw new Error("Session expired. Please sign in again.");
-      
+
       const res = await fetch(`${API_BASE}/collectibles/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
-      
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || "Failed to delete badge");
-      }
-      
+
+      if (!res.ok) throw new Error(await res.text() || "Failed to delete badge");
+
       toast.success("Badge deleted", { id: toastId });
       setBadges((prev) => prev.filter((b) => b.id !== id));
-      if (editingBadge?.id === id) {
-        resetForm();
-      }
+      if (editingBadge?.id === id) resetForm();
     } catch (err) {
       toast.error(err.message || "Failed to delete badge", { id: toastId });
     }
@@ -240,15 +241,13 @@ export default function ManageBadges() {
                 icon="description"
               />
 
-              <InputField
-                type="text"
-                name="imageUrl"
-                placeholder="Image URL (optional)"
-                value={formData.imageUrl}
-                onChange={(event) =>
-                  handleFieldChange("imageUrl", event.target.value)
-                }
-                icon="image"
+              <label className="text-sm mt-2">Upload New Image:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                style={{ marginBottom: "10px" }}
               />
 
               {formData.imageUrl && (
@@ -266,7 +265,12 @@ export default function ManageBadges() {
               )}
 
               <div className="btn flex gap-2">
-                <IconButton type="submit" icon="save" label="Save Badge" />
+                <IconButton
+                  type="submit"
+                  icon="save"
+                  label={uploading ? "Uploading..." : "Save Badge"}
+                  disabled={uploading}
+                />
                 <IconButton
                   type="button"
                   icon="arrow_back"

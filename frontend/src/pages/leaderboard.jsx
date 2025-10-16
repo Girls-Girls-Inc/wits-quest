@@ -580,7 +580,6 @@ const Leaderboard = () => {
             Private
           </button>
         </div>
-        </div>
 
         <div style={{ flex: 1 }} />
 

@@ -8,6 +8,7 @@ import "../styles/button.css";
 import "../styles/profile.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
@@ -366,18 +367,19 @@ export default function ManageQuizzes() {
               />
 
               <div className="input-box">
-                <label htmlFor="questionType">Question Type</label>
-                <select
-                  id="questionType"
-                  name="questionType"
-                  value={formData.questionType}
-                  onChange={(event) =>
-                    handleQuestionTypeChange(event.target.value)
-                  }
-                >
-                  <option value="text">Text / Short Answer</option>
-                  <option value="mcq">Multiple Choice</option>
-                </select>
+              <label htmlFor="questionType">Question Type</label>
+              <ComboBox
+                id="questionType"
+                name="questionType"
+                value={formData.questionType}
+                onChange={(event) =>
+                  handleQuestionTypeChange(event.target.value)
+                }
+                options={[
+                  { value: "text", label: "Text / Short Answer" },
+                  { value: "mcq", label: "Multiple Choice" },
+                ]}
+              />
               </div>
 
               {formData.questionType === "mcq" && (
@@ -419,21 +421,19 @@ export default function ManageQuizzes() {
               {formData.questionType === "mcq" ? (
                 <div className="input-box">
                   <label htmlFor="correctAnswer">Correct Answer</label>
-                  <select
+                  <ComboBox
                     id="correctAnswer"
                     name="correctAnswer"
                     value={formData.correctAnswer}
                     onChange={(event) =>
                       handleFieldChange("correctAnswer", event.target.value)
                     }
-                  >
-                    <option value="">Select correct option</option>
-                    {availableAnswers.map((answer) => (
-                      <option key={answer} value={answer}>
-                        {answer}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select correct option"
+                    options={availableAnswers.map((answer) => ({
+                      value: answer,
+                      label: answer,
+                    }))}
+                  />
                   <small>
                     Tip: Correct answer must match one of the options above.
                   </small>

@@ -32,36 +32,18 @@ const TOAST_OPTIONS = {
   },
 };
 
-const ACTION_SECTIONS = [
-  {
-    title: "Create",
-    actions: [
-      { label: "Create Quest", icon: "task", path: "/addQuest" },
-      { label: "Create Hunt", icon: "flag", path: "/addHunt" },
-      { label: "Create Quiz", icon: "quiz", path: "/addQuiz" },
-      { label: "Create Location", icon: "edit_location", path: "/addLocation" },
-      {
-        label: "Create Collectible",
-        icon: "military_tech",
-        path: "/addCollectiable",
-      },
-    ],
-  },
-  {
-    title: "Manage",
-    actions: [
-      { label: "Manage Quests", icon: "star", path: "/manageQuests" },
-      { label: "Manage Hunts", icon: "travel_explore", path: "/manageHunts" },
-      { label: "Manage Quizzes", icon: "quiz", path: "/manageQuizzes" },
-      {
-        label: "Manage Collectibles",
-        icon: "workspace_premium",
-        path: "/manageCollectibles",
-      },
-      { label: "Manage Locations", icon: "location_on", path: "/manageLocations" },
-      { label: "Manage Admins", icon: "admin_panel_settings", path: "/manageAdmins" },
-    ],
-  },
+const DASHBOARD_ACTIONS = [
+  { label: "Create Quest", icon: "task", path: "/addQuest" },
+  { label: "Create Hunt", icon: "flag", path: "/addHunt" },
+  { label: "Create Quiz", icon: "quiz", path: "/addQuiz" },
+  { label: "Create Location", icon: "edit_location", path: "/addLocation" },
+  { label: "Create Collectible", icon: "military_tech", path: "/addCollectiable" },
+  { label: "Manage Quests", icon: "star", path: "/manageQuests" },
+  { label: "Manage Hunts", icon: "stars", path: "/manageHunts" },
+  { label: "Manage Quizzes", icon: "quiz", path: "/manageQuizzes" },
+  { label: "Manage Locations", icon: "location_on", path: "/manageLocations" },
+  { label: "Manage Badges", icon: "award_star", path: "/manageCollectibles" },
+  { label: "Manage Admins", icon: "admin_panel_settings", path: "/manageAdmins" },
 ];
 
 const AdminDashboard = () => {
@@ -77,22 +59,17 @@ const AdminDashboard = () => {
         </p>
       </div>
 
-      {ACTION_SECTIONS.map((section) => (
-        <section className="admin-section" key={section.title}>
-          <h2 className="admin-section__title">{section.title}</h2>
-          <div className="admin-buttons">
-            {section.actions.map((action) => (
-              <IconButton
-                key={action.label}
-                icon={action.icon}
-                label={action.label}
-                className="tile-button"
-                onClick={() => navigate(action.path)}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="admin-buttons">
+        {DASHBOARD_ACTIONS.map((action) => (
+          <IconButton
+            key={action.label}
+            icon={action.icon}
+            label={action.label}
+            className="tile-button"
+            onClick={() => navigate(action.path)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

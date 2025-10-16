@@ -8,6 +8,7 @@ import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 
 const API_BASE =
   import.meta.env.VITE_WEB_URL ||
@@ -196,19 +197,18 @@ const AddHunt = () => {
           />
         </div>
         <div className="input-box">
-          <label>Collectible</label>
-          <select
+          <label htmlFor="collectibleId">Collectible</label>
+          <ComboBox
+            id="collectibleId"
             name="collectibleId"
             value={huntData.collectibleId}
             onChange={handleHuntChange}
-          >
-            <option value="">Select a collectible</option>
-            {collectibles.map((collectible) => (
-              <option key={collectible.id} value={collectible.id}>
-                {collectible.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Select a collectible"
+            options={collectibles.map((collectible) => ({
+              value: collectible.id,
+              label: collectible.name,
+            }))}
+          />
         </div>
         <div className="input-box">
           <InputField

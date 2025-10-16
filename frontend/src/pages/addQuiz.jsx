@@ -8,6 +8,7 @@ import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const TOAST_OPTIONS = {
@@ -250,15 +251,16 @@ const AddQuiz = () => {
 
         <div className="input-box">
           <label htmlFor="questionType">Question Type</label>
-          <select
+          <ComboBox
             id="questionType"
             name="questionType"
             value={form.questionType}
             onChange={(event) => handleQuestionTypeChange(event.target.value)}
-          >
-            <option value="text">Text / Short Answer</option>
-            <option value="mcq">Multiple Choice</option>
-          </select>
+            options={[
+              { value: "text", label: "Text / Short Answer" },
+              { value: "mcq", label: "Multiple Choice" },
+            ]}
+          />
         </div>
 
         {form.questionType === "mcq" && (
@@ -298,19 +300,17 @@ const AddQuiz = () => {
         {form.questionType === "mcq" ? (
           <div className="input-box">
             <label htmlFor="correctAnswer">Correct Answer</label>
-            <select
+            <ComboBox
               id="correctAnswer"
               name="correctAnswer"
               value={form.correctAnswer}
               onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
-            >
-              <option value="">Select correct option</option>
-              {availableAnswers.map((answer) => (
-                <option key={answer} value={answer}>
-                  {answer}
-                </option>
-              ))}
-            </select>
+              placeholder="Select correct option"
+              options={availableAnswers.map((answer) => ({
+                value: answer,
+                label: answer,
+              }))}
+            />
             <small>Tip: Correct answer must match one of the options above.</small>
           </div>
         ) : (

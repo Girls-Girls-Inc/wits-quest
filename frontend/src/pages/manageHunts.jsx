@@ -6,6 +6,7 @@ import "../styles/login-signup.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
@@ -257,21 +258,22 @@ export default function ManageHunts() {
 
                 <div className="form-row">
                   <label htmlFor="collectibleId">Collectible</label>
-                  <select
+                  <ComboBox
                     id="collectibleId"
                     name="collectibleId"
                     value={formData.collectibleId}
                     onChange={(e) =>
-                      setFormData({ ...formData, collectibleId: e.target.value })
+                      setFormData({
+                        ...formData,
+                        collectibleId: e.target.value,
+                      })
                     }
-                  >
-                    <option value="">Select a collectible</option>
-                    {collectibles.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select a collectible"
+                    options={collectibles.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    }))}
+                  />
                 </div>
 
 

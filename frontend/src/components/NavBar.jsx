@@ -16,28 +16,50 @@ const Navbar = () => {
   }, []);
 
   const isModerator = window.__IS_MODERATOR__ === true;
+  const pathname = location.pathname.toLowerCase();
+  const shouldShowLeaderboard = !/^\/(admin|manage|add)/.test(pathname);
 
-  // All navigation items for desktop
+  const baseDesktopItems = [
+    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/map", icon: "map", label: "Map" },
+    { route: "/settings", icon: "profile", label: "Profile" },
+  ];
+
+  const baseMobileItems = [
+    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/settings", icon: "profile", label: "Profile" },
+  ];
+
+  const leaderboardDesktopItem = {
+    route: "/displayLeaderboard",
+    icon: "leaderboard",
+    label: "Leaderboard",
+  };
+
+  const leaderboardMobileItem = {
+    route: "/displayLeaderboard",
+    icon: "leaderboard",
+    label: "Board",
+  };
+
   const allNavItems = [
     ...(isModerator
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
-    { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/displayQuests", icon: "logo", label: "Quests" },
-    { route: "/map", icon: "map", label: "Map" },
-    { route: "/displayLeaderboard", icon: "leaderboard", label: "Leaderboard" },
-    { route: "/settings", icon: "profile", label: "Profile" },
+    ...baseDesktopItems.slice(0, 3),
+    ...(shouldShowLeaderboard ? [leaderboardDesktopItem] : []),
+    ...baseDesktopItems.slice(3),
   ];
 
-  // Mobile navigation items - exclude map button
   const mobileNavItems = [
     ...(isModerator
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
-    { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/displayQuests", icon: "logo", label: "Quests" },
-    { route: "/displayLeaderboard", icon: "leaderboard", label: "Board" },
-    { route: "/settings", icon: "profile", label: "Profile" },
+    ...baseMobileItems.slice(0, 2),
+    ...(shouldShowLeaderboard ? [leaderboardMobileItem] : []),
+    ...baseMobileItems.slice(2),
   ];
 
   const getActiveClass = (itemRoute) => {

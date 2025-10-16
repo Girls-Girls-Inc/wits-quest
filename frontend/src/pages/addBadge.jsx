@@ -16,22 +16,13 @@ const TOAST_OPTIONS = {
     color: "#ffb819",
   },
   success: {
-    style: {
-      background: "green",
-      color: "white",
-    },
+    style: { background: "green", color: "white" },
   },
   error: {
-    style: {
-      background: "red",
-      color: "white",
-    },
+    style: { background: "red", color: "white" },
   },
   loading: {
-    style: {
-      background: "#002d73",
-      color: "#ffb819",
-    },
+    style: { background: "#002d73", color: "#ffb819" },
   },
 };
 
@@ -42,30 +33,58 @@ const AddBadge = () => {
     description: "",
     imageUrl: "",
   });
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const handleFieldChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (key === "imageUrl") {
-      setImageError(false);
+    if (key === "imageUrl") setImageError(false);
+  };
+
+  // --- Upload image to Supabase Storage ---
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("User not authenticated");
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload to 'badges' bucket
+      const { error: uploadError } = await supabase.storage
+        .from("badges")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage.from("badges").getPublicUrl(filePath);
+      const publicUrl = data?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to get public URL");
+
+      setForm((prev) => ({ ...prev, imageUrl: publicUrl }));
+      toast.success("Image uploaded successfully!");
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const handleImageLoad = () => {
-    setImageError(false);
-  };
+  const handleImageError = () => setImageError(true);
+  const handleImageLoad = () => setImageError(false);
 
   const resetForm = () => {
-    setForm({
-      name: "",
-      description: "",
-      imageUrl: "",
-    });
+    setForm({ name: "", description: "", imageUrl: "" });
     setImageError(false);
   };
 
@@ -79,11 +98,8 @@ const AddBadge = () => {
       return;
     }
 
-    const description = form.description.trim();
-    const imageUrl = form.imageUrl.trim();
-
-    if (imageUrl && imageError) {
-      toast.error("Please provide a valid image URL or leave it blank");
+    if (form.imageUrl && imageError) {
+      toast.error("Please provide a valid image");
       return;
     }
 
@@ -93,16 +109,12 @@ const AddBadge = () => {
         data: { session },
       } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) {
-        toast.error("Session expired. Please sign in again.");
-        setSubmitting(false);
-        return;
-      }
+      if (!token) throw new Error("Session expired. Please sign in again.");
 
       const payload = {
         name,
-        description: description || null,
-        imageUrl: imageUrl || null,
+        description: form.description.trim() || null,
+        imageUrl: form.imageUrl || null,
       };
 
       const res = await fetch(`${API_BASE}/collectibles`, {
@@ -116,11 +128,9 @@ const AddBadge = () => {
       });
 
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(body?.error || "Failed to create badge");
-      }
+      if (!res.ok) throw new Error(body?.error || "Failed to create badge");
 
-      toast.success("Badge created successfully");
+      toast.success("Badge created successfully!");
       resetForm();
       navigate("/manageCollectibles");
     } catch (err) {
@@ -133,6 +143,7 @@ const AddBadge = () => {
   return (
     <div className="admin-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
+
       <div className="admin-header admin-header--with-actions">
         <div className="admin-header__row">
           <h1 className="heading">Create Badge</h1>
@@ -169,14 +180,17 @@ const AddBadge = () => {
           icon="description"
         />
 
-        <InputField
-          type="text"
-          name="imageUrl"
-          placeholder="Image URL (optional)"
-          value={form.imageUrl}
-          onChange={(event) => handleFieldChange("imageUrl", event.target.value)}
-          icon="image"
-        />
+        {/* Upload Image */}
+        <div className="input-box">
+          <label>Upload Image (optional)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={uploading}
+          />
+          {uploading && <p>Uploading image...</p>}
+        </div>
 
         {form.imageUrl && (
           <div className="input-box">
@@ -207,19 +221,14 @@ const AddBadge = () => {
                   }}
                 />
               ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    color: "#999",
-                  }}
-                >
+                <div style={{ textAlign: "center", color: "#999" }}>
                   <i
                     className="material-symbols-outlined"
                     style={{ fontSize: "48px" }}
                   >
                     broken_image
                   </i>
-                  <p>Invalid image URL</p>
+                  <p>Invalid image</p>
                 </div>
               )}
             </div>
@@ -231,14 +240,14 @@ const AddBadge = () => {
             type="submit"
             icon={submitting ? "hourglass_bottom" : "save"}
             label={submitting ? "Creating..." : "Create Badge"}
-            disabled={submitting}
+            disabled={submitting || uploading}
           />
           <IconButton
             type="button"
             icon="restart_alt"
             label="Reset"
             onClick={resetForm}
-            disabled={submitting}
+            disabled={submitting || uploading}
           />
         </div>
       </form>

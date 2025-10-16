@@ -16,50 +16,28 @@ const Navbar = () => {
   }, []);
 
   const isModerator = window.__IS_MODERATOR__ === true;
-  const pathname = location.pathname.toLowerCase();
-  const shouldShowLeaderboard = !/^\/(admin|manage|add)/.test(pathname);
 
-  const baseDesktopItems = [
-    { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/displayQuests", icon: "logo", label: "Quests" },
-    { route: "/map", icon: "map", label: "Map" },
-    { route: "/settings", icon: "profile", label: "Profile" },
-  ];
-
-  const baseMobileItems = [
-    { route: "/dashboard", icon: "dashboard", label: "Home" },
-    { route: "/displayQuests", icon: "logo", label: "Quests" },
-    { route: "/settings", icon: "profile", label: "Profile" },
-  ];
-
-  const leaderboardDesktopItem = {
-    route: "/displayLeaderboard",
-    icon: "leaderboard",
-    label: "Leaderboard",
-  };
-
-  const leaderboardMobileItem = {
-    route: "/displayLeaderboard",
-    icon: "leaderboard",
-    label: "Board",
-  };
-
+  // All navigation items for desktop
   const allNavItems = [
     ...(isModerator
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
-    ...baseDesktopItems.slice(0, 3),
-    ...(shouldShowLeaderboard ? [leaderboardDesktopItem] : []),
-    ...baseDesktopItems.slice(3),
+    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/map", icon: "map", label: "Map" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Leaderboard" },
+    { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
+  // Mobile navigation items - exclude map button
   const mobileNavItems = [
     ...(isModerator
       ? [{ route: "/adminDashboard", icon: "admin", label: "Admin" }]
       : []),
-    ...baseMobileItems.slice(0, 2),
-    ...(shouldShowLeaderboard ? [leaderboardMobileItem] : []),
-    ...baseMobileItems.slice(2),
+    { route: "/dashboard", icon: "dashboard", label: "Home" },
+    { route: "/displayQuests", icon: "logo", label: "Quests" },
+    { route: "/displayLeaderboard", icon: "leaderboard", label: "Board" },
+    { route: "/settings", icon: "profile", label: "Profile" },
   ];
 
   const getActiveClass = (itemRoute) => {

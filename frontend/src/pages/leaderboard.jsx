@@ -171,6 +171,7 @@ const Leaderboard = () => {
   const [joining, setJoining] = useState(false);
 
   const periodDropdownRef = useRef(null);
+  const scopeDropdownRef = useRef(null);
 
   const makePublicUrl = (key) =>
     `${API_BASE}/leaderboard?id=${encodeURIComponent(BOARDS[key].id)}`;
@@ -233,8 +234,9 @@ const Leaderboard = () => {
   };
 
   const switchScope = async (newScope) => {
-    if (newScope === scope) return;
     setScope(newScope);
+    if (scopeDropdownRef.current)
+      scopeDropdownRef.current.classList.remove("open");
     if (newScope === "public") {
       setSelectedPrivateId(null);
       await loadBoard(boardKey, "public");
@@ -252,6 +254,12 @@ const Leaderboard = () => {
     if (!el) return;
     el.classList.toggle("open");
   };
+  const toggleScopeDropdown = () => {
+    const el = scopeDropdownRef.current;
+    if (!el) return;
+    el.classList.toggle("open");
+  };
+
   /* ---------------- private list & member counts ---------------- */
 
   const loadPrivateLeaderboards = async () => {
@@ -550,35 +558,39 @@ const Leaderboard = () => {
           </div>
         )}
 
-        <div
-          className="scope-tabs"
-          role="tablist"
-          aria-label="Leaderboard scope selection"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={scope === "public" ? "true" : "false"}
-            className={`scope-tab ${
-              scope === "public" ? "scope-tab--active" : ""
-            }`}
-            onClick={() => switchScope("public")}
-          >
-            <span className="material-symbols-outlined">public</span>
-            Public
+        <div className="dropdown" ref={scopeDropdownRef}>
+          <button className="dropdown-toggle" onClick={toggleScopeDropdown}>
+            <span className="material-symbols-outlined">
+              {scope === "public" ? "public" : "lock"}
+            </span>
+            {scope === "public" ? "Public" : "Private"}
+            <span className="material-symbols-outlined caret">expand_more</span>
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={scope === "private" ? "true" : "false"}
-            className={`scope-tab ${
-              scope === "private" ? "scope-tab--active" : ""
-            }`}
-            onClick={() => switchScope("private")}
-          >
-            <span className="material-symbols-outlined">lock</span>
-            Private
-          </button>
+
+          <ul className="dropdown-menu">
+            <li>
+              <button
+                className={`dropdown-item ${
+                  scope === "public" ? "active" : ""
+                }`}
+                onClick={() => switchScope("public")}
+              >
+                <span className="material-symbols-outlined">public</span>
+                Public
+              </button>
+            </li>
+            <li>
+              <button
+                className={`dropdown-item ${
+                  scope === "private" ? "active" : ""
+                }`}
+                onClick={() => switchScope("private")}
+              >
+                <span className="material-symbols-outlined">lock</span>
+                Private
+              </button>
+            </li>
+          </ul>
         </div>
 
         <div style={{ flex: 1 }} />

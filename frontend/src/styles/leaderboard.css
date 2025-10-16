@@ -186,53 +186,6 @@ td code {
   color: white;
 }
 
-.scope-tabs {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(0, 45, 115, 0.25);
-  backdrop-filter: blur(4px);
-}
-
-.scope-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border: none;
-  background: transparent;
-  color: white;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.scope-tab .material-symbols-outlined {
-  font-size: 1.1rem;
-}
-
-.scope-tab:hover {
-  background: rgba(255, 210, 63, 0.2);
-}
-
-.scope-tab--active {
-  background: var(--wits-blue);
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-
-.scope-tab--active .material-symbols-outlined {
-  color: white;
-}
-
-.scope-tab:focus-visible {
-  outline: 2px solid var(--wits-yellow);
-  outline-offset: -2px;
-}
-
 @keyframes pop {
   from {
     transform: scale(0.9);

@@ -18,6 +18,7 @@ const Dashboard = () => {
 
   const [badges, setBadges] = useState([]);
   const [loadingBadges, setLoadingBadges] = useState(true);
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   const [ongoing, setOngoing] = useState([]);
   const [loadingOngoing, setLoadingOngoing] = useState(true);
@@ -428,9 +429,6 @@ const Dashboard = () => {
             </div>
             <div className="badges-carousel">
               <div className="carousel-header">
-                <button className="view-badges-btn" aria-label="View badges">
-                  View Badges
-                </button>
                 <div className="carousel-controls">
                   <button
                     aria-label="Scroll left on badges"
@@ -479,13 +477,7 @@ const Dashboard = () => {
             <h3>Points</h3>
             <div className="stat-number">{dashboardData.points}</div>
           </article>
-
           <article className="dashboard-card small-card">
-            <h3>Quests Completed</h3>
-            <div className="stat-number">{dashboardData.questsCompleted}</div>
-          </article>
-
-          <article className="dashboard-card">
             <h3>Locations Visited</h3>
             <div className="stat-number">{dashboardData.locationsVisited}</div>
             <div className="latest-info">
@@ -495,6 +487,12 @@ const Dashboard = () => {
               </div>
             </div>
           </article>
+
+          <article className="dashboard-card small-card">
+            <h3>Quests Completed</h3>
+            <div className="stat-number">{dashboardData.questsCompleted}</div>
+          </article>
+
           <article className="dashboard-card leaderboard-card">
             <h3>Leaderboard</h3>
             <div className="leaderboard-scroll">

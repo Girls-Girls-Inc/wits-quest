@@ -97,7 +97,7 @@
   }
 
   .badge-item-name {
-    font-size: 11px;
+    display: none !important;
   }
 
   .quest-row {
@@ -165,7 +165,7 @@
 .badge-circle {
   width: 120px;
   height: 120px;
-  border: 2px solid #333;
+  border: 1px solid white !important;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -199,7 +199,7 @@
 
 .carousel-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 1rem;
 }
@@ -245,6 +245,7 @@
 
 .carousel-controls {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -253,19 +254,14 @@
   height: 2rem;
   border: 1px solid white;
   border-radius: 20%;
-  background: #131f24;
+  background: var(--wits-blue);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #fff;
   transition: all 0.2s;
-}
-
-.carousel-btn:hover {
-  background-color: #1f2a2f;
-  border-color: #555;
 }
 
 .carousel-container {
@@ -290,15 +286,16 @@
 }
 
 .badge-item img {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #333;
+  border: 1px solid white;
   margin-bottom: 0.5rem;
 }
 
 .badge-item-name {
+  display: block !important;
   font-size: 0.75rem;
   color: #aaa;
   font-weight: 500;
@@ -316,8 +313,16 @@
 .latest-info {
   margin-top: 1.25rem;
 }
+.loc {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
 
 .latest-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border: 1px solid #333;
   border-radius: 0.5rem;
   padding: 1rem;
@@ -451,6 +456,12 @@
 }
 
 @media (max-width: 767px) {
+  .badge-item img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    display: block;
+  }
   .leaderboard-table {
     font-size: 0.75rem;
     min-width: 500px;
@@ -523,14 +534,6 @@
 .table-wrapper.hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
-}
-
-/* Reserve space for badge images */
-.badge-item img {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  display: block;
 }
 
 /* Prevent text pushing layout */

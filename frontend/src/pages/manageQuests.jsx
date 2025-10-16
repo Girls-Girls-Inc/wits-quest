@@ -380,6 +380,7 @@ export default function ManageQuests() {
                   id="locationId"
                   name="locationId"
                   value={formData.locationId}
+                  icon="location_on"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -401,6 +402,7 @@ export default function ManageQuests() {
                   id="collectibleId"
                   name="collectibleId"
                   value={formData.collectibleId}
+                  icon="redeem"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -421,6 +423,7 @@ export default function ManageQuests() {
                   id="huntId"
                   name="huntId"
                   value={formData.huntId}
+                  icon="map"
                   onChange={(e) =>
                     setFormData({ ...formData, huntId: e.target.value || "" })
                   }
@@ -438,6 +441,7 @@ export default function ManageQuests() {
                   id="quizId"
                   name="quizId"
                   value={formData.quizId}
+                  icon="quiz"
                   onChange={(e) =>
                     setFormData({ ...formData, quizId: e.target.value || "" })
                   }
@@ -452,6 +456,7 @@ export default function ManageQuests() {
 
               <div className="input-box">
                 <InputField
+                  icon="emoji_events"
                   type="number"
                   name="pointsAchievable"
                   placeholder="Points Achievable"
@@ -550,7 +555,8 @@ export default function ManageQuests() {
             </div>
             <div className="quest-info flex-1">
               <h2 className="font-bold">{q.name}</h2>
-              <p>
+              <p className="points-display">
+                <i aria-hidden="true" className="material-symbols-outlined">emoji_events</i>
                 <strong>Points:</strong> {q.pointsAchievable}
               </p>
               <p>

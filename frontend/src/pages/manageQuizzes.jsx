@@ -371,6 +371,7 @@ export default function ManageQuizzes() {
                 id="questionType"
                 name="questionType"
                 value={formData.questionType}
+                icon="quiz"
                 onChange={(event) =>
                   handleQuestionTypeChange(event.target.value)
                 }
@@ -420,13 +421,14 @@ export default function ManageQuizzes() {
 
               {formData.questionType === "mcq" ? (
                 <div className="input-box">
-                <ComboBox
-                  id="correctAnswer"
-                  name="correctAnswer"
-                  value={formData.correctAnswer}
-                  onChange={(event) =>
-                    handleFieldChange("correctAnswer", event.target.value)
-                  }
+              <ComboBox
+                id="correctAnswer"
+                name="correctAnswer"
+                value={formData.correctAnswer}
+                icon="check_circle"
+                onChange={(event) =>
+                  handleFieldChange("correctAnswer", event.target.value)
+                }
                   placeholder="Select correct option"
                   options={availableAnswers.map((answer) => ({
                     value: answer,

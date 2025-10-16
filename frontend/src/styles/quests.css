@@ -54,6 +54,17 @@
   padding: 0 10px;
 }
 
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.points-display .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--accent, var(--wits-gold));
+}
+
 .quest-info h2 {
   margin: 0;
   font-size: 18px;

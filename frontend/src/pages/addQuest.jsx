@@ -294,6 +294,7 @@ const AddQuest = () => {
         </div>
         <div className="input-box">
           <InputField
+            icon="emoji_events"
             type="number"
             name="pointsAchievable"
             placeholder="Points Achievable"

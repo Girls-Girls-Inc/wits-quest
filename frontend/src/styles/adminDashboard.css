@@ -164,11 +164,11 @@
 }
 
 .input-box.checkbox .checkbox-label:hover {
-  background: #23313c;
+  background: #262f36;
 }
 
 .input-box.checkbox .checkbox-label:focus-within {
-  box-shadow: 0 0 0 3px rgba(0, 45, 115, 0.25);
+  box-shadow: 0 0 0 3px rgba(255, 184, 25, 0.25);
 }
 
 .input-box.checkbox input[type="checkbox"] {
@@ -201,22 +201,22 @@
 }
 
 .input-box.checkbox input[type="checkbox"]:checked {
-  border-color: var(--wits-blue);
-  background: var(--wits-blue);
+  border-color: var(--wits-yellow);
+  background: var(--wits-yellow);
 }
 
 .input-box.checkbox input[type="checkbox"]:checked::after {
-  border-color: #fff;
+  border-color: #131f24;
 }
 
 .input-box.checkbox input[type="checkbox"]:focus-visible {
-  outline: 3px solid rgba(0, 45, 115, 0.35);
+  outline: 3px solid rgba(255, 184, 25, 0.35);
   outline-offset: 3px;
 }
 
 .input-box.checkbox .checkbox-label--checked {
-  background: rgba(0, 45, 115, 0.25);
-  box-shadow: 0 0 0 3px rgba(0, 45, 115, 0.25);
+  background: rgba(255, 184, 25, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 184, 25, 0.25);
 }
 
 /* TABLES */

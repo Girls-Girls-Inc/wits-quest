@@ -79,4 +79,20 @@ describe("ComboBox", () => {
     const option = screen.getByRole("option", { name: "beta" });
     expect(option).toHaveValue("beta");
   });
+
+  it("renders a leading icon when provided", () => {
+    render(
+      <ComboBox
+        id="withIcon"
+        name="withIcon"
+        value=""
+        onChange={() => {}}
+        icon="location_on"
+        options={[{ value: "1", label: "First" }]}
+      />
+    );
+
+    const icon = screen.getByText("location_on");
+    expect(icon).toHaveClass("combo-box-leading-icon");
+  });
 });

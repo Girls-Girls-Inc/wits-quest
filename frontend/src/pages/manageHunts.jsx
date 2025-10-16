@@ -257,6 +257,7 @@ export default function ManageHunts() {
                 </div>
 
                 <div className="form-row">
+                  <label htmlFor="collectibleId">Collectiable</label>
                   <ComboBox
                     id="collectibleId"
                     name="collectibleId"
@@ -295,6 +296,7 @@ export default function ManageHunts() {
                 <div className="form-row">
                   <label htmlFor="pointsAchievable">Points Achievable</label>
                   <InputField
+                    icon="emoji_events"
                     type="number"
                     id="pointsAchievable"
                     name="pointsAchievable"
@@ -374,7 +376,8 @@ export default function ManageHunts() {
               <p>
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
               </p>
-              <p>
+              <p className="points-display">
+                <i aria-hidden="true" className="material-symbols-outlined">emoji_events</i>
                 <strong>Points:</strong> {h.pointsAchievable ?? "-"}
               </p>
               <p>

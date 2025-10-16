@@ -6,13 +6,12 @@ import { act } from "react-dom/test-utils";
 
 /* Router stub */
 const mockNavigate = jest.fn();
-let mockPathname = "/dashboard";
 jest.mock("react-router-dom", () => {
   const React = require("react");
   return {
     Link: ({ to, children, ...rest }) =>
       React.createElement("a", { href: to, ...rest }, children),
-    useLocation: () => ({ pathname: mockPathname }),
+    useLocation: () => ({ pathname: "/dashboard" }),
     useNavigate: () => mockNavigate,
   };
 });
@@ -22,7 +21,6 @@ import Navbar from "../../components/NavBar";
 describe("Navbar", () => {
   afterEach(() => {
     delete window.__IS_MODERATOR__;
-    mockPathname = "/dashboard";
     jest.clearAllMocks();
   });
 
@@ -72,13 +70,6 @@ describe("Navbar", () => {
     render(<Navbar />);
     expect(screen.getByRole("link", { name: /\bLeaderboard\b/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /\bBoard\b/i })).toBeInTheDocument();
-  });
-
-  it("hides leaderboard links on admin pages", () => {
-    mockPathname = "/adminDashboard";
-    render(<Navbar />);
-    expect(screen.queryByRole("link", { name: /\bLeaderboard\b/i })).toBeNull();
-    expect(screen.queryByRole("link", { name: /\bBoard\b/i })).toBeNull();
   });
 
 

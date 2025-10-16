@@ -27,6 +27,13 @@
   align-items: center;
   padding: 0 1.5rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  z-index: 2;
 }
 
 .profile-avatar {
@@ -37,6 +44,7 @@
   object-fit: cover;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   background-color: #f3f4f6;
+  position: relative;
   z-index: 200;
 }
 

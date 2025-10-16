@@ -444,6 +444,11 @@ const handleBack = () => {
               onClick={() => navigate("/manageLocations")}
             />
             <IconButton
+              icon="award_star"
+              label="Manage Badges"
+              onClick={() => navigate("/manageCollectibles")}
+            />
+            <IconButton
               icon="admin_panel_settings"
               label="Manage Admins"
               onClick={() => setSelectedTask("Admin Privilege")}

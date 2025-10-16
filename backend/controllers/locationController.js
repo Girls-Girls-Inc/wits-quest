@@ -42,7 +42,7 @@ const WITS_CORNERS = [
 ];
 
 const WITS_RADIUS_M =
-  Math.max(...WITS_CORNERS.map(c => metersBetween(WITS_CENTER, c))) + 5;
+  Math.max(...WITS_CORNERS.map(c => metersBetween(WITS_CENTER, c))) -80;
 
 function toRad(x) { return (x * Math.PI) / 180; }
 function metersBetween(a, b) {

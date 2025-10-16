@@ -14,9 +14,8 @@ if (!global.TextDecoder) global.TextDecoder = TextDecoder;
 
 /* ================= Mocks ================= */
 
-// fetch + confirm
+// fetch
 global.fetch = jest.fn();
-global.confirm = jest.fn();
 
 // Router
 const mockNavigate = jest.fn();
@@ -211,7 +210,6 @@ describe("ManageQuests page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.fetch.mockClear();
-    global.confirm.mockReset();
     mockNavigate.mockReset();
   });
 
@@ -474,19 +472,18 @@ describe("ManageQuests page", () => {
     mockFetch(HUNTS);
     mockFetch(QUIZZES);
 
-    global.confirm.mockReturnValue(true);
-
     render(<ManageQuests />);
 
     const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
     const cardRoot = heading.closest(".quest-card");
 
     // DELETE success
-    mockFetch("", 200);
+    mockFetch({}, 200);
 
     await userEvent.click(within(cardRoot).getByText(/delete/i));
+    const dialog = await screen.findByRole("dialog", { name: /delete quest\?/i });
+    await userEvent.click(within(dialog).getByText(/delete quest/i));
 
-    expect(global.confirm).toHaveBeenCalledWith("Delete this quest?");
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         `${API_BASE}/quests/1`,
@@ -518,15 +515,14 @@ describe("ManageQuests page", () => {
     mockFetch(HUNTS);
     mockFetch(QUIZZES);
 
-    global.confirm.mockReturnValue(false);
-
     render(<ManageQuests />);
 
     const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
     const cardRoot = heading.closest(".quest-card");
     await userEvent.click(within(cardRoot).getByText(/delete/i));
+    const dialog = await screen.findByRole("dialog", { name: /delete quest\?/i });
+    await userEvent.click(within(dialog).getByText(/cancel/i));
 
-    expect(global.confirm).toHaveBeenCalled();
     expect(global.fetch).not.toHaveBeenCalledWith(
       expect.stringContaining("/quests/1"),
       expect.objectContaining({ method: "DELETE" })
@@ -544,8 +540,6 @@ describe("ManageQuests page", () => {
     mockFetch(HUNTS);
     mockFetch(QUIZZES);
 
-    global.confirm.mockReturnValue(true);
-
     render(<ManageQuests />);
 
     const heading = await screen.findByRole("heading", { level: 2, name: /find the library/i });
@@ -554,6 +548,8 @@ describe("ManageQuests page", () => {
     mockFetchError(500, "Failed to delete quest");
 
     await userEvent.click(within(cardRoot).getByText(/delete/i));
+    const dialog = await screen.findByRole("dialog", { name: /delete quest\?/i });
+    await userEvent.click(within(dialog).getByText(/delete quest/i));
 
     const toast = (await import("react-hot-toast")).default;
     await waitFor(() => {
@@ -606,10 +602,11 @@ describe("ManageQuests page", () => {
     });
 
     // Delete path:
-    global.confirm.mockReturnValue(true);
     supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } });
 
     await userEvent.click(within(root).getByText(/delete/i));
+    const dialog = await screen.findByRole("dialog", { name: /delete quest\?/i });
+    await userEvent.click(within(dialog).getByText(/delete quest/i));
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Session expired. Please sign in again.", { id: "toast-id" });
     });

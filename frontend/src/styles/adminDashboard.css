@@ -24,6 +24,43 @@
   text-align: center;
 }
 
+.admin-header--with-actions {
+  align-items: stretch;
+}
+
+.admin-header__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.admin-header__row .heading {
+  margin: 0;
+  text-align: left;
+}
+
+.admin-header__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.quest-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.quest-section-header__title {
+  margin: 0;
+}
+
 .admin-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -171,4 +208,20 @@ table button.remove {
 
 .make-green {
   background-color: green;
+}
+
+.map-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #bbb;
+}
+
+.map-picker-fallback {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #1f2a33;
+  border: 1px dashed #2c3a44;
+  text-align: center;
+  color: #d0d6dc;
 }

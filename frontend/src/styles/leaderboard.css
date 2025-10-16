@@ -6,6 +6,7 @@
   color: #333;
   display: flex;
   flex-direction: column;
+  max-width: 100% !important;
 }
 
 .leaderboard-header h2 {
@@ -24,6 +25,7 @@
 }
 
 .leaderboard-controls .btn {
+  font-size: 10px;
   max-width: 20%;
   border-radius: 12px;
   transition: all 0.2s ease;
@@ -35,6 +37,14 @@
   border-radius: 12px;
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 4px 12px rgba(71, 68, 68, 0.08);
+}
+
+.private-table-wrapper {
+  color: #333;
+  overflow-x: auto;
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .leaderboard-table {
@@ -63,10 +73,12 @@
 }
 
 .leaderboard-table tbody tr:nth-child(odd) {
-  background: #f2f5f7;
+  background: #b5c5d0;
+  color: #030d1f;
 }
 .leaderboard-table tbody tr:nth-child(even) {
-  background: #b5c5d0;
+  background: var(--wits-blue);
+  color: white;
 }
 
 .trophy {
@@ -87,7 +99,7 @@
 td code {
   font-family: monospace;
   font-size: 12px;
-  color: #4d5051;
+  color: black;
   background: #c9c6c6;
   padding: 2px 6px;
   border-radius: 6px;
@@ -109,7 +121,7 @@ td code {
   display: flex;
   align-items: center;
   gap: 8px;
-
+  color: white;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -131,24 +143,25 @@ td code {
   position: absolute;
   top: 110%;
   left: 0;
-  background: #fff;
+  background: var(--background);
   border: 1px solid #000;
   border-radius: 15px;
   list-style: none;
   padding: 5px;
   margin: 0;
   width: 160px;
-
+  color: white;
   z-index: 1000;
 }
 
 .dropdown.open .dropdown-menu {
   display: block;
   animation: pop 0.2s ease-out;
+  color: white;
 }
 
 .dropdown-item {
-  color: #333;
+  color: white;
   width: 100%;
   text-align: left;
   padding: 8px 12px;
@@ -165,7 +178,7 @@ td code {
 }
 
 .dropdown-item:hover {
-  background: #ffecb3;
+  background: var(--wits-yellow);
 }
 
 .dropdown-item.active {
@@ -212,17 +225,19 @@ td code {
   background-color: var(--wits-blue);
   color: #fff;
   border: 1px solid transparent;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* hover / active / focus */
 .btn.primary:hover,
 .btn.primary:focus {
   filter: brightness(0.97);
   transform: translateY(0);
 }
 
-/* If you want a ghost/outline version that still uses the wits blue */
+.btn {
+  font-size: 15px;
+}
+
 .btn.ghost.primary {
   background-color: transparent;
   color: var(--wits-blue);
@@ -233,4 +248,221 @@ td code {
 .btn.primary:focus {
   outline: 3px solid color-mix(in srgb, var(--wits-blue) 30%, transparent);
   outline-offset: 2px;
+}
+
+.private-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.private-action {
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.private-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.private-action .btn,
+.private-action button {
+  width: 100%;
+}
+
+.private-action p {
+  font-size: 13px;
+  color: var(--muted, #eee);
+  margin-top: 10px;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal {
+  background: var(--background);
+  border-radius: 16px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transform: scale(0.8);
+  opacity: 0;
+  animation: popUp 0.3s ease forwards;
+  padding: 2rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #ccc;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+.modal h3 {
+  color: #eee;
+  margin-bottom: 10px;
+}
+
+.invite-input {
+  width: 100%;
+  max-width: 320pxs;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: var(--background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.invite-input:focus {
+  border-color: var(--wits-blue, --wits-yellow);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.invite-input::placeholder {
+  color: var(--muted, #98a0aa);
+  font-size: 14px;
+}
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.quests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  color: white;
+}
+
+.quest-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid #555;
+  color: white;
+  border-radius: 12px;
+  padding: 15px;
+  background: var(--background);
+  justify-content: space-between;
+  transition: transform 0.2s ease;
+}
+
+.quest-card:hover {
+  transform: scale(1.01);
+}
+
+.quest-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+  color: white;
+}
+
+.quest-profile img {
+  max-width: 70px;
+  height: auto;
+  object-fit: cover;
+  margin-bottom: 5px;
+}
+
+.quest-info {
+  flex: 1;
+  padding: 0 10px;
+}
+
+.quest-info h2 {
+  margin: 0;
+  font-size: 25px;
+  color: var(--wits-yellow);
+}
+
+@media (max-width: 768px) {
+  .quest-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    color: white;
+  }
+
+  .quest-profile {
+    flex-direction: column;
+    align-items: center;
+    margin-right: 0;
+    gap: 10px;
+  }
+
+  .quest-profile img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .quest-info {
+    padding: 0;
+    color: white;
+  }
+
+  .quest-action {
+    align-self: flex-end;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .quest-action button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .quest-profile img {
+    max-width: 20px;
+    height: auto;
+  }
+  .quests-container {
+    padding: 10px;
+  }
+
+  .quest-info h2 {
+    font-size: 16px;
+  }
 }

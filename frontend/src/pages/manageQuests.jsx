@@ -10,6 +10,30 @@ import IconButton from "../components/IconButton";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
 
 const getToken = async () => {
   const {
@@ -26,6 +50,7 @@ export default function ManageQuests() {
   const [hunts, setHunts] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuest, setEditingQuest] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -253,7 +278,7 @@ export default function ManageQuests() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this quest?")) return;
+    setPendingDelete(null);
     const t = toast.loading("Deleting quest...");
     try {
       const token = await getToken();
@@ -275,12 +300,36 @@ export default function ManageQuests() {
     }
   };
 
+  const requestDelete = (quest) => setPendingDelete(quest);
+  const cancelDeletePrompt = () => setPendingDelete(null);
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    handleDelete(pendingDelete.id);
+  };
+
   return (
     <div className="quests-container">
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Quests</h1>
-        {/* <button onClick={loadQuests}>Refresh</button> */}
-        <IconButton icon="refresh" label="Refresh" onClick={loadQuests} />
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
+          <IconButton icon="refresh" label="Refresh" onClick={loadQuests} />
+          <IconButton
+            icon="add"
+            label="New Quest"
+            onClick={() =>
+              navigate("/adminDashboard", {
+                state: { selectedTask: "Quest Creation" },
+              })
+            }
+          />
+        </div>
       </div>
 
       {editingQuest && (
@@ -451,6 +500,42 @@ export default function ManageQuests() {
         </div>
       )}
 
+      {pendingDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-quest-title"
+          onClick={cancelDeletePrompt}
+        >
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-body">
+              <h2 id="delete-quest-title">Delete Quest?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDelete.name}</strong>"? This action cannot be
+                undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton
+                  icon="delete"
+                  label="Delete Quest"
+                  onClick={confirmDelete}
+                />
+                <IconButton
+                  icon="close"
+                  label="Cancel"
+                  onClick={cancelDeletePrompt}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="quest-list">
         {quests.map((q) => (
           <div
@@ -508,19 +593,11 @@ export default function ManageQuests() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(q.id)}
+                onClick={() => requestDelete(q)}
               />
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

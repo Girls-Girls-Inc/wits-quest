@@ -5,14 +5,14 @@ import toast from "react-hot-toast";
 import "../styles/login-signup.css";
 import "../index.css";
 import "../styles/leaderboard.css";
-import "../styles/quests.css"; // reuse quests classes for the private-list look
+import Logo from "../assets/Logo.png";
 
 const API_BASE = import.meta.env.VITE_WEB_URL || ""; // ensure this is set in your .env
 
 const BOARDS = {
   year: { label: "Yearly", id: "12345", icon: "calendar_today" },
   month: { label: "Monthly", id: "1234", icon: "calendar_month" },
-  week: { label: "Weekly", id: "week", icon: "calendar_view_week" },
+  week: { label: "Weekly", id: "123", icon: "calendar_view_week" },
 };
 
 /* --------------------- helper utilities (unchanged) --------------------- */
@@ -35,7 +35,8 @@ function detectAccessTokenFromLocalStorage() {
           if (raw.trim().startsWith("{") || raw.trim().startsWith("[")) {
             const obj = JSON.parse(raw);
             if (obj?.access_token) return obj.access_token;
-            if (obj?.currentSession?.access_token) return obj.currentSession.access_token;
+            if (obj?.currentSession?.access_token)
+              return obj.currentSession.access_token;
             if (obj?.session?.access_token) return obj.session.access_token;
             if (obj?.data?.access_token) return obj.data.access_token;
             if (obj?.auth?.access_token) return obj.auth.access_token;
@@ -182,7 +183,7 @@ const Leaderboard = () => {
     setRows([]);
     try {
       abortRef.current?.abort();
-    } catch { }
+    } catch {}
     const ac = new AbortController();
     abortRef.current = ac;
 
@@ -234,14 +235,15 @@ const Leaderboard = () => {
 
   const switchScope = async (newScope) => {
     setScope(newScope);
-    if (scopeDropdownRef.current) scopeDropdownRef.current.classList.remove("open");
+    if (scopeDropdownRef.current)
+      scopeDropdownRef.current.classList.remove("open");
     if (newScope === "public") {
       setSelectedPrivateId(null);
       await loadBoard(boardKey, "public");
     } else {
       try {
         abortRef.current?.abort();
-      } catch { }
+      } catch {}
       setRows([]);
       await loadPrivateLeaderboards();
     }
@@ -283,18 +285,23 @@ const Leaderboard = () => {
           if (typeof lb.memberCount === "number") return lb;
           try {
             const members = await safeFetchJson(
-              `${API_BASE}/private-leaderboards/${encodeURIComponent(lb.id)}/members`,
+              `${API_BASE}/private-leaderboards/${encodeURIComponent(
+                lb.id
+              )}/members`,
               {
                 headers: { Accept: "application/json" },
                 credentials: "include",
                 includeAuth: true,
               }
             );
-            if (Array.isArray(members)) return { ...lb, memberCount: members.length };
+            if (Array.isArray(members))
+              return { ...lb, memberCount: members.length };
           } catch {
             try {
               const standings = await safeFetchJson(
-                `${API_BASE}/private-leaderboards/${encodeURIComponent(lb.id)}/standings`,
+                `${API_BASE}/private-leaderboards/${encodeURIComponent(
+                  lb.id
+                )}/standings`,
                 {
                   headers: { Accept: "application/json" },
                   credentials: "include",
@@ -304,7 +311,11 @@ const Leaderboard = () => {
               if (Array.isArray(standings))
                 return { ...lb, memberCount: standings.length };
             } catch (err2) {
-              console.warn("Could not fetch members or standings for", lb.id, err2);
+              console.warn(
+                "Could not fetch members or standings for",
+                lb.id,
+                err2
+              );
             }
           }
           return { ...lb, memberCount: null };
@@ -363,7 +374,9 @@ const Leaderboard = () => {
       } else {
         try {
           const members = await safeFetchJson(
-            `${API_BASE}/private-leaderboards/${encodeURIComponent(leaderboardId)}/members`,
+            `${API_BASE}/private-leaderboards/${encodeURIComponent(
+              leaderboardId
+            )}/members`,
             {
               headers: { Accept: "application/json" },
               credentials: "include",
@@ -421,7 +434,8 @@ const Leaderboard = () => {
   /* ---------------- create / join flows ---------------- */
 
   const createLeaderboard = async () => {
-    if (!createName.trim()) return toast.error("Please enter a leaderboard name");
+    if (!createName.trim())
+      return toast.error("Please enter a leaderboard name");
     setCreating(true);
     try {
       const res = await safeFetchJson(`${API_BASE}/private-leaderboards`, {
@@ -496,52 +510,53 @@ const Leaderboard = () => {
     <div className="leaderboard-container">
       <div className="leaderboard-header">
         <h1>LEADERBOARD</h1>
-        <h2>
-          {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
-        </h2>
+        <h2>{BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}</h2>
       </div>
 
       <div className="leaderboard-controls" style={{ gap: 12 }}>
-        <div className="dropdown" ref={periodDropdownRef}>
-          <button
-            className="dropdown-toggle"
-            onClick={togglePeriodDropdown}
-          >
-            <span className="material-symbols-outlined">
-              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
-            </span>
-            {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
-            <span className="material-symbols-outlined caret">expand_more</span>
-          </button>
+        {/* Only show period dropdown when scope is "public" */}
+        {scope === "public" && (
+          <div className="dropdown" ref={periodDropdownRef}>
+            <button className="dropdown-toggle" onClick={togglePeriodDropdown}>
+              <span className="material-symbols-outlined">
+                {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].icon}
+              </span>
+              {BOARDS[selectedPrivateId ? detailPeriodKey : boardKey].label}
+              <span className="material-symbols-outlined caret">
+                expand_more
+              </span>
+            </button>
 
-          <ul className="dropdown-menu">
-            {Object.keys(BOARDS).map((key) => (
-              <li key={key}>
-                <button
-                  className={`dropdown-item ${(selectedPrivateId ? detailPeriodKey : boardKey) === key
-                      ? "active"
-                      : ""
+            <ul className="dropdown-menu">
+              {Object.keys(BOARDS).map((key) => (
+                <li key={key}>
+                  <button
+                    className={`dropdown-item ${
+                      (selectedPrivateId ? detailPeriodKey : boardKey) === key
+                        ? "active"
+                        : ""
                     }`}
-                  onClick={async () => {
-                    if (selectedPrivateId) {
-                      setDetailPeriodKey(key);
-                      await loadPrivateStandings(selectedPrivateId, key);
-                    } else {
-                      await switchBoard(key);
-                    }
-                    if (periodDropdownRef.current)
-                      periodDropdownRef.current.classList.remove("open");
-                  }}
-                >
-                  <span className="material-symbols-outlined">
-                    {BOARDS[key].icon}
-                  </span>
-                  {BOARDS[key].label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+                    onClick={async () => {
+                      if (selectedPrivateId) {
+                        setDetailPeriodKey(key);
+                        await loadPrivateStandings(selectedPrivateId, key);
+                      } else {
+                        await switchBoard(key);
+                      }
+                      if (periodDropdownRef.current)
+                        periodDropdownRef.current.classList.remove("open");
+                    }}
+                  >
+                    <span className="material-symbols-outlined">
+                      {BOARDS[key].icon}
+                    </span>
+                    {BOARDS[key].label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="dropdown" ref={scopeDropdownRef}>
           <button className="dropdown-toggle" onClick={toggleScopeDropdown}>
@@ -555,7 +570,9 @@ const Leaderboard = () => {
           <ul className="dropdown-menu">
             <li>
               <button
-                className={`dropdown-item ${scope === "public" ? "active" : ""}`}
+                className={`dropdown-item ${
+                  scope === "public" ? "active" : ""
+                }`}
                 onClick={() => switchScope("public")}
               >
                 <span className="material-symbols-outlined">public</span>
@@ -564,8 +581,9 @@ const Leaderboard = () => {
             </li>
             <li>
               <button
-                className={`dropdown-item ${scope === "private" ? "active" : ""
-                  }`}
+                className={`dropdown-item ${
+                  scope === "private" ? "active" : ""
+                }`}
                 onClick={() => switchScope("private")}
               >
                 <span className="material-symbols-outlined">lock</span>
@@ -580,7 +598,6 @@ const Leaderboard = () => {
         <div className="btn">
           <IconButton
             type="button"
-            label="Refresh"
             icon="refresh"
             onClick={() => {
               if (selectedPrivateId)
@@ -637,7 +654,7 @@ const Leaderboard = () => {
 
       {/* ---------- PRIVATE: list or detail ---------- */}
       {scope === "private" && (
-        <div className="leaderboard-table-wrapper">
+        <div>
           <div className="quests-header" style={{ marginBottom: 18 }}>
             <h1 style={{ margin: 0 }}>
               {selectedPrivateId
@@ -657,16 +674,15 @@ const Leaderboard = () => {
                 }}
               >
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button
-                    className="btn primary"
+                  <IconButton
+                    icon="arrow_back"
+                    label="Back"
                     onClick={() => {
                       setSelectedPrivateId(null);
                       setSelectedPrivateDetails(null);
                       setSelectedStandings([]);
                     }}
-                  >
-                    ← Back
-                  </button>
+                  />
 
                   <div
                     style={{
@@ -679,17 +695,17 @@ const Leaderboard = () => {
                 </div>
 
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button className="btn primary" onClick={toggleShowCode}>
-                    {detailShowCode ? "Hide Code" : "Show Code"}
-                  </button>
+                  <IconButton
+                    icon="code"
+                    label={detailShowCode ? "Hide Code" : "Show Code"}
+                    onClick={toggleShowCode}
+                  />
                 </div>
               </div>
 
               {detailShowCode && (
                 <div style={{ marginBottom: 12 }}>
-                  <div
-                    style={{ fontSize: 13, color: "var(--muted, #98a0aa)" }}
-                  >
+                  <div style={{ fontSize: 13, color: "var(--muted, #98a0aa)" }}>
                     Invite code:
                   </div>
                   <div
@@ -704,14 +720,16 @@ const Leaderboard = () => {
                       style={{
                         fontFamily: "monospace",
                         padding: "6px 10px",
+                        color: "black !important",
                         background: "var(--surface, #f6f7f8)",
                         borderRadius: 6,
                       }}
                     >
                       {selectedPrivateDetails?.inviteCode ?? "—"}
                     </div>
-                    <button
-                      className="btn primary"
+                    <IconButton
+                      icon="content_copy"
+                      label="Copy"
                       onClick={() => {
                         const code = selectedPrivateDetails?.inviteCode ?? "";
                         if (!code) return;
@@ -720,14 +738,12 @@ const Leaderboard = () => {
                           .then(() => toast.success("Code copied"))
                           .catch(() => toast("Copy failed"));
                       }}
-                    >
-                      Copy
-                    </button>
+                    />
                   </div>
                 </div>
               )}
 
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 8, color: "white" }}>
                 {detailLoading ? (
                   <div>Loading standings…</div>
                 ) : (
@@ -780,10 +796,7 @@ const Leaderboard = () => {
               ) : (
                 <>
                   {privateLeaderboards.length > 0 && (
-                    <div
-                      className="quest-list"
-                      style={{ marginBottom: 20 }}
-                    >
+                    <div className="quest-list" style={{ marginBottom: 20 }}>
                       {privateLeaderboards.map((b) => (
                         <div
                           key={b.id}
@@ -798,7 +811,10 @@ const Leaderboard = () => {
                               alignItems: "center",
                               justifyContent: "center",
                             }}
-                          />
+                          >
+                            <img src={Logo} alt="Logo" />
+                          </div>
+
                           <div className="quest-info" style={{ flex: 1 }}>
                             <h2 style={{ marginBottom: 6 }}>{b.name}</h2>
                             <p
@@ -808,8 +824,9 @@ const Leaderboard = () => {
                               }}
                             >
                               {typeof b.memberCount === "number"
-                                ? `${b.memberCount} member${b.memberCount === 1 ? "" : "s"
-                                }`
+                                ? `${b.memberCount} member${
+                                    b.memberCount === 1 ? "" : "s"
+                                  }`
                                 : "—"}
                             </p>
                           </div>
@@ -819,10 +836,8 @@ const Leaderboard = () => {
                           >
                             <IconButton
                               icon="find_in_page"
-                              label="View Details"
-                              onClick={() =>
-                                handleViewPrivateLeaderboard(b.id)
-                              }
+                              label="View Leaderboard"
+                              onClick={() => handleViewPrivateLeaderboard(b.id)}
                             />
                           </div>
                         </div>
@@ -843,16 +858,25 @@ const Leaderboard = () => {
                     </div>
                   )}
 
-                  <div
+                  <section
                     style={{
                       display: "flex",
-                      gap: 20,
-                      alignItems: "flex-start",
+                      flexDirection: "column",
+                      alignItems: "center",
                       justifyContent: "center",
                       padding: "12px 0 40px",
+                      gap: 12,
                     }}
                   >
-                    <div style={{ textAlign: "center", width: 260 }}>
+                    {/* Buttons side by side */}
+                    <section
+                      style={{
+                        display: "flex",
+                        gap: 20,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
                       <IconButton
                         icon="login"
                         label="Join"
@@ -861,18 +885,7 @@ const Leaderboard = () => {
                           setShowJoinModal(true);
                         }}
                       />
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted, #98a0aa)",
-                          marginTop: 8,
-                        }}
-                      >
-                        Enter an invite code to join a private leaderboard.
-                      </div>
-                    </div>
 
-                    <div style={{ textAlign: "center", width: 260 }}>
                       <IconButton
                         icon="group_add"
                         label="Create"
@@ -881,17 +894,23 @@ const Leaderboard = () => {
                           setShowCreateModal(true);
                         }}
                       />
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted, #98a0aa)",
-                          marginTop: 8,
-                        }}
-                      >
-                        Create a private leaderboard and invite friends.
-                      </div>
-                    </div>
-                  </div>
+                    </section>
+
+                    {/* Shared description */}
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "var(--muted, #98a0aa)",
+                        textAlign: "center",
+                        marginTop: 8,
+                        maxWidth: 340,
+                      }}
+                    >
+                      Click <b>“Join”</b> to enter an invite code and join a
+                      private leaderboard, or <b>“Create”</b> to start one and
+                      invite your friends.
+                    </p>
+                  </section>
                 </>
               )}
             </>
@@ -901,10 +920,11 @@ const Leaderboard = () => {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
+        <div className="modal-backdrop">
+          <div className="modal">
             <h3>Create a leaderboard</h3>
             <input
+              className="invite-input"
               autoFocus
               placeholder="Leaderboard name"
               value={createName}
@@ -919,22 +939,22 @@ const Leaderboard = () => {
                 marginTop: 12,
               }}
             >
-              <button
-                className="btn ghost"
+              <IconButton
+                icon="close"
+                label="Cancel"
+                className="ghost"
                 onClick={() => {
                   setShowCreateModal(false);
                   setCreateName("");
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn"
+              />
+
+              <IconButton
+                icon="add_circle"
+                label={creating ? "Creating…" : "Create"}
                 onClick={createLeaderboard}
                 disabled={creating}
-              >
-                {creating ? "Creating…" : "Create"}
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -942,10 +962,11 @@ const Leaderboard = () => {
 
       {/* Join Modal */}
       {showJoinModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
+        <div className="modal-backdrop">
+          <div className="modal">
             <h3>Join a leaderboard</h3>
             <input
+              className="invite-input"
               autoFocus
               placeholder="Paste invite code"
               value={joinCode}
@@ -960,22 +981,22 @@ const Leaderboard = () => {
                 marginTop: 12,
               }}
             >
-              <button
-                className="btn ghost"
+              <IconButton
+                icon="close"
+                label="Cancel"
+                className="ghost"
                 onClick={() => {
                   setShowJoinModal(false);
                   setJoinCode("");
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn"
+              />
+
+              <IconButton
+                icon="group_add"
+                label="Join"
                 onClick={joinLeaderboard}
                 disabled={joining}
-              >
-                {joining ? "Joining…" : "Join"}
-              </button>
+              />
             </div>
           </div>
         </div>

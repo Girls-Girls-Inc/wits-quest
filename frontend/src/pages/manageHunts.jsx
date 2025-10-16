@@ -14,12 +14,16 @@ export default function ManageHunts() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState([]);
   const [editingHunt, setEditingHunt] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [collectibles, setCollectibles] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     question: "",
     answer: "",
     timeLimit: "",
+    collectibleId: "",
+    pointsAchievable: "",
   });
 
   const loadHunts = async () => {
@@ -36,8 +40,24 @@ export default function ManageHunts() {
     }
   };
 
+  const loadCollectibles = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/collectibles`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch collectibles");
+      const data = await res.json();
+      setCollectibles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setCollectibles([]);
+    }
+  };
+
+
   useEffect(() => {
     loadHunts();
+    loadCollectibles();
   }, []);
 
   const handleEditClick = (hunt) => {
@@ -49,6 +69,8 @@ export default function ManageHunts() {
       question: hunt.question || "",
       answer: hunt.answer || "",
       timeLimit: hunt.timeLimit || "",
+      collectibleId: hunt.collectibleId || "",
+      pointsAchievable: hunt.pointsAchievable || "",
     });
   };
 
@@ -62,6 +84,12 @@ export default function ManageHunts() {
         question: formData.question,
         answer: formData.answer,
         timeLimit: formData.timeLimit ? Number(formData.timeLimit) : null,
+        collectibleId: formData.collectibleId
+          ? Number(formData.collectibleId)
+          : null,
+        pointsAchievable: formData.pointsAchievable
+          ? Number(formData.pointsAchievable)
+          : 0,
       };
       const huntId = Number(editingHunt.id);
       const resp = await fetch(`${API_BASE}/hunts/${huntId}`, {
@@ -77,12 +105,13 @@ export default function ManageHunts() {
       toast.success("Hunt updated", { id: t });
       setEditingHunt(null);
     } catch (err) {
-      toast.error(err.message, { id: t });
+      toast.error(err?.message || "Failed to update hunt", { id: t });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this hunt?")) return;
+    if (!id) return;
+    setPendingDelete(null);
     const t = toast.loading("Deleting hunt...");
     try {
       const resp = await fetch(`${API_BASE}/hunts/${id}`, {
@@ -94,16 +123,66 @@ export default function ManageHunts() {
       if (editingHunt?.id === id) setEditingHunt(null);
       toast.success("Hunt deleted", { id: t });
     } catch (err) {
-      toast.error(err.message, { id: t });
+      toast.error(err?.message || "Failed to delete hunt", { id: t });
     }
+  };
+
+  const requestDelete = (hunt) => setPendingDelete(hunt);
+  const cancelDeletePrompt = () => setPendingDelete(null);
+  const confirmDelete = () => {
+    if (!pendingDelete?.id) return;
+    handleDelete(pendingDelete.id);
   };
 
   return (
     <div className="quests-container">
-      <Toaster />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#002d73",
+            color: "#ffb819",
+          },
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+          loading: {
+            style: {
+              background: "#002d73",
+              color: "#ffb819",
+            },
+          },
+        }}
+      />
       <div className="quests-header">
         <h1>Manage Hunts</h1>
-        <IconButton icon="refresh" label="Refresh" onClick={loadHunts} />
+        <div className="quest-buttons">
+          <IconButton
+            type="button"
+            icon="arrow_back"
+            label="Back to Admin"
+            onClick={() => navigate("/adminDashboard")}
+          />
+          <IconButton icon="refresh" label="Refresh" onClick={loadHunts} />
+          <IconButton
+            icon="add"
+            label="New Hunt"
+            onClick={() =>
+              navigate("/adminDashboard", {
+                state: { selectedTask: "Hunt Creation" },
+              })
+            }
+          />
+        </div>
       </div>
 
       {editingHunt && (
@@ -152,7 +231,6 @@ export default function ManageHunts() {
                     }
                   />
                 </div>
-
                 <div className="form-row">
                   <label htmlFor="question">Question</label>
                   <InputField
@@ -182,6 +260,26 @@ export default function ManageHunts() {
                 </div>
 
                 <div className="form-row">
+                  <label htmlFor="collectibleId">Collectible</label>
+                  <select
+                    id="collectibleId"
+                    name="collectibleId"
+                    value={formData.collectibleId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, collectibleId: e.target.value })
+                    }
+                  >
+                    <option value="">Select a collectible</option>
+                    {collectibles.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+
+                <div className="form-row">
                   <label htmlFor="timeLimit">Time Limit (seconds)</label>
                   <InputField
                     type="number"
@@ -191,6 +289,20 @@ export default function ManageHunts() {
                     value={formData.timeLimit}
                     onChange={(e) =>
                       setFormData({ ...formData, timeLimit: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="pointsAchievable">Points Achievable</label>
+                  <InputField
+                    type="number"
+                    id="pointsAchievable"
+                    name="pointsAchievable"
+                    placeholder="Points Achievable"
+                    value={formData.pointsAchievable}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pointsAchievable: e.target.value })
                     }
                   />
                 </div>
@@ -210,12 +322,47 @@ export default function ManageHunts() {
         </div>
       )}
 
+      {pendingDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-hunt-title"
+          onClick={cancelDeletePrompt}
+        >
+          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-hunt-title">Delete Hunt?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton icon="delete" label="Delete Hunt" onClick={confirmDelete} />
+                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="quest-list">
         {hunts.map((h) => (
           <div
             key={h.id}
             className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
           >
+            <div className="quest-profile">
+              <img
+                src={
+                  collectibles.find((c) => c.id === h.collectibleId)?.imageUrl ||
+                  "https://via.placeholder.com/100"
+                }
+                alt={h.name}
+                className="w-16 h-16 object-cover rounded"
+              />
+            </div>
+
             <div className="quest-info flex-1">
               <h2 className="font-bold">{h.name}</h2>
               <p>{h.description || "-"}</p>
@@ -228,6 +375,13 @@ export default function ManageHunts() {
               <p>
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
               </p>
+              <p>
+                <strong>Points:</strong> {h.pointsAchievable ?? "-"}
+              </p>
+              <p>
+                <strong>Collectible:</strong>{" "}
+                {collectibles.find((c) => c.id === h.collectibleId)?.name || "-"}
+              </p>
             </div>
             <div className="quest-action flex gap-2">
               <IconButton
@@ -238,19 +392,11 @@ export default function ManageHunts() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(h.id)}
+                onClick={() => requestDelete(h)}
               />
             </div>
           </div>
         ))}
-        <div className="mt-4">
-          <IconButton
-            type="button"
-            icon="arrow_back"
-            label="Back to Admin"
-            onClick={() => navigate("/adminDashboard")}
-          />
-        </div>
       </div>
     </div>
   );

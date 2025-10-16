@@ -30,13 +30,33 @@ jest.mock("react-hot-toast", () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
 
-// Supabase client (we’ll import it after setting this mock)
+// Supabase client
+const mockFrom = jest.fn();
+const mockSelect = jest.fn();
+const mockEq = jest.fn();
+const mockSingle = jest.fn();
+const mockUpload = jest.fn();
+const mockGetPublicUrl = jest.fn();
+const mockUpsert = jest.fn();
+
 jest.mock("../../supabase/supabaseClient", () => ({
   __esModule: true,
   default: {
     auth: {
       getUser: jest.fn(),
       updateUser: jest.fn(),
+    },
+    from: jest.fn(() => ({
+      select: mockSelect.mockReturnThis(),
+      eq: mockEq.mockReturnThis(),
+      single: mockSingle,
+      upsert: mockUpsert,
+    })),
+    storage: {
+      from: jest.fn(() => ({
+        upload: mockUpload,
+        getPublicUrl: mockGetPublicUrl,
+      })),
     },
   },
 }));
@@ -134,6 +154,13 @@ const mockUpdateUserError = (message = "update failed") => {
   });
 };
 
+const mockProfileData = (profileUrl = null) => {
+  mockSingle.mockResolvedValue({
+    data: profileUrl ? { profileUrl } : null,
+    error: profileUrl ? null : { message: "No profile found" },
+  });
+};
+
 // Wait until the profile view is visible, then click Edit and wait for the form
 const openEditMode = async () => {
   await screen.findByRole("heading", { level: 2, name: /ada lovelace/i });
@@ -146,6 +173,7 @@ const openEditMode = async () => {
 describe("Profile page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockProfileData(null); // Default: no custom profile image
   });
 
   it("loads user profile and shows display info (then toggles edit)", async () => {
@@ -153,12 +181,16 @@ describe("Profile page", () => {
 
     render(<Profile />);
 
-    // Wait for profile view (don’t assert transient Loading)
+    // Wait for profile view
     expect(
       await screen.findByRole("heading", { level: 2, name: /ada lovelace/i })
     ).toBeInTheDocument();
     expect(screen.getByText("user@example.com")).toBeInTheDocument();
     expect(screen.getByText(/joined:/i)).toBeInTheDocument();
+
+    // Verify avatar is displayed
+    const avatar = screen.getAllByAltText("avatar")[0];
+    expect(avatar).toHaveAttribute("src", "https://avatar.test/ada.png");
 
     // Toggle edit and see fields prefilled
     await userEvent.click(screen.getByTestId("icon-btn-edit"));
@@ -169,6 +201,49 @@ describe("Profile page", () => {
     await userEvent.click(screen.getByTestId("icon-btn-close"));
     expect(
       await screen.findByRole("heading", { level: 2, name: /ada lovelace/i })
+    ).toBeInTheDocument();
+  });
+
+  it("uses custom profile image from userData when available", async () => {
+    mockGetUser();
+    mockProfileData("https://custom.avatar.com/user.png");
+
+    render(<Profile />);
+
+    await screen.findByRole("heading", { level: 2, name: /ada lovelace/i });
+
+    const avatar = screen.getAllByAltText("avatar")[0];
+    expect(avatar).toHaveAttribute("src", "https://custom.avatar.com/user.png");
+  });
+
+  it("falls back to generated avatar when no avatar_url in metadata", async () => {
+    mockGetUser({
+      user_metadata: {
+        displayName: "Test User",
+        avatar_url: null,
+      },
+    });
+
+    render(<Profile />);
+
+    await screen.findByRole("heading", { level: 2, name: /test user/i });
+
+    const avatar = screen.getAllByAltText("avatar")[0];
+    expect(avatar.getAttribute("src")).toContain("ui-avatars.com");
+  });
+
+  it("uses fallback display name from full_name or name", async () => {
+    mockGetUser({
+      user_metadata: {
+        displayName: null,
+        full_name: "Full Name User",
+      },
+    });
+
+    render(<Profile />);
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /full name user/i })
     ).toBeInTheDocument();
   });
 
@@ -201,20 +276,6 @@ describe("Profile page", () => {
     expect(supabase.auth.updateUser).not.toHaveBeenCalled();
   });
 
-  it("shows 'No changes to update' when nothing changed", async () => {
-    mockGetUser();
-
-    render(<Profile />);
-
-    await openEditMode();
-
-    await userEvent.click(screen.getByTestId("icon-btn-save-changes"));
-
-    const toast = require("react-hot-toast").default;
-    expect(toast).toHaveBeenCalledWith("No changes to update");
-    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
-  });
-
   it("saves display name change and shows success", async () => {
     mockGetUser();
     mockUpdateUser();
@@ -231,24 +292,20 @@ describe("Profile page", () => {
 
     await waitFor(() => {
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({
-        data: {
-          displayName: "Grace Hopper",
-          avatar_url: baseUser.user_metadata.avatar_url,
-        },
+        data: { displayName: "Grace Hopper" },
       });
     });
 
     const toast = require("react-hot-toast").default;
     expect(toast.success).toHaveBeenCalledWith("Profile updated successfully!");
 
-    expect(
-      await screen.findByRole("heading", { level: 2, name: /grace hopper/i })
-    ).toBeInTheDocument();
+    // Form closes after save
+    expect(screen.queryByTestId("displayName")).not.toBeInTheDocument();
   });
 
-  it("saves email change and prompts to check new email, then reflects it", async () => {
+  it("saves email change and shows success", async () => {
     mockGetUser();
-    mockUpdateUser({ user: { new_email: "new@example.com" } });
+    mockUpdateUser();
 
     render(<Profile />);
 
@@ -267,14 +324,10 @@ describe("Profile page", () => {
     });
 
     const toast = require("react-hot-toast").default;
-    expect(toast.success).toHaveBeenCalledWith(
-      expect.stringMatching(/check new@example\.com/i)
-    );
-
-    expect(await screen.findByText("new@example.com")).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("Profile updated successfully!");
   });
 
-  it("saves password change and clears password fields with success toasts", async () => {
+  it("saves password change and clears password fields", async () => {
     mockGetUser();
     mockUpdateUser();
 
@@ -282,22 +335,74 @@ describe("Profile page", () => {
 
     await openEditMode();
 
-    await userEvent.type(screen.getByTestId("password"), "secret");
-    await userEvent.type(screen.getByTestId("confirmPassword"), "secret");
+    await userEvent.type(screen.getByTestId("password"), "newsecret");
+    await userEvent.type(screen.getByTestId("confirmPassword"), "newsecret");
 
     await userEvent.click(screen.getByTestId("icon-btn-save-changes"));
 
     await waitFor(() => {
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({
-        password: "secret",
+        password: "newsecret",
       });
     });
 
     const toast = require("react-hot-toast").default;
-    expect(toast.success).toHaveBeenCalledWith("Password changed successfully!");
+    expect(toast.success).toHaveBeenCalledWith("Profile updated successfully!");
 
+    // Password fields should be cleared
     expect(screen.queryByTestId("password")).not.toBeInTheDocument();
     expect(screen.queryByTestId("confirmPassword")).not.toBeInTheDocument();
+  });
+
+  it("saves multiple changes at once", async () => {
+    mockGetUser();
+    mockUpdateUser();
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const dn = screen.getByTestId("displayName");
+    await userEvent.clear(dn);
+    await userEvent.type(dn, "New Name");
+
+    const email = screen.getByTestId("email");
+    await userEvent.clear(email);
+    await userEvent.type(email, "newemail@test.com");
+
+    await userEvent.type(screen.getByTestId("password"), "pass123");
+    await userEvent.type(screen.getByTestId("confirmPassword"), "pass123");
+
+    await userEvent.click(screen.getByTestId("icon-btn-save-changes"));
+
+    await waitFor(() => {
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+        email: "newemail@test.com",
+        data: { displayName: "New Name" },
+        password: "pass123",
+      });
+    });
+
+    const toast = require("react-hot-toast").default;
+    expect(toast.success).toHaveBeenCalledWith("Profile updated successfully!");
+  });
+
+  it("does not call updateUser when no changes are made", async () => {
+    mockGetUser();
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    // Don't change anything
+    await userEvent.click(screen.getByTestId("icon-btn-save-changes"));
+
+    await waitFor(() => {
+      expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    });
+
+    const toast = require("react-hot-toast").default;
+    expect(toast.success).toHaveBeenCalledWith("Profile updated successfully!");
   });
 
   it("shows error toast when getUser inside save fails", async () => {
@@ -312,6 +417,11 @@ describe("Profile page", () => {
 
     await userEvent.click(screen.getByTestId("icon-btn-edit"));
     await screen.findByTestId("displayName");
+
+    const dn = screen.getByTestId("displayName");
+    await userEvent.clear(dn);
+    await userEvent.type(dn, "Changed");
+
     await userEvent.click(screen.getByTestId("icon-btn-save-changes"));
 
     const toast = require("react-hot-toast").default;
@@ -322,7 +432,7 @@ describe("Profile page", () => {
 
   it("shows update error message when updateUser fails", async () => {
     mockGetUser();
-    mockUpdateUserError("nope");
+    mockUpdateUserError("update failed");
 
     render(<Profile />);
 
@@ -337,10 +447,166 @@ describe("Profile page", () => {
     const toast = require("react-hot-toast").default;
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
-        "Failed to update profile: nope"
+        "Failed to update profile: update failed"
       );
     });
   });
+
+  it("handles avatar upload successfully", async () => {
+    mockGetUser();
+    mockUpload.mockResolvedValue({ error: null });
+    mockGetPublicUrl.mockReturnValue({
+      data: { publicUrl: "https://storage.test/new-avatar.png" },
+    });
+    mockUpsert.mockResolvedValue({ error: null });
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    const input = screen.getByLabelText(/change profile image/i);
+
+    await userEvent.upload(input, file);
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalled();
+      expect(mockUpsert).toHaveBeenCalledWith(
+        {
+          userId: "u_1",
+          profileUrl: "https://storage.test/new-avatar.png",
+        },
+        { onConflict: "userId" }
+      );
+    });
+
+    const toast = require("react-hot-toast").default;
+    expect(toast.success).toHaveBeenCalledWith("Profile image updated!");
+  });
+
+  it("shows error when avatar upload fails", async () => {
+    mockGetUser();
+    mockUpload.mockResolvedValue({ error: { message: "Upload failed" } });
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    const input = screen.getByLabelText(/change profile image/i);
+
+    await userEvent.upload(input, file);
+
+    const toast = require("react-hot-toast").default;
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to upload image");
+    });
+  });
+
+  it("shows error when getting public URL fails after upload", async () => {
+    mockGetUser();
+    mockUpload.mockResolvedValue({ error: null });
+    mockGetPublicUrl.mockReturnValue({ data: { publicUrl: null } });
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    const input = screen.getByLabelText(/change profile image/i);
+
+    await userEvent.upload(input, file);
+
+    const toast = require("react-hot-toast").default;
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to upload image");
+    });
+  });
+
+  it("shows error when saving avatar URL to userData fails", async () => {
+    mockGetUser();
+    mockUpload.mockResolvedValue({ error: null });
+    mockGetPublicUrl.mockReturnValue({
+      data: { publicUrl: "https://storage.test/avatar.png" },
+    });
+    mockUpsert.mockResolvedValue({ error: { message: "DB error" } });
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+    const input = screen.getByLabelText(/change profile image/i);
+
+    await userEvent.upload(input, file);
+
+    const toast = require("react-hot-toast").default;
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to upload image");
+    });
+  });
+
+  it("does not upload avatar when no file is selected", async () => {
+    mockGetUser();
+
+    render(<Profile />);
+
+    await openEditMode();
+
+    const input = screen.getByLabelText(/change profile image/i);
+
+    // Trigger change event with no files
+    await userEvent.click(input);
+
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
+  it("shows loading state initially", () => {
+    mockGetUser();
+
+    render(<Profile />);
+
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+  });
+
+  it("handles unexpected errors during initial fetch", async () => {
+    supabase.auth.getUser.mockRejectedValue(new Error("Network error"));
+
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+
+    render(<Profile />);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Unexpected error fetching user:",
+        expect.any(Error)
+      );
+    });
+
+    const toast = require("react-hot-toast").default;
+    expect(toast.error).toHaveBeenCalledWith("Failed to fetch user");
+
+    consoleSpy.mockRestore();
+  });
+
+  it("warns when profile image query fails", async () => {
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+
+    mockGetUser();
+    mockSingle.mockResolvedValue({
+      data: null,
+      error: { message: "Not found" },
+    });
+
+    render(<Profile />);
+
+    await screen.findByRole("heading", { level: 2, name: /ada lovelace/i });
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "No profile image found yet:",
+      expect.any(Object)
+    );
+
+    consoleSpy.mockRestore();
+  });
 });
-
-

@@ -18,9 +18,12 @@ const ManageQuests = lazy(() => import("./pages/manageQuests"));
 const ManageHunts = lazy(() => import("./pages/manageHunts"));
 import Hunts from "./pages/hunts";
 const ManageQuizzes = lazy(() => import("./pages/manageQuizzes"));
+const ManageLocations = lazy(() => import("./pages/manageLocations"));
 const AddQuiz = lazy(() => import("./pages/addQuiz"));
 const Settings = lazy(() => import("./pages/settings"));
 import HuntDetail from "./pages/huntDetail";
+const ManageCollectibles = lazy(() => import("./pages/manageCollectibles"));
+const AddBadge = lazy(() => import("./pages/addBadge"));
 
 const App = () => {
   return (
@@ -145,10 +148,34 @@ const App = () => {
               }
             />
             <Route
+              path="/manageCollectibles"
+              element={
+                <RequireSession>
+                  <ManageCollectibles />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addBadge"
+              element={
+                <RequireSession>
+                  <AddBadge />
+                </RequireSession>
+              }
+            />
+            <Route
               path="/manageHunts"
               element={
                 <RequireSession>
                   <ManageHunts />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/manageLocations"
+              element={
+                <RequireSession>
+                  <ManageLocations />
                 </RequireSession>
               }
             />

@@ -81,6 +81,7 @@ jest.mock("../../components/IconButton", () => (props) => (
 // CSS
 jest.mock("../../styles/layout.css", () => ({}));
 jest.mock("../../styles/login-signup.css", () => ({}));
+jest.mock("../../styles/adminDashboard.css", () => ({}));
 jest.mock("../../styles/button.css", () => ({}));
 
 import supabase from "../../supabase/supabaseClient";

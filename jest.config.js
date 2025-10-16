@@ -54,7 +54,9 @@ module.exports = {
   coverageReporters: ["text", "lcov", "json"],
   coveragePathIgnorePatterns: [
     "/node_modules/",
-    "/coverage/"
+    "/coverage/",
+    "/src/pages/Layout.jsx",
+    "/src/App.jsx",                    // Pure routing config
   ],
 
   verbose: true

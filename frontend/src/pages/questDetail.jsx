@@ -258,46 +258,24 @@ export default function QuestDetail() {
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
       // 2) Activate the hunt linked to this quest
-      // fetch the hunt linked to this quest
-      const { data: huntData, error: huntError } = await supabase
-        .from("hunts")
-        .select("*")
-        .eq("id", quest.huntId)
-        .single();
-
-      if (huntError || !huntData) {
-        console.error("Could not fetch hunt:", huntError);
+      const activateRes = await fetch(
+        `${API_BASE}/hunts/${quest.huntId}/activate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const activateJson = await activateRes.json().catch(() => ({}));
+      if (!activateRes.ok) {
+        console.error("Error activating hunt:", activateJson);
         toast.error("Quest completed, but hunt could not be activated.");
         return;
-      }
-
-      const now = new Date();
-      const timeLimitMinutes = huntData.timeLimit || 0;
-
-      const closingAt = new Date(
-        now.getTime() + timeLimitMinutes * 60 * 1000
-      ).toISOString();
-
-      const { error: upsertError } = await supabase
-        .from("userHunts")
-        .upsert(
-          {
-            userId: me.id,
-            huntId: quest.huntId,
-            isActive: true,
-            startedAt: now.toISOString(),
-            closingAt,
-          },
-          { onConflict: ["userId", "huntId"] } // ensure uniqueness
-        );
-
-      if (upsertError) {
-        console.error("Error activating hunt:", upsertError);
-        toast.error("Quest completed, but hunt could not be activated.");
       } else {
         toast.success("Hunt activated!");
       }
-
 
       // 3) Award collectible (if any)
       if (quest.collectibleId != null) {
@@ -353,13 +331,13 @@ export default function QuestDetail() {
 
   const youIcon = isLoaded
     ? {
-      path: window.google.maps.SymbolPath.CIRCLE,
-      fillColor: "#1E90FF",
-      fillOpacity: 1,
-      strokeColor: "white",
-      strokeWeight: 2,
-      scale: 10,
-    }
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: "#1E90FF",
+        fillOpacity: 1,
+        strokeColor: "white",
+        strokeWeight: 2,
+        scale: 10,
+      }
     : undefined;
 
   const hasRadius =
@@ -491,8 +469,9 @@ export default function QuestDetail() {
 
       <section className="actions">
         <div
-          className={` highlight radius-indicator ${withinRadius ? "ok" : "far"
-            }`}
+          className={` highlight radius-indicator ${
+            withinRadius ? "ok" : "far"
+          }`}
         >
           {withinRadius
             ? "You are inside the radius"

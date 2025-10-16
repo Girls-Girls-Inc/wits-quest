@@ -14,6 +14,7 @@ import IconButton from "../components/IconButton";
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const LOCATIONS_API = `${API_BASE}/locations`;
 const USER_QUESTS_API = `${API_BASE}/user-quests`;
+const THRIFT_IMPORT_API = `${API_BASE}/locations/thrift/import`;
 
 export default function Quests() {
   const navigate = useNavigate();
@@ -78,6 +79,44 @@ export default function Quests() {
     }
   };
 
+  const triggerThriftImport = async (token) => {
+    if (!token) return;
+
+    try {
+      const resp = await fetch(
+        `${THRIFT_IMPORT_API}?syncIfStale=true&createQuests=true`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const json = await resp.json();
+
+      if (!resp.ok) {
+        console.warn("Thrift import failed:", json.error || resp.status);
+        return;
+      }
+
+      if (json.skipped) {
+        console.log("Thrift sync skipped:", json.skipped);
+      } else {
+        console.log("Thrift sync completed:", json);
+        if (json.createdLocations > 0 || json.questsCreated > 0) {
+          toast.success(
+            `Synced ${json.storesProcessed} stores: +${json.createdLocations} locations, +${json.questsCreated} quests`
+          );
+          loadQuests();
+        }
+      }
+    } catch (err) {
+      console.warn("Thrift import error:", err.message);
+    }
+  };
+
   const getStableQuestId = (q) => {
     const raw = q?.id ?? q?.questId;
     const n = Number(raw);
@@ -87,6 +126,13 @@ export default function Quests() {
   useEffect(() => {
     loadQuests();
     fetchJwt();
+    const triggerImport = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (!error && data?.session?.access_token) {
+        triggerThriftImport(data.session.access_token);
+      }
+    };
+    triggerImport();
   }, []);
 
   const openModal = async (quest) => {
@@ -142,8 +188,8 @@ export default function Quests() {
       typeof questOrId === "object"
         ? getStableQuestId(questOrId)
         : Number.isFinite(Number(questOrId))
-          ? String(Number(questOrId))
-          : null;
+        ? String(Number(questOrId))
+        : null;
 
     if (!questIdStr) {
       toast.error("Could not determine questId for this quest.");
@@ -238,7 +284,6 @@ export default function Quests() {
   if (loading) {
     return (
       <div className="quests-loading">
-        <Toaster />
         <div>Loading quests...</div>
       </div>
     );
@@ -246,7 +291,6 @@ export default function Quests() {
 
   return (
     <div className="quests-container">
-      <Toaster />
       <div className="quests-header">
         <h1>QUEST</h1>
         <div className="quest-buttons">

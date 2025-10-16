@@ -7,12 +7,78 @@ import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
 import supabase from "../supabase/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import LocationMapPicker from "../components/LocationMapPicker";
 
-const API_BASE = import.meta.env.VITE_WEB_URL;
+const API_BASE =
+  import.meta.env.VITE_WEB_URL ||
+  process.env.VITE_WEB_URL ||
+  "http://localhost:3000";
+const TOAST_OPTIONS = {
+  style: {
+    background: "#002d73",
+    color: "#ffb819",
+  },
+  success: {
+    style: {
+      background: "green",
+      color: "white",
+    },
+  },
+  error: {
+    style: {
+      background: "red",
+      color: "white",
+    },
+  },
+  loading: {
+    style: {
+      background: "#002d73",
+      color: "#ffb819",
+    },
+  },
+};
+
+const getErrorMessage = (err, fallback = "Unexpected error") => {
+  if (!err) return fallback;
+  if (typeof err === "string") return err;
+  if (typeof err.message === "string" && err.message.trim()) {
+    return err.message;
+  }
+  return fallback;
+};
+
+const createQuestDefaults = () => ({
+  name: "",
+  description: "",
+  collectibleId: "",
+  locationId: "",
+  huntId: "",
+  quizId: "",
+  pointsAchievable: "",
+  isActive: true,
+});
+
+const createLocationDefaults = () => ({
+  name: "",
+  latitude: "",
+  longitude: "",
+  radius: "",
+});
+
+const createHuntDefaults = () => ({
+  name: "",
+  description: "",
+  question: "",
+  answer: "",
+  timeLimit: "",
+  collectibleId: "",
+  pointsAchievable: "",
+});
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedTask, setSelectedTask] = useState(null);
   const [quests, setQuests] = useState([]);
   const [collectibles, setCollectibles] = useState([]);
@@ -29,31 +95,19 @@ const AdminDashboard = () => {
     return session?.access_token;
   };
 
-  const [questData, setQuestData] = useState({
-    name: "",
-    description: "",
-    collectibleId: "",
-    locationId: "",
-    huntId: "",
-    quizId: "",
-    pointsAchievable: "",
-    isActive: true,
-  });
+  const [questData, setQuestData] = useState(createQuestDefaults);
 
-  const [locationData, setLocationData] = useState({
-    name: "",
-    latitude: "",
-    longitude: "",
-    radius: "",
-  });
+  const [locationData, setLocationData] = useState(createLocationDefaults);
 
-  const [huntData, setHuntData] = useState({
-    name: "",
-    description: "",
-    question: "",
-    answer: "",
-    timeLimit: "",
-  });
+  const [huntData, setHuntData] = useState(createHuntDefaults);
+
+  useEffect(() => {
+    const taskFromState = location.state?.selectedTask;
+    if (taskFromState && selectedTask !== taskFromState) {
+      setSelectedTask(taskFromState);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state?.selectedTask, navigate, selectedTask]);
 
   // Signed-in Supabase user
   useEffect(() => {
@@ -133,7 +187,7 @@ const AdminDashboard = () => {
         const data = await res.json();
         setUsers(data);
       } catch (err) {
-        toast.error(`Failed to load users: ${err.message}`);
+        toast.error(`Failed to load users: ${getErrorMessage(err)}`);
       }
     };
 
@@ -141,25 +195,16 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
-  const handleBack = () => {
-    setSelectedTask(null);
-    setQuestData({
-      name: "",
-      description: "",
-      collectibleId: "",
-      locationId: "",
-      huntId: "",
-      quizId: "",
-      pointsAchievable: "",
-      isActive: true,
-    });
-    setLocationData({
-      name: "",
-      latitude: "",
-      longitude: "",
-      radius: "",
-    });
-  };
+  const resetQuestForm = () => setQuestData(createQuestDefaults());
+  const resetLocationForm = () => setLocationData(createLocationDefaults());
+  const resetHuntForm = () => setHuntData(createHuntDefaults());
+
+const handleBack = () => {
+  setSelectedTask(null);
+  resetQuestForm();
+  resetLocationForm();
+  resetHuntForm();
+};
 
   const handleQuestChange = (e) => {
     const { name, value } = e.target;
@@ -169,6 +214,15 @@ const AdminDashboard = () => {
   const handleLocationChange = (e) => {
     const { name, value } = e.target;
     setLocationData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLocationPositionChange = ({ lat, lng }) => {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    setLocationData((prev) => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6),
+    }));
   };
 
   const handleQuestSubmit = async (e) => {
@@ -211,7 +265,7 @@ const AdminDashboard = () => {
       toast.success(`Quest created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create quest: ${err.message}`);
+      toast.error(`Failed to create quest: ${getErrorMessage(err)}`);
     }
   };
 
@@ -234,6 +288,19 @@ const AdminDashboard = () => {
       radius: parseFloat(locationData.radius),
     };
 
+    if (
+      !Number.isFinite(locationInsert.latitude) ||
+      !Number.isFinite(locationInsert.longitude)
+    ) {
+      toast.error("Please drop a pin on the map to set the coordinates.");
+      return;
+    }
+
+    if (!Number.isFinite(locationInsert.radius) || locationInsert.radius <= 0) {
+      toast.error("Radius must be a positive number.");
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/locations`, {
         method: "POST",
@@ -254,7 +321,7 @@ const AdminDashboard = () => {
       toast.success(`Location created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create location: ${err.message}`);
+      toast.error(`Failed to create location: ${getErrorMessage(err)}`);
     }
   };
 
@@ -286,7 +353,7 @@ const AdminDashboard = () => {
       }
       toast.success("User updated!");
     } catch (err) {
-      toast.error(`Failed to update user: ${err.message}`);
+      toast.error(`Failed to update user: ${getErrorMessage(err)}`);
       console.error("DEBUG PATCH error:", err);
     }
   };
@@ -302,7 +369,11 @@ const AdminDashboard = () => {
 
     const huntInsert = {
       ...huntData,
+      collectibleId: huntData.collectibleId
+        ? Number(huntData.collectibleId)
+        : null,
       timeLimit: huntData.timeLimit ? Number(huntData.timeLimit) : null,
+      pointsAchievable: Number(huntData.pointsAchievable) || 0, // ✅ added
     };
 
     try {
@@ -317,12 +388,13 @@ const AdminDashboard = () => {
       toast.success(`Hunt created successfully!`);
       handleBack();
     } catch (err) {
-      toast.error(`Failed to create hunt: ${err.message}`);
+      toast.error(`Failed to create hunt: ${getErrorMessage(err)}`);
     }
   };
 
   return (
     <div className="admin-container">
+      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       {!selectedTask ? (
         <div className="admin-header">
           <h1 className="heading">Admin Dashboard</h1>
@@ -347,26 +419,19 @@ const AdminDashboard = () => {
             />
             <IconButton
               icon="edit_location"
-              label="Add Location"
+              label="Create Location"
               onClick={() => setSelectedTask("Location Creation")}
               className="tile-button"
             />
             <IconButton
-              icon="admin_panel_settings"
-              label="Adjust Admins"
-              onClick={() => setSelectedTask("Admin Privilege")}
-              className="tile-button"
-            />
-            {/* <IconButton
-              icon="award_star"
-              label="Create Badge"
-              onClick={() => setSelectedTask("Badge Creation")}
-              className="tile-button"
-            /> */}
-            <IconButton
               icon="star"
               label="Manage Quests"
               onClick={() => navigate("/manageQuests")}
+            />
+            <IconButton
+              icon="stars"
+              label="Manage Hunts"
+              onClick={() => navigate("/manageHunts")}
             />
             <IconButton
               icon="quiz"
@@ -374,15 +439,38 @@ const AdminDashboard = () => {
               onClick={() => navigate("/manageQuizzes")}
             />
             <IconButton
-              icon="stars"
-              label="Manage Hunts"
-              onClick={() => navigate("/manageHunts")}
+              icon="location_on"
+              label="Manage Locations"
+              onClick={() => navigate("/manageLocations")}
+            />
+            <IconButton
+              icon="award_star"
+              label="Manage Badges"
+              onClick={() => navigate("/manageCollectibles")}
+            />
+            <IconButton
+              icon="admin_panel_settings"
+              label="Manage Admins"
+              onClick={() => setSelectedTask("Admin Privilege")}
+              className="tile-button"
             />
           </div>
         </div>
       ) : (
         <div>
-          <h1>{selectedTask}</h1>
+          <div className="admin-header admin-header--with-actions">
+            <div className="admin-header__row">
+              <h1 className="heading">{selectedTask}</h1>
+              <div className="admin-header__actions">
+                <IconButton
+                  type="button"
+                  icon="arrow_back"
+                  label="Back to Admin"
+                  onClick={handleBack}
+                />
+              </div>
+            </div>
+          </div>
 
           {selectedTask === "Quest Creation" && (
             <form className="login-form" onSubmit={handleQuestSubmit}>
@@ -494,13 +582,13 @@ const AdminDashboard = () => {
                   Active
                 </label>
               </div>
-              <div className="flex gap-2">
+              <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Quest" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetQuestForm}
                 />
               </div>
             </form>
@@ -552,6 +640,24 @@ const AdminDashboard = () => {
                   required
                 />
               </div>
+
+              {/* New Collectible Dropdown */}
+              <div className="input-box">
+                <label>Collectible</label>
+                <select
+                  name="collectibleId"
+                  value={huntData.collectibleId || ""}
+                  onChange={handleHuntChange}
+                >
+                  <option value="">Select a collectible</option>
+                  {collectibles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="input-box">
                 <InputField
                   icon="timer"
@@ -562,13 +668,24 @@ const AdminDashboard = () => {
                   onChange={handleHuntChange}
                 />
               </div>
-              <div className="flex gap-2">
+
+              <div className="input-box">
+                <InputField
+                  icon="star"
+                  type="number"
+                  name="pointsAchievable"
+                  placeholder="Points Achievable"
+                  value={huntData.pointsAchievable}
+                  onChange={handleHuntChange}
+                />
+              </div>
+              <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Hunt" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetHuntForm}
                 />
               </div>
             </form>
@@ -576,6 +693,17 @@ const AdminDashboard = () => {
 
           {selectedTask === "Location Creation" && (
             <form className="login-form" onSubmit={handleLocationSubmit}>
+              <div className="input-box">
+                <label htmlFor="location-map" className="map-label">
+                  Drop a pin to set latitude & longitude
+                </label>
+                <LocationMapPicker
+                  latitude={locationData.latitude}
+                  longitude={locationData.longitude}
+                  onChange={handleLocationPositionChange}
+                  height="300px"
+                />
+              </div>
               <div className="input-box">
                 <InputField
                   type="text"
@@ -588,48 +716,61 @@ const AdminDashboard = () => {
                 />
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="latitude"
-                  step="any"
-                  placeholder="Latitude"
-                  value={locationData.latitude}
-                  onChange={handleLocationChange}
-                  icon="globe_location_pin"
-                  required
-                />
+                <label htmlFor="location-latitude">Latitude</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-latitude"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    placeholder="Latitude"
+                    value={locationData.latitude}
+                    readOnly
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">globe_location_pin</i>
+                </div>
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="longitude"
-                  step="any"
-                  placeholder="Longitude"
-                  value={locationData.longitude}
-                  onChange={handleLocationChange}
-                  icon="globe_location_pin"
-                  required
-                />
+                <label htmlFor="location-longitude">Longitude</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-longitude"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    placeholder="Longitude"
+                    value={locationData.longitude}
+                    readOnly
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">globe_location_pin</i>
+                </div>
               </div>
               <div className="input-box">
-                <InputField
-                  type="number"
-                  name="radius"
-                  step="any"
-                  placeholder="Radius"
-                  value={locationData.radius}
-                  onChange={handleLocationChange}
-                  icon="lens_blur"
-                  required
-                />
+                <label htmlFor="location-radius">Radius</label>
+                <div className="input-wrapper">
+                  <input
+                    id="location-radius"
+                    name="radius"
+                    type="number"
+                    step="any"
+                    placeholder="Radius"
+                    value={locationData.radius}
+                    onChange={handleLocationChange}
+                    required
+                    className="input-field"
+                  />
+                  <i className="material-symbols-outlined">lens_blur</i>
+                </div>
               </div>
               <div className="btn flex gap-2">
                 <IconButton type="submit" icon="save" label="Create Location" />
                 <IconButton
                   type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={resetLocationForm}
                 />
               </div>
             </form>
@@ -637,7 +778,11 @@ const AdminDashboard = () => {
 
           {selectedTask === "Admin Privilege" && (
             <div className="quest-list">
-              <h2>Manage Admin Privileges</h2>
+              <div className="quest-section-header">
+                <h2 className="quest-section-header__title">
+                  Manage Admin Privileges
+                </h2>
+              </div>
               {users.map((u) => (
                 <div
                   key={u.userId}
@@ -661,28 +806,12 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               ))}
-              <div className="btn flex gap-2 mt-2">
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
-                />
-              </div>
             </div>
           )}
 
           {selectedTask === "Badge Creation" && (
             <div className="quest-list">
               <h2>Badge Creation (Coming Soon)</h2>
-              <div className="btn flex gap-2 mt-2">
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Back"
-                  onClick={handleBack}
-                />
-              </div>
             </div>
           )}
         </div>

@@ -177,7 +177,7 @@ describe("ManageBadges page", () => {
     render(<ManageBadges />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: /manage badges/i })
+      screen.getByRole("heading", { level: 1, name: /manage collectiables/i })
     ).toBeInTheDocument();
 
     // Wait a bit and then log the DOM
@@ -499,7 +499,7 @@ describe("ManageBadges page", () => {
     render(<ManageBadges />);
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: /manage badges/i })
+      await screen.findByRole("heading", { level: 1, name: /manage collectiables/i })
     ).toBeInTheDocument();
 
     const badges = screen.queryAllByRole("heading", { level: 2 });

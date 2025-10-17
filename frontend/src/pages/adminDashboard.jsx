@@ -42,7 +42,7 @@ const DASHBOARD_ACTIONS = [
   { label: "Manage Hunts", icon: "stars", path: "/manageHunts" },
   { label: "Manage Quizzes", icon: "quiz", path: "/manageQuizzes" },
   { label: "Manage Locations", icon: "location_on", path: "/manageLocations" },
-  { label: "Manage Badges", icon: "award_star", path: "/manageCollectibles" },
+  { label: "Manage Collectiables", icon: "award_star", path: "/manageCollectibles" },
   { label: "Manage Admins", icon: "admin_panel_settings", path: "/manageAdmins" },
 ];
 

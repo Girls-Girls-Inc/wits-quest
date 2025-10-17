@@ -183,7 +183,7 @@ export default function ManageBadges() {
     <div className="quests-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
-        <h1>Manage Badges</h1>
+        <h1>Manage Collectiables</h1>
         <div className="quest-buttons">
           <IconButton
             type="button"

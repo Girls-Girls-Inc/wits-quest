@@ -354,6 +354,7 @@ export default function ManageQuests() {
                   type="text"
                   name="name"
                   placeholder="Quest Name"
+                  icon="badge"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -367,6 +368,7 @@ export default function ManageQuests() {
                   type="text"
                   name="description"
                   placeholder="Quest Description"
+                  icon="description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })

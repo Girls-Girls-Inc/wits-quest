@@ -210,6 +210,7 @@ export default function ManageHunts() {
                     id="name"
                     name="name"
                     placeholder="Hunt Name"
+                    icon="badge"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -224,6 +225,7 @@ export default function ManageHunts() {
                     type="text"
                     id="description"
                     name="description"
+                    icon="description"
                     placeholder="Hunt Description"
                     value={formData.description}
                     onChange={(e) =>
@@ -238,6 +240,7 @@ export default function ManageHunts() {
                     id="question"
                     name="question"
                     placeholder="Question"
+                    icon="help"
                     value={formData.question}
                     onChange={(e) =>
                       setFormData({ ...formData, question: e.target.value })
@@ -252,6 +255,7 @@ export default function ManageHunts() {
                     id="answer"
                     name="answer"
                     placeholder="Answer"
+                    icon="check_circle"
                     value={formData.answer}
                     onChange={(e) =>
                       setFormData({ ...formData, answer: e.target.value })
@@ -286,6 +290,7 @@ export default function ManageHunts() {
                     id="timeLimit"
                     name="timeLimit"
                     placeholder="Time Limit (seconds)"
+                    icon="timer"
                     value={formData.timeLimit}
                     onChange={(e) =>
                       setFormData({ ...formData, timeLimit: e.target.value })
@@ -300,6 +305,7 @@ export default function ManageHunts() {
                     id="pointsAchievable"
                     name="pointsAchievable"
                     placeholder="Points Achievable"
+                    icon="star"
                     value={formData.pointsAchievable}
                     onChange={(e) =>
                       setFormData({ ...formData, pointsAchievable: e.target.value })

@@ -207,7 +207,6 @@ const HuntDetail = () => {
           placeholder="Description"
           value={h.description || "No description provided."}
           icon="description"
-          readOnly
         />
 
         <InputField
@@ -216,7 +215,6 @@ const HuntDetail = () => {
           placeholder="Question"
           value={h.question || "?"}
           icon="help"
-          readOnly
         />
 
         <div className="input-box">

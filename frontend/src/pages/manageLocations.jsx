@@ -249,6 +249,7 @@ export default function ManageLocations() {
                     type="text"
                     name="name"
                     placeholder="Location Name"
+                    icon="badge"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))

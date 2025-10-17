@@ -4,7 +4,7 @@
   color: #333;
   display: flex;
   flex-direction: column;
-  width: 90%;
+  width: 100%;
   margin: 0 auto;
   max-width: 1300px;
 }
@@ -74,7 +74,7 @@
 @media (max-width: 767px) {
   .dashboard-container {
     padding: 10px;
-    width: 90%;
+    width: 98%;
   }
 
   .dashboard-grid {

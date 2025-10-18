@@ -50,6 +50,11 @@
 }
 .icon-button span {
   line-height: 1;
+  flex: 1 1 auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 @media (max-width: 650px) {

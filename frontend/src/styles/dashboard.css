@@ -335,6 +335,7 @@
 .latest-box div {
   font-weight: 600;
   color: #fff;
+  text-align: center;
 }
 
 /* Quests Card */
@@ -539,6 +540,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center
 }
 
 /* Skeleton loaders */
@@ -553,6 +555,7 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }

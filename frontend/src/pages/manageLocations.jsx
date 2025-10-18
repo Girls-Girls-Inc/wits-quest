@@ -58,17 +58,20 @@ function formatCoord(value) {
   return "";
 }
 
+const createEmptyLocationForm = () => ({
+  name: "",
+  latitude: "",
+  longitude: "",
+  radius: "",
+});
+
 export default function ManageLocations() {
   const navigate = useNavigate();
   const [locations, setLocations] = useState([]);
   const [editingLocation, setEditingLocation] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    latitude: "",
-    longitude: "",
-    radius: "",
-  });
+  const [formData, setFormData] = useState(createEmptyLocationForm);
+  const [initialFormData, setInitialFormData] = useState(createEmptyLocationForm);
 
   const loadLocations = async () => {
     const toastId = toast.loading("Loading locations...");
@@ -98,7 +101,7 @@ export default function ManageLocations() {
       return;
     }
     setEditingLocation(location);
-    setFormData({
+    const nextForm = {
       name: location.name || "",
       latitude: formatCoord(location.latitude ?? location.lat),
       longitude: formatCoord(location.longitude ?? location.lng),
@@ -106,7 +109,9 @@ export default function ManageLocations() {
         location.radius != null && Number.isFinite(Number(location.radius))
           ? String(location.radius)
           : "",
-    });
+    };
+    setFormData(nextForm);
+    setInitialFormData({ ...nextForm });
   };
 
   const handleSave = async () => {
@@ -162,7 +167,7 @@ export default function ManageLocations() {
         )
       );
       toast.success("Location updated", { id: toastId });
-      setEditingLocation(null);
+      closeEditModal();
     } catch (err) {
       toast.error(err.message || "Failed to update location", { id: toastId });
     }
@@ -188,7 +193,7 @@ export default function ManageLocations() {
         throw new Error(message || "Failed to delete location");
       }
       setLocations((prev) => prev.filter((loc) => Number(loc.id) !== Number(id)));
-      if (editingLocation?.id === id) setEditingLocation(null);
+      if (editingLocation?.id === id) closeEditModal();
       toast.success("Location deleted", { id: toastId });
     } catch (err) {
       toast.error(err.message || "Failed to delete location", { id: toastId });
@@ -200,6 +205,17 @@ export default function ManageLocations() {
   const confirmDelete = () => {
     if (!pendingDelete?.id) return;
     handleDelete(pendingDelete.id);
+  };
+
+  const handleResetForm = () => {
+    setFormData(() => ({ ...initialFormData }));
+  };
+
+  const closeEditModal = () => {
+    setEditingLocation(null);
+    const emptyForm = createEmptyLocationForm();
+    setFormData(emptyForm);
+    setInitialFormData(emptyForm);
   };
 
   return (
@@ -224,9 +240,9 @@ export default function ManageLocations() {
       </div>
 
       {editingLocation && (
-        <div className="modal-backdrop" onClick={() => setEditingLocation(null)}>
+        <div className="modal-backdrop" onClick={closeEditModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setEditingLocation(null)}>
+            <button className="modal-close" onClick={closeEditModal}>
               ✖
             </button>
 
@@ -321,13 +337,13 @@ export default function ManageLocations() {
                   </div>
                 </div>
 
-                <div className="btn">
+                <div className="modal-form-actions">
                   <IconButton type="submit" icon="save" label="Save Location" />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={() => setEditingLocation(null)}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
                   />
                 </div>
               </form>
@@ -353,7 +369,7 @@ export default function ManageLocations() {
               </p>
               <div className="modal-actions">
                 <IconButton icon="delete" label="Delete Location" onClick={confirmDelete} />
-                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+                <IconButton icon="restart_alt" label="Reset" onClick={cancelDeletePrompt} />
               </div>
             </div>
           </div>

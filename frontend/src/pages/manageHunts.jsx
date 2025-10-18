@@ -11,21 +11,24 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
+const createDefaultHuntForm = () => ({
+  name: "",
+  description: "",
+  question: "",
+  answer: "",
+  timeLimit: "",
+  collectibleId: "",
+  pointsAchievable: "",
+});
+
 export default function ManageHunts() {
   const navigate = useNavigate();
   const [hunts, setHunts] = useState([]);
   const [editingHunt, setEditingHunt] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [collectibles, setCollectibles] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    question: "",
-    answer: "",
-    timeLimit: "",
-    collectibleId: "",
-    pointsAchievable: "",
-  });
+  const [formData, setFormData] = useState(createDefaultHuntForm);
+  const [initialFormData, setInitialFormData] = useState(createDefaultHuntForm);
 
   const loadHunts = async () => {
     const t = toast.loading("Loading hunts...");
@@ -64,7 +67,7 @@ export default function ManageHunts() {
   const handleEditClick = (hunt) => {
     if (!hunt?.id) return toast.error("Invalid hunt selected");
     setEditingHunt({ ...hunt });
-    setFormData({
+    const preparedForm = {
       name: hunt.name || "",
       description: hunt.description || "",
       question: hunt.question || "",
@@ -72,8 +75,19 @@ export default function ManageHunts() {
       timeLimit: hunt.timeLimit || "",
       collectibleId: hunt.collectibleId || "",
       pointsAchievable: hunt.pointsAchievable || "",
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
+
+  useEffect(() => {
+    if (!editingHunt) {
+      setFormData(createDefaultHuntForm());
+      setInitialFormData(createDefaultHuntForm());
+    }
+  }, [editingHunt]);
 
   const handleSave = async () => {
     if (!editingHunt?.id) return toast.error("Invalid hunt selected");
@@ -313,13 +327,13 @@ export default function ManageHunts() {
                   />
                 </div>
 
-                <div className="btn">
+                <div className="modal-form-actions">
                   <IconButton type="submit" icon="save" label="Save Hunt" />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={() => setEditingHunt(null)}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
                   />
                 </div>
               </form>
@@ -345,7 +359,7 @@ export default function ManageHunts() {
               </p>
               <div className="modal-actions">
                 <IconButton icon="delete" label="Delete Hunt" onClick={confirmDelete} />
-                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+                <IconButton icon="restart_alt" label="Reset" onClick={cancelDeletePrompt} />
               </div>
             </div>
           </div>

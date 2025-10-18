@@ -53,18 +53,21 @@ const syncCorrectAnswer = (options, questionType, currentAnswer) => {
   return trimmed.includes((currentAnswer || "").trim()) ? currentAnswer : "";
 };
 
+const createEmptyQuizForm = () => ({
+  questionText: "",
+  questionType: "text",
+  options: cloneDefaultOptions(),
+  correctAnswer: "",
+});
+
 export default function ManageQuizzes() {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [formData, setFormData] = useState({
-    questionText: "",
-    questionType: "text",
-    options: cloneDefaultOptions(),
-    correctAnswer: "",
-  });
+  const [formData, setFormData] = useState(createEmptyQuizForm);
+  const [initialFormData, setInitialFormData] = useState(createEmptyQuizForm);
 
   const availableAnswers = useMemo(() => {
     if (formData.questionType !== "mcq") return [];
@@ -114,15 +117,19 @@ export default function ManageQuizzes() {
     loadQuizzes();
   }, []);
 
-  const resetForm = () => {
+  const closeModal = () => {
     setEditingQuiz(null);
     setShowEditModal(false);
-    setFormData({
-      questionText: "",
-      questionType: "text",
-      options: cloneDefaultOptions(),
-      correctAnswer: "",
-    });
+    const emptyForm = createEmptyQuizForm();
+    setFormData(emptyForm);
+    setInitialFormData(emptyForm);
+  };
+
+  const handleResetForm = () => {
+    setFormData(() => ({
+      ...initialFormData,
+      options: [...(initialFormData.options || [])],
+    }));
   };
 
   const handleEditClick = (quiz) => {
@@ -130,7 +137,7 @@ export default function ManageQuizzes() {
     const questionType = (quiz.questionType || "text").toLowerCase();
     const options = ensureOptionCount(quiz.options, questionType);
     setEditingQuiz({ ...quiz, questionType });
-    setFormData({
+    const nextForm = {
       questionText: quiz.questionText || "",
       questionType,
       options,
@@ -138,6 +145,11 @@ export default function ManageQuizzes() {
         questionType === "mcq"
           ? syncCorrectAnswer(options, questionType, quiz.correctAnswer || "")
           : quiz.correctAnswer || "",
+    };
+    setFormData(nextForm);
+    setInitialFormData({
+      ...nextForm,
+      options: [...(nextForm.options || [])],
     });
     setShowEditModal(true);
   };
@@ -275,7 +287,7 @@ export default function ManageQuizzes() {
       setQuizzes((prev) =>
         prev.map((q) => (q.id === editingQuiz.id ? updated : q))
       );
-      resetForm();
+      closeModal();
     } catch (err) {
       toast.error(err.message || "Failed to update quiz", { id: toastId });
     }
@@ -300,7 +312,7 @@ export default function ManageQuizzes() {
       toast.success("Quiz deleted", { id: toastId });
       setQuizzes((prev) => prev.filter((q) => q.id !== id));
       if (editingQuiz?.id === id) {
-        resetForm();
+        closeModal();
       }
     } catch (err) {
       toast.error(err.message || "Failed to delete quiz", { id: toastId });
@@ -341,7 +353,7 @@ export default function ManageQuizzes() {
           <div className="modal">
             <button
               className="modal-close"
-              onClick={resetForm}
+              onClick={closeModal}
               aria-label="Close modal"
             >
               ✖
@@ -466,13 +478,13 @@ export default function ManageQuizzes() {
                 )}
               </div>
 
-                <div className="btn flex gap-2">
+                <div className="modal-form-actions">
                   <IconButton type="submit" icon="save" label="Save Quiz" />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={resetForm}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
                   />
                 </div>
               </form>
@@ -498,7 +510,7 @@ export default function ManageQuizzes() {
               </p>
               <div className="modal-actions">
                 <IconButton icon="delete" label="Delete Quiz" onClick={confirmDelete} />
-                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+                <IconButton icon="restart_alt" label="Reset" onClick={cancelDeletePrompt} />
               </div>
             </div>
           </div>

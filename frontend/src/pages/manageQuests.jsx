@@ -36,6 +36,17 @@ const TOAST_OPTIONS = {
   },
 };
 
+const createDefaultQuestForm = () => ({
+  name: "",
+  description: "",
+  locationId: "",
+  pointsAchievable: "",
+  collectibleId: "",
+  huntId: "",
+  quizId: "",
+  isActive: true,
+});
+
 const getToken = async () => {
   const {
     data: { session },
@@ -52,16 +63,8 @@ export default function ManageQuests() {
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuest, setEditingQuest] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    locationId: "",
-    pointsAchievable: "",
-    collectibleId: "",
-    huntId: "",
-    quizId: "",
-    isActive: true,
-  });
+  const [formData, setFormData] = useState(createDefaultQuestForm);
+  const [initialFormData, setInitialFormData] = useState(createDefaultQuestForm);
 
   // Load quests with images
   const loadQuests = async () => {
@@ -189,7 +192,7 @@ export default function ManageQuests() {
   const handleEditClick = (quest) => {
     if (!quest?.id) return toast.error("Invalid quest selected");
     setEditingQuest({ ...quest });
-    setFormData({
+    const preparedForm = {
       name: quest.name || "",
       description: quest.description || "",
       locationId: quest.locationId || "",
@@ -198,8 +201,19 @@ export default function ManageQuests() {
       huntId: quest.huntId || "",
       quizId: quest.quizId != null ? String(quest.quizId) : "",
       isActive: quest.isActive ?? true,
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
+
+  useEffect(() => {
+    if (!editingQuest) {
+      setFormData(createDefaultQuestForm());
+      setInitialFormData(createDefaultQuestForm());
+    }
+  }, [editingQuest]);
 
   const handleSave = async () => {
     const token = await getToken();
@@ -515,13 +529,13 @@ export default function ManageQuests() {
                   </div>
                 </div>
 
-                <div className="btn">
+                <div className="modal-form-actions">
                   <IconButton type="submit" icon="save" label="Save Quest" />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={() => setEditingQuest(null)}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
                   />
                 </div>
               </form>
@@ -556,8 +570,8 @@ export default function ManageQuests() {
                   onClick={confirmDelete}
                 />
                 <IconButton
-                  icon="close"
-                  label="Cancel"
+                  icon="restart_alt"
+                  label="Reset"
                   onClick={cancelDeletePrompt}
                 />
               </div>

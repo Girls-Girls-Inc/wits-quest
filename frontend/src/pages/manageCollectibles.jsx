@@ -18,16 +18,19 @@ const TOAST_OPTIONS = {
   loading: { style: { background: "#002d73", color: "#ffb819" } },
 };
 
+const createDefaultBadgeForm = () => ({
+  name: "",
+  description: "",
+  imageUrl: "",
+});
+
 export default function ManageBadges() {
   const navigate = useNavigate();
   const [badges, setBadges] = useState([]);
   const [editingBadge, setEditingBadge] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    imageUrl: "",
-  });
+  const [formData, setFormData] = useState(createDefaultBadgeForm);
+  const [initialFormData, setInitialFormData] = useState(createDefaultBadgeForm);
   const [uploading, setUploading] = useState(false);
 
   const getToken = async () => {
@@ -61,20 +64,25 @@ export default function ManageBadges() {
     loadBadges();
   }, []);
 
-  const resetForm = () => {
+  const handleCloseModal = () => {
     setEditingBadge(null);
     setShowEditModal(false);
-    setFormData({ name: "", description: "", imageUrl: "" });
+    setFormData(createDefaultBadgeForm());
+    setInitialFormData(createDefaultBadgeForm());
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
 
   const handleEditClick = (badge) => {
     if (!badge?.id) return toast.error("Invalid badge selected");
     setEditingBadge(badge);
-    setFormData({
+    const preparedForm = {
       name: badge.name || "",
       description: badge.description || "",
       imageUrl: badge.imageUrl || "",
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
     setShowEditModal(true);
   };
 
@@ -148,7 +156,7 @@ export default function ManageBadges() {
       setBadges((prev) =>
         prev.map((b) => (b.id === editingBadge.id ? body : b))
       );
-      resetForm();
+      handleCloseModal();
     } catch (err) {
       toast.error(err.message || "Failed to update badge", { id: toastId });
     }
@@ -173,7 +181,7 @@ export default function ManageBadges() {
 
       toast.success("Badge deleted", { id: toastId });
       setBadges((prev) => prev.filter((b) => b.id !== id));
-      if (editingBadge?.id === id) resetForm();
+      if (editingBadge?.id === id) handleCloseModal();
     } catch (err) {
       toast.error(err.message || "Failed to delete badge", { id: toastId });
     }
@@ -205,7 +213,7 @@ export default function ManageBadges() {
           <div className="modal">
             <button
               className="modal-close"
-              onClick={resetForm}
+              onClick={handleCloseModal}
               aria-label="Close modal"
             >
               ✖
@@ -284,7 +292,7 @@ export default function ManageBadges() {
                 </div>
               )}
 
-                <div className="btn flex gap-2">
+                <div className="modal-form-actions">
                   <IconButton
                     type="submit"
                     icon="save"
@@ -293,9 +301,10 @@ export default function ManageBadges() {
                   />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={resetForm}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
+                    disabled={uploading}
                   />
                 </div>
               </form>

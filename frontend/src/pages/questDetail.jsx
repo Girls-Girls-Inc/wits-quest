@@ -351,9 +351,11 @@ export default function QuestDetail() {
           <span>
             <strong>Points:</strong> {quest.pointsAchievable}
           </span>
+          <br />
           <span>
             <strong>Location:</strong> {loc.name ?? "Unknown"}
           </span>
+          <br />
 
           {distanceM != null && (
             <span>

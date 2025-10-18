@@ -244,8 +244,10 @@
 
 .action-buttons {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 .modal.login-required {

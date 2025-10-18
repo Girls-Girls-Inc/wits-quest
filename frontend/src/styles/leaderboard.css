@@ -410,12 +410,6 @@ td code {
   padding: 0 10px;
 }
 
-.quest-info h2 {
-  margin: 0;
-  font-size: 25px;
-  color: var(--wits-yellow);
-}
-
 @media (max-width: 768px) {
   .quest-card {
     flex-direction: column;

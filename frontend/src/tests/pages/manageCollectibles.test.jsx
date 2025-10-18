@@ -19,7 +19,8 @@ jest.mock("react-router-dom", () => {
   const React = require("react");
   return {
     useNavigate: () => mockNavigate,
-    Link: ({ to, children }) => React.createElement("a", { href: to }, children),
+    Link: ({ to, children }) =>
+      React.createElement("a", { href: to }, children),
   };
 });
 
@@ -55,17 +56,22 @@ jest.mock("../../components/IconButton", () => (props) => (
   <button {...props}>{props.label || "Button"}</button>
 ));
 
-jest.mock("../../components/InputField", () => ({ value, onChange, placeholder, name, icon, required, type }) => (
-  <input
-    type={type || "text"}
-    name={name}
-    placeholder={placeholder}
-    value={value}
-    onChange={onChange}
-    required={required}
-    data-icon={icon}
-  />
-));
+jest.mock(
+  "../../components/InputField",
+  () =>
+    ({ value, onChange, placeholder, name, icon, required, type }) =>
+      (
+        <input
+          type={type || "text"}
+          name={name}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required={required}
+          data-icon={icon}
+        />
+      )
+);
 
 jest.mock("../../styles/quests.css", () => ({}));
 jest.mock("../../styles/layout.css", () => ({}));
@@ -102,7 +108,8 @@ const setupFetchRouter = () => {
 
     const hit = routes[idx];
     routes.splice(idx, 1);
-    const response = typeof hit.reply === "function" ? hit.reply(u, opts) : hit.reply;
+    const response =
+      typeof hit.reply === "function" ? hit.reply(u, opts) : hit.reply;
     console.log(`[FETCH] Matched route, returning:`, response);
     return response;
   });
@@ -169,22 +176,40 @@ const ManageBadges = require(manageCollectiblesAbsPath).default;
 
 describe("ManageBadges page", () => {
   it("loads badges on mount and displays them", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-      { id: "b2", name: "Badge 2", description: null, imageUrl: null, createdAt: "2024-01-02T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "b2",
+          name: "Badge 2",
+          description: null,
+          imageUrl: null,
+          createdAt: "2024-01-02T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: /manage collectiables/i })
+      screen.getByRole("heading", { level: 1, name: /manage collectibles/i })
     ).toBeInTheDocument();
 
     // Wait a bit and then log the DOM
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     console.log("[TEST] Current DOM:", document.body.innerHTML);
 
-    expect(await screen.findByText("Badge 1", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(
+      await screen.findByText("Badge 1", {}, { timeout: 3000 })
+    ).toBeInTheDocument();
     expect(screen.getByText("First badge")).toBeInTheDocument();
     expect(screen.getByText("Badge 2")).toBeInTheDocument();
   });
@@ -206,9 +231,19 @@ describe("ManageBadges page", () => {
   });
 
   it("opens edit modal when Edit button is clicked", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -217,7 +252,9 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    expect(await screen.findByPlaceholderText(/badge name/i)).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText(/badge name/i)
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/description/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/image url/i)).toBeInTheDocument();
   });
@@ -225,9 +262,19 @@ describe("ManageBadges page", () => {
   it("updates badge successfully", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("PATCH", "/collectibles/b1", (url, opts) => {
       const body = JSON.parse(opts.body);
@@ -255,7 +302,10 @@ describe("ManageBadges page", () => {
     await userEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Badge updated", expect.any(Object));
+      expect(toast.success).toHaveBeenCalledWith(
+        "Badge updated",
+        expect.any(Object)
+      );
     });
 
     expect(await screen.findByText("Updated Badge")).toBeInTheDocument();
@@ -264,9 +314,19 @@ describe("ManageBadges page", () => {
   it("shows error when saving badge without name", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -287,14 +347,25 @@ describe("ManageBadges page", () => {
   it("handles update error with error message", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
-    addRoute("PATCH", "/collectibles/b1", jsonRes(
-      { error: "Update failed" },
-      { status: 400 }
-    ));
+    addRoute(
+      "PATCH",
+      "/collectibles/b1",
+      jsonRes({ error: "Update failed" }, { status: 400 })
+    );
 
     render(<ManageBadges />);
 
@@ -303,14 +374,14 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    const saveButton = await screen.findByRole("button", { name: /save badge/i });
+    const saveButton = await screen.findByRole("button", {
+      name: /save badge/i,
+    });
     await userEvent.click(saveButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Update failed");
     });
   });
@@ -318,10 +389,26 @@ describe("ManageBadges page", () => {
   it("deletes badge successfully after confirmation", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-      { id: "b2", name: "Badge 2", description: null, imageUrl: null, createdAt: "2024-01-02T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "b2",
+          name: "Badge 2",
+          description: null,
+          imageUrl: null,
+          createdAt: "2024-01-02T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("DELETE", "/collectibles/b1", jsonRes({}, { status: 200 }));
 
@@ -333,7 +420,10 @@ describe("ManageBadges page", () => {
     await userEvent.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Badge deleted", expect.any(Object));
+      expect(toast.success).toHaveBeenCalledWith(
+        "Badge deleted",
+        expect.any(Object)
+      );
     });
 
     expect(screen.queryByText("Badge 1")).not.toBeInTheDocument();
@@ -343,9 +433,19 @@ describe("ManageBadges page", () => {
   it("does not delete badge when confirmation is cancelled", async () => {
     global.confirm = jest.fn(() => false);
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -364,11 +464,25 @@ describe("ManageBadges page", () => {
   it("handles delete error", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
-    addRoute("DELETE", "/collectibles/b1", textRes("Failed to delete", { status: 500 }));
+    addRoute(
+      "DELETE",
+      "/collectibles/b1",
+      textRes("Failed to delete", { status: 500 })
+    );
 
     render(<ManageBadges />);
 
@@ -379,9 +493,7 @@ describe("ManageBadges page", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Failed to delete");
     });
 
@@ -389,9 +501,19 @@ describe("ManageBadges page", () => {
   });
 
   it("closes edit modal when cancel is clicked", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -400,20 +522,34 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    expect(await screen.findByPlaceholderText(/badge name/i)).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText(/badge name/i)
+    ).toBeInTheDocument();
 
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
     await userEvent.click(cancelButton);
 
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText(/badge name/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText(/badge name/i)
+      ).not.toBeInTheDocument();
     });
   });
 
   it("closes edit modal when X button is clicked", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -422,25 +558,55 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    expect(await screen.findByPlaceholderText(/badge name/i)).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText(/badge name/i)
+    ).toBeInTheDocument();
 
     const closeButton = screen.getByRole("button", { name: /close modal/i });
     await userEvent.click(closeButton);
 
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText(/badge name/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText(/badge name/i)
+      ).not.toBeInTheDocument();
     });
   });
 
   it("refreshes badge list when Refresh button is clicked", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-      { id: "b2", name: "Badge 2", description: null, imageUrl: null, createdAt: "2024-01-02T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "b2",
+          name: "Badge 2",
+          description: null,
+          imageUrl: null,
+          createdAt: "2024-01-02T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -453,15 +619,17 @@ describe("ManageBadges page", () => {
     expect(await screen.findByText("Badge 2")).toBeInTheDocument();
   });
 
-  it("navigates to addCollectiable page when New Badge button is clicked", async () => {
+  it("navigates to addCollectible page when New Badge button is clicked", async () => {
     addRoute("GET", "/collectibles", jsonRes([]));
 
     render(<ManageBadges />);
 
-    const newBadgeButton = await screen.findByRole("button", { name: /new badge/i });
+    const newBadgeButton = await screen.findByRole("button", {
+      name: /new badge/i,
+    });
     await userEvent.click(newBadgeButton);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/addCollectiable");
+    expect(mockNavigate).toHaveBeenCalledWith("/addCollectible");
   });
 
   it("navigates to adminDashboard when Back button is clicked", async () => {
@@ -469,7 +637,9 @@ describe("ManageBadges page", () => {
 
     render(<ManageBadges />);
 
-    const backButton = await screen.findByRole("button", { name: /back to admin/i });
+    const backButton = await screen.findByRole("button", {
+      name: /back to admin/i,
+    });
     await userEvent.click(backButton);
 
     expect(mockNavigate).toHaveBeenCalledWith("/adminDashboard");
@@ -486,9 +656,7 @@ describe("ManageBadges page", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Session expired");
     });
   });
@@ -499,7 +667,10 @@ describe("ManageBadges page", () => {
     render(<ManageBadges />);
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: /manage collectiables/i })
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /manage collectibles/i,
+      })
     ).toBeInTheDocument();
 
     const badges = screen.queryAllByRole("heading", { level: 2 });
@@ -519,9 +690,19 @@ describe("ManageBadges page", () => {
   });
 
   it("updates form fields correctly", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     render(<ManageBadges />);
 
@@ -554,9 +735,19 @@ describe("ManageBadges page", () => {
   it("submits form with Enter key", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("PATCH", "/collectibles/b1", (url, opts) => {
       const body = JSON.parse(opts.body);
@@ -581,16 +772,29 @@ describe("ManageBadges page", () => {
     await userEvent.type(nameInput, "Enter Badge{Enter}");
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Badge updated", expect.any(Object));
+      expect(toast.success).toHaveBeenCalledWith(
+        "Badge updated",
+        expect.any(Object)
+      );
     });
   });
 
   it("closes edit modal and resets form after successful delete", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("DELETE", "/collectibles/b1", jsonRes({}, { status: 200 }));
 
@@ -601,31 +805,52 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    expect(await screen.findByPlaceholderText(/badge name/i)).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText(/badge name/i)
+    ).toBeInTheDocument();
 
     const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
     await userEvent.click(deleteButtons[0]);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Badge deleted", expect.any(Object));
+      expect(toast.success).toHaveBeenCalledWith(
+        "Badge deleted",
+        expect.any(Object)
+      );
     });
 
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText(/badge name/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText(/badge name/i)
+      ).not.toBeInTheDocument();
     });
   });
 
   it("handles 401 error when updating badge", async () => {
     const toast = (await import("react-hot-toast")).default;
 
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
-    addRoute("PATCH", "/collectibles/b1", jsonRes(
-      { error: "Session expired. Please sign in again." },
-      { status: 401 }
-    ));
+    addRoute(
+      "PATCH",
+      "/collectibles/b1",
+      jsonRes(
+        { error: "Session expired. Please sign in again." },
+        { status: 401 }
+      )
+    );
 
     render(<ManageBadges />);
 
@@ -634,22 +859,32 @@ describe("ManageBadges page", () => {
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await userEvent.click(editButtons[0]);
 
-    const saveButton = await screen.findByRole("button", { name: /save badge/i });
+    const saveButton = await screen.findByRole("button", {
+      name: /save badge/i,
+    });
     await userEvent.click(saveButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Session expired");
     });
   });
 
   it("trims whitespace from form inputs before saving", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("PATCH", "/collectibles/b1", (url, opts) => {
       const body = JSON.parse(opts.body);
@@ -704,9 +939,19 @@ describe("ManageBadges page", () => {
   });
 
   it("sends null for empty description and imageUrl", async () => {
-    addRoute("GET", "/collectibles", jsonRes([
-      { id: "b1", name: "Badge 1", description: "First badge", imageUrl: "http://example.com/b1.png", createdAt: "2024-01-01T00:00:00Z" },
-    ]));
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
 
     addRoute("PATCH", "/collectibles/b1", (url, opts) => {
       const body = JSON.parse(opts.body);

@@ -18,7 +18,8 @@ jest.mock("react-router-dom", () => {
   const React = require("react");
   return {
     useNavigate: () => mockNavigate,
-    Link: ({ to, children }) => React.createElement("a", { href: to }, children),
+    Link: ({ to, children }) =>
+      React.createElement("a", { href: to }, children),
   };
 });
 
@@ -57,17 +58,22 @@ jest.mock("../../components/IconButton", () => (props) => (
   <button {...props}>{props.label || "Button"}</button>
 ));
 
-jest.mock("../../components/InputField", () => ({ value, onChange, placeholder, name, icon, required, type }) => (
-  <input
-    type={type || "text"}
-    name={name}
-    placeholder={placeholder}
-    value={value}
-    onChange={onChange}
-    required={required}
-    data-icon={icon}
-  />
-));
+jest.mock(
+  "../../components/InputField",
+  () =>
+    ({ value, onChange, placeholder, name, icon, required, type }) =>
+      (
+        <input
+          type={type || "text"}
+          name={name}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required={required}
+          data-icon={icon}
+        />
+      )
+);
 
 jest.mock("../../styles/layout.css", () => ({}));
 jest.mock("../../styles/login-signup.css", () => ({}));
@@ -149,31 +155,37 @@ afterEach(() => {
 /* =============== import component =============== */
 
 const path = require("path");
-const addCollectiableAbsPath = path.resolve(
+const addCollectibleAbsPath = path.resolve(
   __dirname,
-  "../../pages/addCollectiable.jsx"
+  "../../pages/addCollectible.jsx"
 );
-jest.unmock(addCollectiableAbsPath);
-const AddCollectiable = require(addCollectiableAbsPath).default;
+jest.unmock(addCollectibleAbsPath);
+const AddCollectible = require(addCollectibleAbsPath).default;
 
 /* ================================ Tests ================================= */
 
-describe("AddCollectiable page", () => {
+describe("AddCollectible page", () => {
   it("renders create collectible form", () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
-    expect(screen.getByRole("heading", { name: /create collectible/i })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/collectible name/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /create collectible/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/collectible name/i)
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/description/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/image url/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /create collectible/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /create collectible/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reset/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /back to collectibles/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /back to collectibles/i })
+    ).toBeInTheDocument();
   });
 
   it("creates collectible successfully with all fields", async () => {
-
-
     addRoute("POST", "/collectibles", (url, opts) => {
       const body = JSON.parse(opts.body);
       expect(body.name).toBe("Test Collectible");
@@ -187,7 +199,7 @@ describe("AddCollectiable page", () => {
       });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     const descInput = screen.getByPlaceholderText(/description/i);
@@ -197,19 +209,21 @@ describe("AddCollectiable page", () => {
     await userEvent.type(descInput, "Test Description");
     await userEvent.type(imageInput, "http://example.com/collectible.png");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Collectible created successfully");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Collectible created successfully"
+      );
     });
 
     expect(mockNavigate).toHaveBeenCalledWith("/manageCollectibles");
   });
 
   it("creates collectible with only required name field", async () => {
-
-
     addRoute("POST", "/collectibles", (url, opts) => {
       const body = JSON.parse(opts.body);
       expect(body.name).toBe("Collectible Name Only");
@@ -218,27 +232,31 @@ describe("AddCollectiable page", () => {
       return jsonRes({ id: "b2", name: body.name });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Collectible Name Only");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Collectible created successfully");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Collectible created successfully"
+      );
     });
 
     expect(mockNavigate).toHaveBeenCalledWith("/manageCollectibles");
   });
 
   it("shows error when name is empty", async () => {
+    render(<AddCollectible />);
 
-
-    render(<AddCollectiable />);
-
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     const form = createButton.closest("form");
     expect(form).not.toBeNull();
     fireEvent.submit(form);
@@ -251,43 +269,45 @@ describe("AddCollectiable page", () => {
   });
 
   it("trims whitespace from name field", async () => {
-
-
     addRoute("POST", "/collectibles", (url, opts) => {
       const body = JSON.parse(opts.body);
       expect(body.name).toBe("Trimmed Name");
       return jsonRes({ id: "b3", name: body.name });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "  Trimmed Name  ");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Collectible created successfully");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Collectible created successfully"
+      );
     });
   });
 
   it("shows error when name is only whitespace", async () => {
-
-
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "   ");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     expect(toast.error).toHaveBeenCalledWith("Collectible name is required");
   });
 
   it("resets form when reset button is clicked", async () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     const descInput = screen.getByPlaceholderText(/description/i);
@@ -310,95 +330,98 @@ describe("AddCollectiable page", () => {
   });
 
   it("navigates back to collectibles list when back button is clicked", async () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
-    const backButton = screen.getByRole("button", { name: /back to collectibles/i });
+    const backButton = screen.getByRole("button", {
+      name: /back to collectibles/i,
+    });
     await userEvent.click(backButton);
 
     expect(mockNavigate).toHaveBeenCalledWith("/manageCollectibles");
   });
 
   it("handles session expired error", async () => {
-
-
     mockGetSession.mockResolvedValue({
       data: { session: null },
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Test Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Session expired. Please sign in again.");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Session expired. Please sign in again."
+      );
     });
 
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("handles API error with error message", async () => {
+    addRoute(
+      "POST",
+      "/collectibles",
+      jsonRes({ error: "Duplicate collectible name" }, { status: 400 })
+    );
 
-
-    addRoute("POST", "/collectibles", jsonRes(
-      { error: "Duplicate collectible name" },
-      { status: 400 }
-    ));
-
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Duplicate Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Duplicate collectible name");
     });
   });
 
   it("handles API error without error message", async () => {
-
-
     addRoute("POST", "/collectibles", textRes("Server Error", { status: 500 }));
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Test Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled();
-      const msg = toast.error.mock.calls
-        .map((c) => c[0])
-        .join(" ");
+      const msg = toast.error.mock.calls.map((c) => c[0]).join(" ");
       expect(msg).toContain("Failed to create collectible");
     });
   });
 
   it("disables buttons while submitting", async () => {
     addRoute("POST", "/collectibles", async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return jsonRes({ id: "b4", name: "Test" });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Test Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     const resetButton = screen.getByRole("button", { name: /reset/i });
 
     await userEvent.click(createButton);
@@ -416,46 +439,54 @@ describe("AddCollectiable page", () => {
 
   it("shows creating... text while submitting", async () => {
     addRoute("POST", "/collectibles", async () => {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
       return jsonRes({ id: "b5", name: "Test" });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Test Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
-    expect(screen.getByRole("button", { name: /creating.../i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /creating.../i })
+    ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /creating.../i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /creating.../i })
+      ).not.toBeInTheDocument();
     });
   });
 
   it("submits form with Enter key", async () => {
+    addRoute(
+      "POST",
+      "/collectibles",
+      jsonRes({ id: "b6", name: "Enter Collectible" })
+    );
 
-
-    addRoute("POST", "/collectibles", jsonRes({ id: "b6", name: "Enter Collectible" }));
-
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Enter Collectible{Enter}");
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Collectible created successfully");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Collectible created successfully"
+      );
     });
   });
 
   it("resets form after successful creation", async () => {
-
-
     addRoute("POST", "/collectibles", jsonRes({ id: "b7", name: "Test" }));
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     const descInput = screen.getByPlaceholderText(/description/i);
@@ -463,11 +494,15 @@ describe("AddCollectiable page", () => {
     await userEvent.type(nameInput, "Test Collectible");
     await userEvent.type(descInput, "Test Description");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Collectible created successfully");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Collectible created successfully"
+      );
     });
 
     // Form should be reset but we're navigated away, so just check navigation
@@ -483,12 +518,14 @@ describe("AddCollectiable page", () => {
       return jsonRes({ id: "b8", name: body.name });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Name Only");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
@@ -515,7 +552,7 @@ describe("AddCollectiable page", () => {
       return jsonRes({ id: "b9", name: body.name });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     const descInput = screen.getByPlaceholderText(/description/i);
@@ -525,7 +562,9 @@ describe("AddCollectiable page", () => {
     await userEvent.type(descInput, "  Trimmed Desc  ");
     await userEvent.type(imageInput, "  http://example.com/img.png  ");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
     await userEvent.click(createButton);
 
     await waitFor(() => {
@@ -544,16 +583,18 @@ describe("AddCollectiable page", () => {
 
   it("prevents double submission", async () => {
     addRoute("POST", "/collectibles", async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return jsonRes({ id: "b10", name: "Test" });
     });
 
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const nameInput = screen.getByPlaceholderText(/collectible name/i);
     await userEvent.type(nameInput, "Test Collectible");
 
-    const createButton = screen.getByRole("button", { name: /create collectible/i });
+    const createButton = screen.getByRole("button", {
+      name: /create collectible/i,
+    });
 
     // Click twice rapidly
     await userEvent.click(createButton);
@@ -566,7 +607,7 @@ describe("AddCollectiable page", () => {
   });
 
   it("shows image preview when valid URL is provided", async () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const imageInput = screen.getByPlaceholderText(/image url/i);
     await userEvent.type(imageInput, "http://example.com/collectible.png");
@@ -576,14 +617,16 @@ describe("AddCollectiable page", () => {
   });
 
   it("does not show image preview when URL is empty", () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     expect(screen.queryByText(/image preview/i)).not.toBeInTheDocument();
-    expect(screen.queryByAltText(/collectible preview/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByAltText(/collectible preview/i)
+    ).not.toBeInTheDocument();
   });
 
   it("clears image preview when reset is clicked", async () => {
-    render(<AddCollectiable />);
+    render(<AddCollectible />);
 
     const imageInput = screen.getByPlaceholderText(/image url/i);
     await userEvent.type(imageInput, "http://example.com/collectible.png");

@@ -558,7 +558,7 @@ const Dashboard = () => {
             <div className="stat-number">{dashboardData.questsCompleted}</div>
           </article>
 
-          <article className="dashboard-card">
+          <article className="dashboard-card small-card">
             <h3>Locations Visited</h3>
             <div className="stat-number">{dashboardData.locationsVisited}</div>
             <div className="latest-info">

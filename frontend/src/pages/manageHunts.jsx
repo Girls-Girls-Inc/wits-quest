@@ -58,7 +58,6 @@ export default function ManageHunts() {
     }
   };
 
-
   useEffect(() => {
     loadHunts();
     loadCollectibles();
@@ -275,7 +274,7 @@ export default function ManageHunts() {
                 </div>
 
                 <div className="form-row">
-                  <label htmlFor="collectibleId">Collectiable</label>
+                  <label htmlFor="collectibleId">Collectible</label>
                   <ComboBox
                     id="collectibleId"
                     name="collectibleId"
@@ -295,7 +294,6 @@ export default function ManageHunts() {
                     }))}
                   />
                 </div>
-
 
                 <div className="form-row">
                   <label htmlFor="timeLimit">Time Limit (seconds)</label>
@@ -322,7 +320,10 @@ export default function ManageHunts() {
                     placeholder="Points Achievable"
                     value={formData.pointsAchievable}
                     onChange={(e) =>
-                      setFormData({ ...formData, pointsAchievable: e.target.value })
+                      setFormData({
+                        ...formData,
+                        pointsAchievable: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -350,16 +351,28 @@ export default function ManageHunts() {
           aria-labelledby="delete-hunt-title"
           onClick={cancelDeletePrompt}
         >
-          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-body">
               <h2 id="delete-hunt-title">Delete Hunt?</h2>
               <p>
                 Are you sure you want to delete "
-                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+                <strong>{pendingDelete.name}</strong>"? This action cannot be
+                undone.
               </p>
               <div className="modal-actions">
-                <IconButton icon="delete" label="Delete Hunt" onClick={confirmDelete} />
-                <IconButton icon="restart_alt" label="Reset" onClick={cancelDeletePrompt} />
+                <IconButton
+                  icon="delete"
+                  label="Delete Hunt"
+                  onClick={confirmDelete}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={cancelDeletePrompt}
+                />
               </div>
             </div>
           </div>
@@ -375,8 +388,8 @@ export default function ManageHunts() {
             <div className="quest-profile">
               <img
                 src={
-                  collectibles.find((c) => c.id === h.collectibleId)?.imageUrl ||
-                  "https://via.placeholder.com/100"
+                  collectibles.find((c) => c.id === h.collectibleId)
+                    ?.imageUrl || "https://via.placeholder.com/100"
                 }
                 alt={h.name}
                 className="w-16 h-16 object-cover rounded"
@@ -396,12 +409,15 @@ export default function ManageHunts() {
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
               </p>
               <p className="points-display">
-                <i aria-hidden="true" className="material-symbols-outlined">emoji_events</i>
+                <i aria-hidden="true" className="material-symbols-outlined">
+                  emoji_events
+                </i>
                 <strong>Points:</strong> {h.pointsAchievable ?? "-"}
               </p>
               <p>
                 <strong>Collectible:</strong>{" "}
-                {collectibles.find((c) => c.id === h.collectibleId)?.name || "-"}
+                {collectibles.find((c) => c.id === h.collectibleId)?.name ||
+                  "-"}
               </p>
             </div>
             <div className="quest-action flex gap-2">

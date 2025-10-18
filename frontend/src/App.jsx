@@ -26,7 +26,7 @@ const AddLocation = lazy(() => import("./pages/addLocation"));
 const Settings = lazy(() => import("./pages/settings"));
 import HuntDetail from "./pages/huntDetail";
 const ManageCollectibles = lazy(() => import("./pages/manageCollectibles"));
-const AddCollectiable = lazy(() => import("./pages/addCollectiable"));
+const AddCollectible = lazy(() => import("./pages/addCollectible"));
 const ManageAdmins = lazy(() => import("./pages/manageAdmins"));
 
 const App = () => {
@@ -200,10 +200,10 @@ const App = () => {
               }
             />
             <Route
-              path="/addCollectiable"
+              path="/addCollectible"
               element={
                 <RequireSession>
-                  <AddCollectiable />
+                  <AddCollectible />
                 </RequireSession>
               }
             />

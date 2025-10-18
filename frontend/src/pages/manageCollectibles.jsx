@@ -30,11 +30,15 @@ export default function ManageBadges() {
   const [editingBadge, setEditingBadge] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState(createDefaultBadgeForm);
-  const [initialFormData, setInitialFormData] = useState(createDefaultBadgeForm);
+  const [initialFormData, setInitialFormData] = useState(
+    createDefaultBadgeForm
+  );
   const [uploading, setUploading] = useState(false);
 
   const getToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     return session?.access_token || null;
   };
 
@@ -49,7 +53,8 @@ export default function ManageBadges() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error(await res.text() || "Failed to fetch badges");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to fetch badges");
 
       const payload = await res.json();
       setBadges(Array.isArray(payload) ? payload : []);
@@ -177,7 +182,8 @@ export default function ManageBadges() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error(await res.text() || "Failed to delete badge");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to delete badge");
 
       toast.success("Badge deleted", { id: toastId });
       setBadges((prev) => prev.filter((b) => b.id !== id));
@@ -191,7 +197,7 @@ export default function ManageBadges() {
     <div className="quests-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
-        <h1>Manage Collectiables</h1>
+        <h1>Manage Collectibles</h1>
         <div className="quest-buttons">
           <IconButton
             type="button"
@@ -203,7 +209,7 @@ export default function ManageBadges() {
           <IconButton
             icon="add"
             label="New Badge"
-            onClick={() => navigate("/addCollectiable")}
+            onClick={() => navigate("/addCollectible")}
           />
         </div>
       </div>
@@ -227,70 +233,70 @@ export default function ManageBadges() {
                   handleSave();
                 }}
               >
-              <div className="form-row">
-                <label htmlFor="badge-name">Badge Name</label>
-                <InputField
-                  id="badge-name"
-                  type="text"
-                  name="name"
-                  placeholder="Badge Name"
-                  value={formData.name}
-                  onChange={(event) =>
-                    handleFieldChange("name", event.target.value)
-                  }
-                  icon="badge"
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <label htmlFor="badge-description">Description</label>
-                <InputField
-                  id="badge-description"
-                  type="text"
-                  name="description"
-                  placeholder="Description (optional)"
-                  value={formData.description}
-                  onChange={(event) =>
-                    handleFieldChange("description", event.target.value)
-                  }
-                  icon="description"
-                  required={false}
-                />
-              </div>
-
-              <div className="form-row">
-                <label htmlFor="badge-image-upload">Upload New Image</label>
-                <div className="form-row-column">
-                  <input
-                    id="badge-image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    style={{ marginBottom: "10px" }}
+                <div className="form-row">
+                  <label htmlFor="badge-name">Badge Name</label>
+                  <InputField
+                    id="badge-name"
+                    type="text"
+                    name="name"
+                    placeholder="Badge Name"
+                    value={formData.name}
+                    onChange={(event) =>
+                      handleFieldChange("name", event.target.value)
+                    }
+                    icon="badge"
+                    required
                   />
                 </div>
-              </div>
 
-              {formData.imageUrl && (
                 <div className="form-row">
-                  <label>Preview</label>
+                  <label htmlFor="badge-description">Description</label>
+                  <InputField
+                    id="badge-description"
+                    type="text"
+                    name="description"
+                    placeholder="Description (optional)"
+                    value={formData.description}
+                    onChange={(event) =>
+                      handleFieldChange("description", event.target.value)
+                    }
+                    icon="description"
+                    required={false}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="badge-image-upload">Upload New Image</label>
                   <div className="form-row-column">
-                    <div className="image-preview">
-                      <img
-                        src={formData.imageUrl}
-                        alt="Badge preview"
-                        style={{ maxWidth: "200px", maxHeight: "200px" }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          toast.error("Invalid image URL");
-                        }}
-                      />
-                    </div>
+                    <input
+                      id="badge-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      style={{ marginBottom: "10px" }}
+                    />
                   </div>
                 </div>
-              )}
+
+                {formData.imageUrl && (
+                  <div className="form-row">
+                    <label>Preview</label>
+                    <div className="form-row-column">
+                      <div className="image-preview">
+                        <img
+                          src={formData.imageUrl}
+                          alt="Badge preview"
+                          style={{ maxWidth: "200px", maxHeight: "200px" }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            toast.error("Invalid image URL");
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="modal-form-actions">
                   <IconButton

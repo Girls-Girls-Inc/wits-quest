@@ -26,7 +26,7 @@ const TOAST_OPTIONS = {
   },
 };
 
-const AddCollectiable = () => {
+const AddCollectible = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
@@ -261,4 +261,4 @@ const AddCollectiable = () => {
   );
 };
 
-export default AddCollectiable;
+export default AddCollectible;

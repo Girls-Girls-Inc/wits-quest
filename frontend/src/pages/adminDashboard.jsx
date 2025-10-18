@@ -37,13 +37,25 @@ const DASHBOARD_ACTIONS = [
   { label: "Create Hunt", icon: "flag", path: "/addHunt" },
   { label: "Create Quiz", icon: "quiz", path: "/addQuiz" },
   { label: "Create Location", icon: "edit_location", path: "/addLocation" },
-  { label: "Create Collectible", icon: "military_tech", path: "/addCollectiable" },
+  {
+    label: "Create Collectible",
+    icon: "military_tech",
+    path: "/addCollectible",
+  },
   { label: "Manage Quests", icon: "star", path: "/manageQuests" },
   { label: "Manage Hunts", icon: "stars", path: "/manageHunts" },
   { label: "Manage Quizzes", icon: "quiz", path: "/manageQuizzes" },
   { label: "Manage Locations", icon: "location_on", path: "/manageLocations" },
-  { label: "Manage Collectiables", icon: "award_star", path: "/manageCollectibles" },
-  { label: "Manage Admins", icon: "admin_panel_settings", path: "/manageAdmins" },
+  {
+    label: "Manage Collectibles",
+    icon: "award_star",
+    path: "/manageCollectibles",
+  },
+  {
+    label: "Manage Admins",
+    icon: "admin_panel_settings",
+    path: "/manageAdmins",
+  },
 ];
 
 const AdminDashboard = () => {
@@ -55,7 +67,8 @@ const AdminDashboard = () => {
       <div className="admin-header">
         <h1 className="heading">Admin Dashboard</h1>
         <p className="admin-header__subtitle">
-          Choose an area to create new content or manage existing quests, hunts, and resources.
+          Choose an area to create new content or manage existing quests, hunts,
+          and resources.
         </p>
       </div>
 

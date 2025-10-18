@@ -12,6 +12,7 @@ import {
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import IconButton from "../components/IconButton";
+import "../styles/quests.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -351,9 +352,11 @@ export default function QuestDetail() {
           <span>
             <strong>Points:</strong> {quest.pointsAchievable}
           </span>
+          <br />
           <span>
             <strong>Location:</strong> {loc.name ?? "Unknown"}
           </span>
+          <br />
 
           {distanceM != null && (
             <span>
@@ -365,13 +368,13 @@ export default function QuestDetail() {
 
       {quiz && (
         <section className="quiz-section">
-          <h3>Quiz</h3>
+          <h3>Quest Challenge</h3>
           <p>{quiz.questionText}</p>
 
           {quizType === "mcq" && quizOptions.length > 0 && (
             <div className="quiz-options">
               {quizOptions.map((opt, i) => (
-                <label key={i} style={{ display: "block" }}>
+                <label key={i}>
                   <input
                     type="radio"
                     name="quiz"
@@ -386,12 +389,23 @@ export default function QuestDetail() {
           )}
 
           {quizType === "text" && (
-            <input
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Your answer"
-            />
+            <>
+              {quiz.correctAnswer && quiz.correctAnswer.length > 50 ? (
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here..."
+                  rows={Math.min(Math.ceil(quiz.correctAnswer.length / 40), 6)}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here..."
+                />
+              )}
+            </>
           )}
         </section>
       )}

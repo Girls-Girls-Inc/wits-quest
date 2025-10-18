@@ -328,9 +328,6 @@ button:focus-visible {
     height: 90vh;
     width: 90vw;
   }
-  .icon-button {
-    border: none !important;
-  }
 
   .container .form-box.signup .signup-form {
     visibility: hidden;

@@ -6,7 +6,7 @@ import "../styles/layout.css";
 import "../styles/login-signup.css";
 import "../styles/adminDashboard.css";
 import "../styles/button.css";
-import InputField from "../components/InputField";
+import "../styles/quests.css";
 import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
@@ -191,88 +191,108 @@ const HuntDetail = () => {
         </div>
       </div>
 
+      <section className="quiz-section">
+        <h3>Hunt Challenge</h3>
+        <p>{h.description || "No description provided."}</p>
 
-      <form
-        className="login-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          checkAnswer();
-        }}
-      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            checkAnswer();
+          }}
+        >
+          <div className="quiz-options" style={{ marginTop: "20px" }}>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                marginBottom: "16px",
+              }}
+            >
+              <span style={{ marginBottom: "8px", fontWeight: "500" }}>
+                Question:
+              </span>
+              <span
+                style={{ fontSize: "1rem", color: "#fff", fontWeight: "600" }}
+              >
+                {h.question || "?"}
+              </span>
+            </label>
 
-
-        <InputField
-          type="text"
-          name="description"
-          placeholder="Description"
-          value={h.description || "No description provided."}
-          icon="description"
-          readOnly
-        />
-
-        <InputField
-          type="text"
-          name="question"
-          placeholder="Question"
-          value={h.question || "?"}
-          icon="help"
-          readOnly
-        />
-
-        <div className="input-box">
-          <label>Time Remaining</label>
-          <div className="text-sm font-semibold text-blue-600">
-            {remainingTime || "Calculating..."}
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                marginBottom: "16px",
+              }}
+            >
+              <span style={{ marginBottom: "8px", fontWeight: "500" }}>
+                Time Remaining:
+              </span>
+              <span
+                style={{
+                  fontSize: "0.95rem",
+                  color: "#1E90FF",
+                  fontWeight: "600",
+                }}
+              >
+                {remainingTime || "Calculating..."}
+              </span>
+            </label>
           </div>
-        </div>
 
-        {!isExpiredOrCompleted ? (
-          <>
-            <div className="input-box">
-              <label>Your Answer</label>
+          {!isExpiredOrCompleted ? (
+            <>
               <input
                 type="text"
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Enter your answer"
-                className="input"
+                placeholder="Type your answer here..."
               />
-            </div>
 
-            {feedback && (
-              <p
-                className={`text-center font-medium ${
-                  feedback.includes("✅")
-                    ? "text-green-600"
-                    : "text-red-500"
-                }`}
-              >
-                {feedback}
-              </p>
-            )}
+              {feedback && (
+                <p
+                  style={{
+                    textAlign: "center",
+                    fontWeight: "500",
+                    marginTop: "12px",
+                    color: feedback.includes("✅") ? "#22c55e" : "#ef4444",
+                  }}
+                >
+                  {feedback}
+                </p>
+              )}
 
-            <div className="btn flex gap-2 mt-4">
-              <IconButton
-                type="submit"
-                icon={submitting ? "hourglass_bottom" : "send"}
-                label={submitting ? "Checking..." : "Submit Answer"}
-                disabled={submitting}
-              />
-              <IconButton
-                type="button"
-                icon="restart_alt"
-                label="Clear"
-                onClick={() => setAnswer("")}
-                disabled={submitting}
-              />
-            </div>
-          </>
-        ) : (
-          <p className="text-green-600 font-semibold text-center mt-6">
-            ✅ This hunt is completed or expired.
-          </p>
-        )}
-      </form>
+              <div className="action-buttons" style={{ marginTop: "20px" }}>
+                <IconButton
+                  type="submit"
+                  icon={submitting ? "hourglass_bottom" : "send"}
+                  label={submitting ? "Checking..." : "Submit Answer"}
+                  disabled={submitting}
+                />
+                <IconButton
+                  type="button"
+                  icon="restart_alt"
+                  label="Clear"
+                  onClick={() => setAnswer("")}
+                  disabled={submitting}
+                />
+              </div>
+            </>
+          ) : (
+            <p
+              style={{
+                color: "#22c55e",
+                fontWeight: "600",
+                textAlign: "center",
+                marginTop: "20px",
+              }}
+            >
+              ✅ This hunt is completed or expired.
+            </p>
+          )}
+        </form>
+      </section>
     </div>
   );
 };

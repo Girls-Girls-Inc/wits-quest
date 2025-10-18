@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
 import "../styles/layout.css";
@@ -149,7 +150,7 @@ export default function ManageHunts() {
   };
 
   return (
-    <div className="quests-container">
+    <div className="quests-container" style={{ marginLeft: "150px" }}>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -381,10 +382,7 @@ export default function ManageHunts() {
 
       <div className="quest-list">
         {hunts.map((h) => (
-          <div
-            key={h.id}
-            className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
-          >
+          <div key={h.id} className="quest-card ">
             <div className="quest-profile">
               <img
                 src={
@@ -396,7 +394,7 @@ export default function ManageHunts() {
               />
             </div>
 
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{h.name}</h2>
               <p>{h.description || "-"}</p>
               <p>

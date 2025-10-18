@@ -335,7 +335,7 @@ export default function ManageBadges() {
                 }}
               />
             )}
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{badge.name}</h2>
               {badge.description && <p>{badge.description}</p>}
               <p className="text-sm text-gray-500">

@@ -64,7 +64,9 @@ export default function ManageQuests() {
   const [editingQuest, setEditingQuest] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState(createDefaultQuestForm);
-  const [initialFormData, setInitialFormData] = useState(createDefaultQuestForm);
+  const [initialFormData, setInitialFormData] = useState(
+    createDefaultQuestForm
+  );
 
   // Load quests with images
   const loadQuests = async () => {
@@ -582,10 +584,7 @@ export default function ManageQuests() {
 
       <div className="quest-list">
         {quests.map((q) => (
-          <div
-            key={q.id}
-            className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
-          >
+          <div key={q.id} className="quest-card">
             <div className="quest-profile">
               <img
                 src={q.imageUrl || "https://via.placeholder.com/100"}
@@ -593,10 +592,12 @@ export default function ManageQuests() {
                 className="w-16 h-16 object-cover rounded"
               />
             </div>
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{q.name}</h2>
               <p className="points-display">
-                <i aria-hidden="true" className="material-symbols-outlined">emoji_events</i>
+                <i aria-hidden="true" className="material-symbols-outlined">
+                  emoji_events
+                </i>
                 <strong>Points:</strong> {q.pointsAchievable}
               </p>
               <p>

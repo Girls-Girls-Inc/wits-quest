@@ -71,7 +71,9 @@ export default function ManageLocations() {
   const [editingLocation, setEditingLocation] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [formData, setFormData] = useState(createEmptyLocationForm);
-  const [initialFormData, setInitialFormData] = useState(createEmptyLocationForm);
+  const [initialFormData, setInitialFormData] = useState(
+    createEmptyLocationForm
+  );
 
   const loadLocations = async () => {
     const toastId = toast.loading("Loading locations...");
@@ -81,7 +83,8 @@ export default function ManageLocations() {
         credentials: "include",
         ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Failed to fetch locations");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to fetch locations");
       const data = await res.json();
       setLocations(Array.isArray(data) ? data : []);
       toast.success("Locations loaded", { id: toastId });
@@ -158,12 +161,16 @@ export default function ManageLocations() {
       });
       const result = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        throw new Error(result?.error || result?.message || "Failed to update location");
+        throw new Error(
+          result?.error || result?.message || "Failed to update location"
+        );
       }
 
       setLocations((prev) =>
         prev.map((loc) =>
-          Number(loc.id) === Number(editingLocation.id) ? { ...loc, ...result } : loc
+          Number(loc.id) === Number(editingLocation.id)
+            ? { ...loc, ...result }
+            : loc
         )
       );
       toast.success("Location updated", { id: toastId });
@@ -192,7 +199,9 @@ export default function ManageLocations() {
         const message = await resp.text();
         throw new Error(message || "Failed to delete location");
       }
-      setLocations((prev) => prev.filter((loc) => Number(loc.id) !== Number(id)));
+      setLocations((prev) =>
+        prev.filter((loc) => Number(loc.id) !== Number(id))
+      );
       if (editingLocation?.id === id) closeEditModal();
       toast.success("Location deleted", { id: toastId });
     } catch (err) {
@@ -297,7 +306,9 @@ export default function ManageLocations() {
                       readOnly
                       className="input-field"
                     />
-                    <i className="material-symbols-outlined">globe_location_pin</i>
+                    <i className="material-symbols-outlined">
+                      globe_location_pin
+                    </i>
                   </div>
                 </div>
 
@@ -314,7 +325,9 @@ export default function ManageLocations() {
                       readOnly
                       className="input-field"
                     />
-                    <i className="material-symbols-outlined">globe_location_pin</i>
+                    <i className="material-symbols-outlined">
+                      globe_location_pin
+                    </i>
                   </div>
                 </div>
 
@@ -329,7 +342,10 @@ export default function ManageLocations() {
                       placeholder="Radius"
                       value={formData.radius}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, radius: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          radius: e.target.value,
+                        }))
                       }
                       className="input-field"
                     />
@@ -360,16 +376,28 @@ export default function ManageLocations() {
           aria-labelledby="delete-location-title"
           onClick={cancelDeletePrompt}
         >
-          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-body">
               <h2 id="delete-location-title">Delete Location?</h2>
               <p>
                 Are you sure you want to delete "
-                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+                <strong>{pendingDelete.name}</strong>"? This action cannot be
+                undone.
               </p>
               <div className="modal-actions">
-                <IconButton icon="delete" label="Delete Location" onClick={confirmDelete} />
-                <IconButton icon="restart_alt" label="Reset" onClick={cancelDeletePrompt} />
+                <IconButton
+                  icon="delete"
+                  label="Delete Location"
+                  onClick={confirmDelete}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={cancelDeletePrompt}
+                />
               </div>
             </div>
           </div>
@@ -378,11 +406,8 @@ export default function ManageLocations() {
 
       <div className="quest-list">
         {locations.map((location) => (
-          <div
-            key={location.id}
-            className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
-          >
-            <div className="quest-info flex-1">
+          <div key={location.id} className="quest-card">
+            <div className="quest-info ">
               <h2 className="font-bold">{location.name}</h2>
               <p>
                 <strong>Latitude:</strong>{" "}

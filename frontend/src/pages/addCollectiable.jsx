@@ -161,26 +161,30 @@ const AddCollectiable = () => {
       </div>
 
       <form className="login-form" onSubmit={handleSubmit}>
-        <InputField
-          type="text"
-          name="name"
-          placeholder="Collectible Name"
-          value={form.name}
-          onChange={(event) => handleFieldChange("name", event.target.value)}
-          icon="badge"
-          required
-        />
+        <div className="input-box">
+          <InputField
+            type="text"
+            name="name"
+            placeholder="Collectible Name"
+            value={form.name}
+            onChange={(event) => handleFieldChange("name", event.target.value)}
+            icon="badge"
+            required
+          />
+        </div>
 
-        <InputField
-          type="text"
-          name="description"
-          placeholder="Description (optional)"
-          value={form.description}
-          onChange={(event) =>
-            handleFieldChange("description", event.target.value)
-          }
-          icon="description"
-        />
+        <div className="input-box">
+          <InputField
+            type="text"
+            name="description"
+            placeholder="Description (optional)"
+            value={form.description}
+            onChange={(event) =>
+              handleFieldChange("description", event.target.value)
+            }
+            icon="description"
+          />
+        </div>
 
         {/* Upload Image */}
         <div className="input-box">

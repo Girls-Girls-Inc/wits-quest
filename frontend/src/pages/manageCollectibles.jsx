@@ -211,74 +211,95 @@ export default function ManageBadges() {
               ✖
             </button>
 
-            <form
-              className="login-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleSave();
-              }}
-            >
-              <InputField
-                type="text"
-                name="name"
-                placeholder="Badge Name"
-                value={formData.name}
-                onChange={(event) =>
-                  handleFieldChange("name", event.target.value)
-                }
-                icon="badge"
-                required
-              />
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSave();
+                }}
+              >
+              <div className="form-row">
+                <label htmlFor="badge-name">Badge Name</label>
+                <InputField
+                  id="badge-name"
+                  type="text"
+                  name="name"
+                  placeholder="Badge Name"
+                  value={formData.name}
+                  onChange={(event) =>
+                    handleFieldChange("name", event.target.value)
+                  }
+                  icon="badge"
+                  required
+                />
+              </div>
 
-              <InputField
-                type="text"
-                name="description"
-                placeholder="Description (optional)"
-                value={formData.description}
-                onChange={(event) =>
-                  handleFieldChange("description", event.target.value)
-                }
-                icon="description"
-              />
+              <div className="form-row">
+                <label htmlFor="badge-description">Description</label>
+                <InputField
+                  id="badge-description"
+                  type="text"
+                  name="description"
+                  placeholder="Description (optional)"
+                  value={formData.description}
+                  onChange={(event) =>
+                    handleFieldChange("description", event.target.value)
+                  }
+                  icon="description"
+                  required={false}
+                />
+              </div>
 
-              <label className="text-sm mt-2">Upload New Image:</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                style={{ marginBottom: "10px" }}
-              />
+              <div className="form-row">
+                <label htmlFor="badge-image-upload">Upload New Image</label>
+                <div className="form-row-column">
+                  <input
+                    id="badge-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    style={{ marginBottom: "10px" }}
+                  />
+                </div>
+              </div>
 
               {formData.imageUrl && (
-                <div className="image-preview">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Badge preview"
-                    style={{ maxWidth: "200px", maxHeight: "200px" }}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      toast.error("Invalid image URL");
-                    }}
-                  />
+                <div className="form-row">
+                  <label>Preview</label>
+                  <div className="form-row-column">
+                    <div className="image-preview">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Badge preview"
+                        style={{ maxWidth: "200px", maxHeight: "200px" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          toast.error("Invalid image URL");
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <div className="btn flex gap-2">
-                <IconButton
-                  type="submit"
-                  icon="save"
-                  label={uploading ? "Uploading..." : "Save Badge"}
-                  disabled={uploading}
-                />
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Cancel"
-                  onClick={resetForm}
-                />
-              </div>
-            </form>
+                <div className="btn flex gap-2">
+                  <IconButton
+                    type="submit"
+                    icon="save"
+                    label={uploading ? "Uploading..." : "Save Badge"}
+                    disabled={uploading}
+                  />
+                  <IconButton
+                    type="button"
+                    icon="arrow_back"
+                    label="Cancel"
+                    onClick={resetForm}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

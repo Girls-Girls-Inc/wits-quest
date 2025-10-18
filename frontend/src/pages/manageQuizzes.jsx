@@ -347,123 +347,136 @@ export default function ManageQuizzes() {
               ✖
             </button>
 
-            <form
-              className="login-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleSave();
-              }}
-            >
-              <InputField
-                type="text"
-                name="questionText"
-                placeholder="Question Text"
-                value={formData.questionText}
-                onChange={(event) =>
-                  handleFieldChange("questionText", event.target.value)
-                }
-                icon="help"
-                required
-              />
-
-              <div className="input-box">
-              <ComboBox
-                id="questionType"
-                name="questionType"
-                value={formData.questionType}
-                icon="quiz"
-                onChange={(event) =>
-                  handleQuestionTypeChange(event.target.value)
-                }
-                options={[
-                  { value: "text", label: "Text / Short Answer" },
-                  { value: "mcq", label: "Multiple Choice" },
-                ]}
-                ariaLabel="Question Type"
-              />
-            </div>
-
-              {formData.questionType === "mcq" && (
-                <div className="input-box">
-                  <label>Options</label>
-                  {(formData.options || []).map((option, index) => (
-                    <div key={index} className="flex gap-2 mb-2 items-center">
-                      <InputField
-                        type="text"
-                        name={`option-${index}`}
-                        placeholder={`Option ${index + 1}`}
-                        value={option}
-                        onChange={(event) =>
-                          handleOptionChange(index, event.target.value)
-                        }
-                        icon="list"
-                        required
-                      />
-                      {(formData.options || []).length > 2 && (
-                        <button
-                          type="button"
-                          className="icon-button btn-red"
-                          onClick={() => handleRemoveOption(index)}
-                        >
-                          <i className="material-symbols-outlined">delete</i>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <IconButton
-                    type="button"
-                    icon="add"
-                    label="Add Option"
-                    onClick={handleAddOption}
-                  />
-                </div>
-              )}
-
-              {formData.questionType === "mcq" ? (
-                <div className="input-box">
-              <ComboBox
-                id="correctAnswer"
-                name="correctAnswer"
-                value={formData.correctAnswer}
-                icon="check_circle"
-                onChange={(event) =>
-                  handleFieldChange("correctAnswer", event.target.value)
-                }
-                  placeholder="Select correct option"
-                  options={availableAnswers.map((answer) => ({
-                    value: answer,
-                    label: answer,
-                  }))}
-                  ariaLabel="Correct Answer"
-                />
-                  <small>
-                    Tip: Correct answer must match one of the options above.
-                  </small>
-                </div>
-              ) : (
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSave();
+                }}
+              >
+              <div className="form-row">
+                <label htmlFor="quiz-question-text">Question Text</label>
                 <InputField
+                  id="quiz-question-text"
                   type="text"
-                  name="correctAnswer"
-                  placeholder="Correct Answer"
-                  value={formData.correctAnswer}
+                  name="questionText"
+                  placeholder="Question Text"
+                  value={formData.questionText}
                   onChange={(event) =>
-                    handleFieldChange("correctAnswer", event.target.value)
+                    handleFieldChange("questionText", event.target.value)
                   }
-                  icon="check"
+                  icon="help"
                   required
                 />
-              )}
+              </div>
 
-              <div className="btn flex gap-2">
-                <IconButton type="submit" icon="save" label="Save Quiz" />
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Cancel"
-                  onClick={resetForm}
+              <div className="form-row">
+                <label htmlFor="quiz-question-type">Question Type</label>
+                <ComboBox
+                  id="quiz-question-type"
+                  name="questionType"
+                  value={formData.questionType}
+                  icon="quiz"
+                  onChange={(event) =>
+                    handleQuestionTypeChange(event.target.value)
+                  }
+                  options={[
+                    { value: "text", label: "Text / Short Answer" },
+                    { value: "mcq", label: "Multiple Choice" },
+                  ]}
+                  ariaLabel="Question Type"
                 />
               </div>
-            </form>
+
+              {formData.questionType === "mcq" && (
+                <div className="form-row">
+                  <label>Options</label>
+                  <div className="form-row-column">
+                    {(formData.options || []).map((option, index) => (
+                      <div key={index} className="flex gap-2 mb-2 items-center">
+                        <InputField
+                          type="text"
+                          name={`option-${index}`}
+                          placeholder={`Option ${index + 1}`}
+                          value={option}
+                          onChange={(event) =>
+                            handleOptionChange(index, event.target.value)
+                          }
+                          icon="list"
+                          required
+                        />
+                        {(formData.options || []).length > 2 && (
+                          <button
+                            type="button"
+                            className="icon-button btn-red"
+                            onClick={() => handleRemoveOption(index)}
+                          >
+                            <i className="material-symbols-outlined">delete</i>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <IconButton
+                      type="button"
+                      icon="add"
+                      label="Add Option"
+                      onClick={handleAddOption}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="form-row">
+                <label htmlFor="quiz-correct-answer">Correct Answer</label>
+                {formData.questionType === "mcq" ? (
+                  <div className="form-row-column">
+                    <ComboBox
+                      id="quiz-correct-answer"
+                      name="correctAnswer"
+                      value={formData.correctAnswer}
+                      icon="check_circle"
+                      onChange={(event) =>
+                        handleFieldChange("correctAnswer", event.target.value)
+                      }
+                      placeholder="Select correct option"
+                      options={availableAnswers.map((answer) => ({
+                        value: answer,
+                        label: answer,
+                      }))}
+                      ariaLabel="Correct Answer"
+                    />
+                    <small>
+                      Tip: Correct answer must match one of the options above.
+                    </small>
+                  </div>
+                ) : (
+                  <InputField
+                    id="quiz-correct-answer"
+                    type="text"
+                    name="correctAnswer"
+                    placeholder="Correct Answer"
+                    value={formData.correctAnswer}
+                    onChange={(event) =>
+                      handleFieldChange("correctAnswer", event.target.value)
+                    }
+                    icon="check"
+                    required
+                  />
+                )}
+              </div>
+
+                <div className="btn flex gap-2">
+                  <IconButton type="submit" icon="save" label="Save Quiz" />
+                  <IconButton
+                    type="button"
+                    icon="arrow_back"
+                    label="Cancel"
+                    onClick={resetForm}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

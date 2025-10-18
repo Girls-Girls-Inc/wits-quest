@@ -139,7 +139,7 @@ describe("AddQuiz page", () => {
     });
   });
 
-  it("renders initial form (Text type) and basic controls", () => {
+  it("renders initial form with placeholders and basic controls", () => {
     render(<AddQuiz />);
     expect(
       screen.getByRole("heading", { level: 1, name: /create quiz/i })
@@ -149,9 +149,9 @@ describe("AddQuiz page", () => {
     expect(screen.getByPlaceholderText(/question text/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/correct answer/i)).toBeInTheDocument();
 
-    // Question type select default is 'text'
+    // Question type select shows placeholder until selection
     const qType = screen.getByRole("combobox", { name: /question type/i });
-    expect(qType).toHaveValue("text");
+    expect(qType).toHaveValue("");
   });
 
   it("navigates Back to Admin", async () => {
@@ -217,6 +217,10 @@ describe("AddQuiz page", () => {
     const toast = (await import("react-hot-toast")).default;
     render(<AddQuiz />);
 
+    const typeSelect = screen.getByRole("combobox", { name: /question type/i });
+    await userEvent.selectOptions(typeSelect, "text");
+    expect(typeSelect).toHaveValue("text");
+
     // Leave question empty
     await userEvent.click(screen.getByTestId("icon-btn-create-quiz"));
 
@@ -224,9 +228,32 @@ describe("AddQuiz page", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it("validation: question type required", async () => {
+    const toast = (await import("react-hot-toast")).default;
+    render(<AddQuiz />);
+
+    await userEvent.type(
+      screen.getByPlaceholderText(/question text/i),
+      "Select a type please"
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText(/correct answer/i),
+      "Any"
+    );
+
+    await userEvent.click(screen.getByTestId("icon-btn-create-quiz"));
+
+    expect(toast.error).toHaveBeenCalledWith("Question type is required");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it("validation: correct answer required (text type)", async () => {
     const toast = (await import("react-hot-toast")).default;
     render(<AddQuiz />);
+
+    const typeSelect = screen.getByRole("combobox", { name: /question type/i });
+    await userEvent.selectOptions(typeSelect, "text");
+    expect(typeSelect).toHaveValue("text");
 
     await userEvent.type(
       screen.getByPlaceholderText(/question text/i),
@@ -281,6 +308,10 @@ describe("AddQuiz page", () => {
 
   it("submits Text quiz successfully with token", async () => {
     render(<AddQuiz />);
+
+    const typeSelect = screen.getByRole("combobox", { name: /question type/i });
+    await userEvent.selectOptions(typeSelect, "text");
+    expect(typeSelect).toHaveValue("text");
 
     await userEvent.type(
       screen.getByPlaceholderText(/question text/i),
@@ -365,6 +396,10 @@ describe("AddQuiz page", () => {
 
     render(<AddQuiz />);
 
+    const typeSelect = screen.getByRole("combobox", { name: /question type/i });
+    await userEvent.selectOptions(typeSelect, "text");
+    expect(typeSelect).toHaveValue("text");
+
     await userEvent.type(screen.getByPlaceholderText(/question text/i), "Q?");
     await userEvent.type(screen.getByPlaceholderText(/correct answer/i), "A");
 
@@ -381,6 +416,10 @@ describe("AddQuiz page", () => {
 
     render(<AddQuiz />);
 
+    const typeSelect = screen.getByRole("combobox", { name: /question type/i });
+    await userEvent.selectOptions(typeSelect, "text");
+    expect(typeSelect).toHaveValue("text");
+
     await userEvent.type(screen.getByPlaceholderText(/question text/i), "Q?");
     await userEvent.type(screen.getByPlaceholderText(/correct answer/i), "A");
 
@@ -393,7 +432,7 @@ describe("AddQuiz page", () => {
     });
   });
 
-  it("Reset button clears the form and returns to Text defaults", async () => {
+  it("Reset button clears the form and restores default placeholders", async () => {
     render(<AddQuiz />);
 
     // switch to MCQ and fill
@@ -409,7 +448,7 @@ describe("AddQuiz page", () => {
     // Back to defaults
     expect(
       screen.getByRole("combobox", { name: /question type/i })
-    ).toHaveValue("text");
+    ).toHaveValue("");
     expect(screen.getByPlaceholderText(/question text/i)).toHaveValue("");
     expect(screen.getByPlaceholderText(/correct answer/i)).toHaveValue("");
   });

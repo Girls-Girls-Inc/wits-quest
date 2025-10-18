@@ -10,21 +10,6 @@ import "../styles/quests.css";
 import IconButton from "../components/IconButton";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
-const TOAST_OPTIONS = {
-  style: {
-    background: "#002d73",
-    color: "#ffb819",
-  },
-  success: {
-    style: { background: "green", color: "white" },
-  },
-  error: {
-    style: { background: "red", color: "white" },
-  },
-  loading: {
-    style: { background: "#002d73", color: "#ffb819" },
-  },
-};
 
 const HuntDetail = () => {
   const [searchParams] = useSearchParams();
@@ -175,8 +160,6 @@ const HuntDetail = () => {
 
   return (
     <div className="admin-container">
-      <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
-
       <div className="admin-header admin-header--with-actions">
         <div className="admin-header__row">
           <h1 className="heading">{hunt?.hunts?.name || "Hunt"}</h1>

@@ -20,10 +20,14 @@ import Hunts from "./pages/hunts";
 const ManageQuizzes = lazy(() => import("./pages/manageQuizzes"));
 const ManageLocations = lazy(() => import("./pages/manageLocations"));
 const AddQuiz = lazy(() => import("./pages/addQuiz"));
+const AddQuest = lazy(() => import("./pages/addQuest"));
+const AddHunt = lazy(() => import("./pages/addHunt"));
+const AddLocation = lazy(() => import("./pages/addLocation"));
 const Settings = lazy(() => import("./pages/settings"));
 import HuntDetail from "./pages/huntDetail";
 const ManageCollectibles = lazy(() => import("./pages/manageCollectibles"));
-const AddBadge = lazy(() => import("./pages/addBadge"));
+const AddCollectible = lazy(() => import("./pages/addCollectible"));
+const ManageAdmins = lazy(() => import("./pages/manageAdmins"));
 
 const App = () => {
   return (
@@ -116,10 +120,42 @@ const App = () => {
               }
             />
             <Route
+              path="/admin"
+              element={
+                <RequireSession>
+                  <Admin />
+                </RequireSession>
+              }
+            />
+            <Route
               path="/addQuiz"
               element={
                 <RequireSession>
                   <AddQuiz />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addQuest"
+              element={
+                <RequireSession>
+                  <AddQuest />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addHunt"
+              element={
+                <RequireSession>
+                  <AddHunt />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addLocation"
+              element={
+                <RequireSession>
+                  <AddLocation />
                 </RequireSession>
               }
             />
@@ -156,10 +192,18 @@ const App = () => {
               }
             />
             <Route
-              path="/addBadge"
+              path="/manageAdmins"
               element={
                 <RequireSession>
-                  <AddBadge />
+                  <ManageAdmins />
+                </RequireSession>
+              }
+            />
+            <Route
+              path="/addCollectible"
+              element={
+                <RequireSession>
+                  <AddCollectible />
                 </RequireSession>
               }
             />

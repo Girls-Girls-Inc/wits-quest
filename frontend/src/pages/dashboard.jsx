@@ -205,8 +205,6 @@ const Dashboard = () => {
       const completedRows = rows.filter(
         (q) => q.isComplete && q.userId === me?.id
       );
-
-      const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
       const latestRow = completedRows.sort(
         (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
       )[0];
@@ -216,7 +214,6 @@ const Dashboard = () => {
         ...prev,
         questsCompleted: completedRows.length,
         locationsVisited: uniqueLocations.size,
-        points: totalPoints,
         latestLocation,
       }));
     } catch (e) {
@@ -241,8 +238,21 @@ const Dashboard = () => {
         rank: i + 1,
         name: r.username,
         points: r.points,
+        userId: r.userId,
       }));
       setLeaderboard(rows);
+
+      // --- Set dashboard points from leaderboard ---
+      if (me?.id) {
+        const myRow = rows.find((r) => r.userId === me.id);
+        if (myRow) {
+          setDashboardData((prev) => ({
+            ...prev,
+            points: myRow.points,
+          }));
+        }
+      }
+
     } catch (e) {
       console.error("Leaderboard fetch failed:", e.message);
       setLeaderboard([]);

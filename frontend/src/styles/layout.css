@@ -1,13 +1,13 @@
 .app-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .main-content {
   min-width: 90%;
   flex: 1;
   padding: 1rem;
-  margin-left: 150px;
+  margin-left: 150px !important;
   overflow-y: auto;
   /* overflow-x: hidden; */
 }

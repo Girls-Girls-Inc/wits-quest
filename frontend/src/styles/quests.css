@@ -56,7 +56,7 @@
 
 .quest-info h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 @media (max-width: 768px) {
@@ -76,6 +76,7 @@
   .quest-profile img {
     width: 50px;
     height: 50px;
+    max-width: 50px;
   }
 
   .quest-info {
@@ -91,20 +92,6 @@
 
   .quest-action button {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .quest-profile img {
-    max-width: 20px;
-    height: auto;
-  }
-  .quests-container {
-    padding: 10px;
-  }
-
-  .quest-info h2 {
-    font-size: 16px;
   }
 }
 
@@ -195,6 +182,18 @@
   justify-content: center;
 }
 
+.modal-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.modal-form-actions .icon-button {
+  flex: 1 1 0;
+}
+
 @media (max-width: 768px) {
   .modal-body {
     flex-direction: column;
@@ -243,8 +242,10 @@
 
 .action-buttons {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 .modal.login-required {
@@ -304,6 +305,11 @@
   padding: 0;
 }
 
+.modal .login-form {
+  align-items: stretch;
+  width: 100%;
+}
+
 .form-row {
   display: flex;
   align-items: center;
@@ -316,10 +322,21 @@
   font-weight: bold;
 }
 
+.modal .login-form .form-row {
+  width: 100%;
+}
+
 .form-row input,
 .form-row select,
 .form-row textarea {
   flex: 1;
+}
+
+.form-row-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -336,6 +353,10 @@
   .form-row input,
   .form-row select,
   .form-row textarea {
+    width: 100%;
+  }
+
+  .form-row-column {
     width: 100%;
   }
 }
@@ -355,9 +376,25 @@
   color: #fff;
 }
 
+.quest-detail-header {
+  margin-bottom: 16px;
+}
+
+.quest-detail-header h1 {
+  margin-bottom: 8px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #fff;
+}
+/* Quiz Section - Fixed Styling */
 .quiz-section {
   background: var(--background);
-  border: 2px solid var(--accent, var(--wits-gold));
+  border: 2px solid var(--accent, var(--wits-yellow));
   border-radius: 16px;
   padding: 24px;
   margin: 20px 0;
@@ -366,7 +403,7 @@
 
 .quiz-section h3 {
   margin: 0 0 16px 0;
-  color: var(--accent, var(--wits-gold));
+  color: var(--accent, var(--wits-yellow));
   font-size: 1.4rem;
   font-weight: 600;
   display: flex;
@@ -383,10 +420,11 @@
   font-size: 1.1rem;
   line-height: 1.6;
   color: #fff;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
   font-weight: 500;
 }
 
+/* Quiz Options Container */
 .quiz-options {
   display: flex;
   flex-direction: column;
@@ -394,6 +432,7 @@
   margin-top: 16px;
 }
 
+/* Radio Button Labels */
 .quiz-options label {
   display: flex !important;
   align-items: center;
@@ -405,16 +444,27 @@
   transition: all 0.3s ease;
   font-size: 1rem;
   color: #fff;
+  margin: 0;
+  font-weight: 400;
 }
 
 .quiz-options label:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent, var(--wits-gold));
+  border-color: var(--accent, var(--wits-yellow));
   transform: translateX(4px);
 }
 
+.quiz-options label:has(input:checked) {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: var(--accent, var(--wits-yellow));
+  font-weight: 600;
+}
+
+/* Custom Radio Button */
 .quiz-options input[type="radio"] {
   appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   width: 22px;
   height: 22px;
   border: 2px solid rgba(255, 255, 255, 0.4);
@@ -424,15 +474,17 @@
   position: relative;
   flex-shrink: 0;
   transition: all 0.2s ease;
+  background: transparent;
 }
 
 .quiz-options input[type="radio"]:hover {
-  border-color: var(--accent, var(--wits-gold));
+  border-color: var(--accent, var(--wits-yellow));
+  background: rgba(255, 215, 0, 0.1);
 }
 
 .quiz-options input[type="radio"]:checked {
-  border-color: var(--accent, var(--wits-gold));
-  background: var(--accent, var(--wits-gold));
+  border-color: var(--accent, var(--wits-yellow));
+  background: var(--accent, var(--wits-yellow));
 }
 
 .quiz-options input[type="radio"]:checked::after {
@@ -447,12 +499,7 @@
   border-radius: 50%;
 }
 
-.quiz-options label:has(input:checked) {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: var(--accent, var(--wits-gold));
-  font-weight: 600;
-}
-
+/* Text Input Styling */
 .quiz-section input[type="text"] {
   width: 100%;
   padding: 14px 18px;
@@ -464,15 +511,68 @@
   transition: all 0.3s ease;
   margin-top: 12px;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .quiz-section input[type="text"]:focus {
   outline: none;
-  border-color: var(--accent, var(--wits-gold));
+  border-color: var(--accent, var(--wits-yellow));
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
 .quiz-section input[type="text"]::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* Textarea Styling */
+.quiz-section textarea {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.quiz-section textarea:focus {
+  outline: none;
+  border-color: var(--accent, var(--wits-yellow));
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.quiz-section textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .quiz-section {
+    padding: 16px;
+    margin: 15px 0;
+  }
+
+  .quiz-section h3 {
+    font-size: 1.2rem;
+  }
+
+  .quiz-section > p {
+    font-size: 1rem;
+  }
+
+  .quiz-options label {
+    padding: 12px 16px;
+  }
+
+  .quiz-options input[type="radio"] {
+    width: 20px;
+    height: 20px;
+  }
 }

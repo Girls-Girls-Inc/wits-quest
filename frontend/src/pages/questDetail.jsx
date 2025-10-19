@@ -12,6 +12,7 @@ import {
 import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import IconButton from "../components/IconButton";
+import "../styles/quests.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -257,24 +258,30 @@ export default function QuestDetail() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
-      // 2) Activate the hunt linked to this quest
-      const activateRes = await fetch(
-        `${API_BASE}/hunts/${quest.huntId}/activate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
+      // 2) Activate the hunt linked to this quest (if any)
+      if (quest.huntId) {
+        try {
+          const activateRes = await fetch(
+            `${API_BASE}/hunts/${quest.huntId}/activate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          const activateJson = await activateRes.json().catch(() => ({}));
+          if (!activateRes.ok) {
+            console.error("Error activating hunt:", activateJson);
+            toast.error("Quest completed, but hunt could not be activated.");
+          } else {
+            toast.success("Hunt activated!");
+          }
+        } catch (err) {
+          console.error("Hunt activation failed:", err);
+          toast.error("Quest completed, but hunt could not be activated.");
         }
-      );
-      const activateJson = await activateRes.json().catch(() => ({}));
-      if (!activateRes.ok) {
-        console.error("Error activating hunt:", activateJson);
-        toast.error("Quest completed, but hunt could not be activated.");
-        return;
-      } else {
-        toast.success("Hunt activated!");
       }
 
       // 3) Award collectible (if any)
@@ -351,9 +358,11 @@ export default function QuestDetail() {
           <span>
             <strong>Points:</strong> {quest.pointsAchievable}
           </span>
+          <br />
           <span>
             <strong>Location:</strong> {loc.name ?? "Unknown"}
           </span>
+          <br />
 
           {distanceM != null && (
             <span>
@@ -365,13 +374,13 @@ export default function QuestDetail() {
 
       {quiz && (
         <section className="quiz-section">
-          <h3>Quiz</h3>
+          <h3>Quest Challenge</h3>
           <p>{quiz.questionText}</p>
 
           {quizType === "mcq" && quizOptions.length > 0 && (
             <div className="quiz-options">
               {quizOptions.map((opt, i) => (
-                <label key={i} style={{ display: "block" }}>
+                <label key={i}>
                   <input
                     type="radio"
                     name="quiz"
@@ -386,12 +395,23 @@ export default function QuestDetail() {
           )}
 
           {quizType === "text" && (
-            <input
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Your answer"
-            />
+            <>
+              {quiz.correctAnswer && quiz.correctAnswer.length > 50 ? (
+                <textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here..."
+                  rows={Math.min(Math.ceil(quiz.correctAnswer.length / 40), 6)}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here..."
+                />
+              )}
+            </>
           )}
         </section>
       )}

@@ -26,7 +26,7 @@ const TOAST_OPTIONS = {
   },
 };
 
-const AddBadge = () => {
+const AddCollectible = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
@@ -94,7 +94,7 @@ const AddBadge = () => {
 
     const name = form.name.trim();
     if (!name) {
-      toast.error("Badge name is required");
+      toast.error("Collectible name is required");
       return;
     }
 
@@ -128,13 +128,15 @@ const AddBadge = () => {
       });
 
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error || "Failed to create badge");
+      if (!res.ok) {
+        throw new Error(body?.error || "Failed to create collectible");
+      }
 
-      toast.success("Badge created successfully!");
+      toast.success("Collectible created successfully");
       resetForm();
       navigate("/manageCollectibles");
     } catch (err) {
-      toast.error(err?.message || "Failed to create badge");
+      toast.error(err?.message || "Failed to create collectible");
     } finally {
       setSubmitting(false);
     }
@@ -146,39 +148,43 @@ const AddBadge = () => {
 
       <div className="admin-header admin-header--with-actions">
         <div className="admin-header__row">
-          <h1 className="heading">Create Badge</h1>
+          <h1 className="heading">Create Collectible</h1>
           <div className="admin-header__actions">
             <IconButton
               type="button"
               icon="arrow_back"
-              label="Back to Badges"
-              onClick={() => navigate("/manageCollectibles")}
+              label="Back to Admin"
+              onClick={() => navigate("/adminDashboard")}
             />
           </div>
         </div>
       </div>
 
       <form className="login-form" onSubmit={handleSubmit}>
-        <InputField
-          type="text"
-          name="name"
-          placeholder="Badge Name"
-          value={form.name}
-          onChange={(event) => handleFieldChange("name", event.target.value)}
-          icon="badge"
-          required
-        />
+        <div className="input-box">
+          <InputField
+            type="text"
+            name="name"
+            placeholder="Collectible Name"
+            value={form.name}
+            onChange={(event) => handleFieldChange("name", event.target.value)}
+            icon="badge"
+            required
+          />
+        </div>
 
-        <InputField
-          type="text"
-          name="description"
-          placeholder="Description (optional)"
-          value={form.description}
-          onChange={(event) =>
-            handleFieldChange("description", event.target.value)
-          }
-          icon="description"
-        />
+        <div className="input-box">
+          <InputField
+            type="text"
+            name="description"
+            placeholder="Description (optional)"
+            value={form.description}
+            onChange={(event) =>
+              handleFieldChange("description", event.target.value)
+            }
+            icon="description"
+          />
+        </div>
 
         {/* Upload Image */}
         <div className="input-box">
@@ -210,7 +216,7 @@ const AddBadge = () => {
               {!imageError ? (
                 <img
                   src={form.imageUrl}
-                  alt="Badge preview"
+                  alt="Collectible preview"
                   onError={handleImageError}
                   onLoad={handleImageLoad}
                   style={{
@@ -239,7 +245,7 @@ const AddBadge = () => {
           <IconButton
             type="submit"
             icon={submitting ? "hourglass_bottom" : "save"}
-            label={submitting ? "Creating..." : "Create Badge"}
+            label={submitting ? "Creating..." : "Create Collectible"}
             disabled={submitting || uploading}
           />
           <IconButton
@@ -255,4 +261,4 @@ const AddBadge = () => {
   );
 };
 
-export default AddBadge;
+export default AddCollectible;

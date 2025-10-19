@@ -8,8 +8,12 @@ import "../styles/adminDashboard.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 
-const API_BASE = import.meta.env.VITE_WEB_URL;
+const API_BASE =
+  import.meta.env.VITE_WEB_URL ||
+  process.env.VITE_WEB_URL ||
+  "http://localhost:3000";
 const TOAST_OPTIONS = {
   style: {
     background: "#002d73",
@@ -42,7 +46,7 @@ const AddQuiz = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     questionText: "",
-    questionType: "text",
+    questionType: "",
     options: cloneDefaultOptions(),
     correctAnswer: "",
   });
@@ -79,10 +83,17 @@ const AddQuiz = () => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleQuestionTypeChange = (nextType) => {
-    if (nextType === form.questionType) return;
-    if (nextType === "mcq") {
-      setForm((prev) => {
+  const handleQuestionTypeChange = (eventOrValue) => {
+    const nextTypeRaw =
+      typeof eventOrValue === "string"
+        ? eventOrValue
+        : eventOrValue?.target?.value;
+    const normalizedType = nextTypeRaw ?? "";
+
+    setForm((prev) => {
+      if (normalizedType === prev.questionType) return prev;
+
+      if (normalizedType === "mcq") {
         const options = ensureOptionCount(prev.options, "mcq", prev.questionType);
         const nextAnswer = syncAnswerWithOptions(options, "mcq", prev.correctAnswer);
         return {
@@ -91,15 +102,25 @@ const AddQuiz = () => {
           options,
           correctAnswer: nextAnswer,
         };
-      });
-    } else {
-      setForm((prev) => ({
-        questionText: prev.questionText,
-        questionType: "text",
+      }
+
+      if (normalizedType === "text") {
+        return {
+          ...prev,
+          questionType: "text",
+          options: cloneDefaultOptions(),
+          correctAnswer: "",
+        };
+      }
+
+      // Placeholder (empty) selection resets to default state
+      return {
+        ...prev,
+        questionType: "",
         options: cloneDefaultOptions(),
         correctAnswer: "",
-      }));
-    }
+      };
+    });
   };
 
   const handleOptionChange = (index, value) => {
@@ -137,7 +158,7 @@ const AddQuiz = () => {
   const resetForm = () => {
     setForm({
       questionText: "",
-      questionType: "text",
+      questionType: "",
       options: cloneDefaultOptions(),
       correctAnswer: "",
     });
@@ -153,7 +174,12 @@ const AddQuiz = () => {
       return;
     }
 
-    const questionType = form.questionType;
+    const selectedQuestionType = (form.questionType || "").trim();
+    if (!selectedQuestionType) {
+      toast.error("Question type is required");
+      return;
+    }
+    const questionType = selectedQuestionType;
     let options = [];
     if (questionType === "mcq") {
       options = (form.options || [])
@@ -237,28 +263,34 @@ const AddQuiz = () => {
         </div>
       </div>
 
-      <form className="login-form" onSubmit={handleSubmit}>
-        <InputField
-          type="text"
-          name="questionText"
-          placeholder="Question Text"
-          value={form.questionText}
-          onChange={(event) => handleFieldChange("questionText", event.target.value)}
-          icon="help"
-          required
-        />
+      <form className="login-form" noValidate onSubmit={handleSubmit}>
+        <div className="input-box">
+          <InputField
+            type="text"
+            name="questionText"
+            placeholder="Question Text"
+            value={form.questionText}
+            onChange={(event) => handleFieldChange("questionText", event.target.value)}
+            icon="help"
+            required
+          />
+        </div>
 
         <div className="input-box">
-          <label htmlFor="questionType">Question Type</label>
-          <select
+          <ComboBox
             id="questionType"
             name="questionType"
-            value={form.questionType}
-            onChange={(event) => handleQuestionTypeChange(event.target.value)}
-          >
-            <option value="text">Text / Short Answer</option>
-            <option value="mcq">Multiple Choice</option>
-          </select>
+            value={form.questionType || ""}
+            icon="quiz"
+            onChange={handleQuestionTypeChange}
+            placeholder="Select question type"
+            placeholderValue=""
+            options={[
+              { value: "text", label: "Text / Short Answer" },
+              { value: "mcq", label: "Multiple Choice" },
+            ]}
+            ariaLabel="Question Type"
+          />
         </div>
 
         {form.questionType === "mcq" && (
@@ -297,32 +329,33 @@ const AddQuiz = () => {
 
         {form.questionType === "mcq" ? (
           <div className="input-box">
-            <label htmlFor="correctAnswer">Correct Answer</label>
-            <select
+            <ComboBox
               id="correctAnswer"
               name="correctAnswer"
               value={form.correctAnswer}
+              icon="check_circle"
               onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
-            >
-              <option value="">Select correct option</option>
-              {availableAnswers.map((answer) => (
-                <option key={answer} value={answer}>
-                  {answer}
-                </option>
-              ))}
-            </select>
+              placeholder="Select correct option"
+              ariaLabel="Correct Answer"
+              options={availableAnswers.map((answer) => ({
+                value: answer,
+                label: answer,
+              }))}
+            />
             <small>Tip: Correct answer must match one of the options above.</small>
           </div>
         ) : (
-          <InputField
-            type="text"
-            name="correctAnswer"
-            placeholder="Correct Answer"
-            value={form.correctAnswer}
-            onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
-            icon="check"
-            required
-          />
+          <div className="input-box">
+            <InputField
+              type="text"
+              name="correctAnswer"
+              placeholder="Correct Answer"
+              value={form.correctAnswer}
+              onChange={(event) => handleFieldChange("correctAnswer", event.target.value)}
+              icon="check"
+              required
+            />
+          </div>
         )}
 
 

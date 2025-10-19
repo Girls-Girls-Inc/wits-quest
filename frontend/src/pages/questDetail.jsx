@@ -258,24 +258,30 @@ export default function QuestDetail() {
       const j = await res.json();
       if (!res.ok) throw new Error(j?.message || "Failed to complete quest");
 
-      // 2) Activate the hunt linked to this quest
-      const activateRes = await fetch(
-        `${API_BASE}/hunts/${quest.huntId}/activate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
+      // 2) Activate the hunt linked to this quest (if any)
+      if (quest.huntId) {
+        try {
+          const activateRes = await fetch(
+            `${API_BASE}/hunts/${quest.huntId}/activate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          const activateJson = await activateRes.json().catch(() => ({}));
+          if (!activateRes.ok) {
+            console.error("Error activating hunt:", activateJson);
+            toast.error("Quest completed, but hunt could not be activated.");
+          } else {
+            toast.success("Hunt activated!");
+          }
+        } catch (err) {
+          console.error("Hunt activation failed:", err);
+          toast.error("Quest completed, but hunt could not be activated.");
         }
-      );
-      const activateJson = await activateRes.json().catch(() => ({}));
-      if (!activateRes.ok) {
-        console.error("Error activating hunt:", activateJson);
-        toast.error("Quest completed, but hunt could not be activated.");
-        return;
-      } else {
-        toast.success("Hunt activated!");
       }
 
       // 3) Award collectible (if any)

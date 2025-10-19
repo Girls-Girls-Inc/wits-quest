@@ -33,7 +33,7 @@
 
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     margin-bottom: 60px;
   }
 }

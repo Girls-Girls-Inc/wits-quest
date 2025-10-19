@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import "../styles/dashboard.css";
 import "../styles/leaderboard.css";
-import "../styles/profile.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
@@ -206,8 +205,6 @@ const Dashboard = () => {
       const completedRows = rows.filter(
         (q) => q.isComplete && q.userId === me?.id
       );
-
-      const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
       const latestRow = completedRows.sort(
         (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
       )[0];
@@ -217,7 +214,6 @@ const Dashboard = () => {
         ...prev,
         questsCompleted: completedRows.length,
         locationsVisited: uniqueLocations.size,
-        points: totalPoints,
         latestLocation,
       }));
     } catch (e) {
@@ -242,8 +238,21 @@ const Dashboard = () => {
         rank: i + 1,
         name: r.username,
         points: r.points,
+        userId: r.userId,
       }));
       setLeaderboard(rows);
+
+      // --- Set dashboard points from leaderboard ---
+      if (me?.id) {
+        const myRow = rows.find((r) => r.userId === me.id);
+        if (myRow) {
+          setDashboardData((prev) => ({
+            ...prev,
+            points: myRow.points,
+          }));
+        }
+      }
+
     } catch (e) {
       console.error("Leaderboard fetch failed:", e.message);
       setLeaderboard([]);
@@ -296,78 +305,6 @@ const Dashboard = () => {
             ?
           </button>
         </header>
-
-        {showHelpModal && (
-          <div className="modal-backdrop">
-            <div className="modal help-modal">
-              <button
-                className="modal-close"
-                onClick={() => setShowHelpModal(false)}
-              >
-                ✕
-              </button>
-
-              <h2>How to Complete a Quest</h2>
-              <div className="help-actions">
-                <IconButton
-                  type="button"
-                  icon="map"
-                  label="View Quests"
-                  onClick={() => {
-                    setShowHelpModal(false);
-                    navigate("/displayQuests");
-                  }}
-                />
-              </div>
-              <ol className="help-list">
-                <li>
-                  Go to the <strong>Quests</strong> page.
-                </li>
-                <li>
-                  Browse the list and click <strong>View Details</strong> on a
-                  quest that interests you.
-                </li>
-                <li>
-                  Select <strong>Add to My Quests</strong> to save it.
-                </li>
-                <li>
-                  Open your <strong>Dashboard</strong> and, in the Quests table,
-                  click <strong>View</strong> next to the quest you want to
-                  complete.
-                </li>
-                <li>
-                  Travel to the quest’s location on the map (make sure you’re
-                  within the marked radius).
-                </li>
-                <li>
-                  Click <strong>Check In</strong> to finish the quest.
-                </li>
-                <li>
-                  Your points will be automatically added to your profile.
-                </li>
-              </ol>
-
-              <p className="help-summary">
-                This is a summary of the main functions. For a more detailed
-                guide, click the button below:
-              </p>
-
-              <div className="help-actions" style={{ marginBottom: "1rem" }}>
-                <IconButton
-                  type="button"
-                  icon="book"
-                  label="Open Full User Guide"
-                  onClick={() =>
-                    window.open(
-                      "https://pattern-zircon-799.notion.site/WitsQuest-User-Guide-290fdf0881da803b8754c702078ae9e4?source=copy_link",
-                      "_blank"
-                    )
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         <section
           className="dashboard-grid"
@@ -558,7 +495,7 @@ const Dashboard = () => {
             <div className="stat-number">{dashboardData.questsCompleted}</div>
           </article>
 
-          <article className="dashboard-card small-card">
+          <article className="dashboard-card">
             <h3>Locations Visited</h3>
             <div className="stat-number">{dashboardData.locationsVisited}</div>
             <div className="latest-info">

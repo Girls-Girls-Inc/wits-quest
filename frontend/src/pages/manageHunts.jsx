@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import supabase from "../supabase/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/quests.css";
 import "../styles/layout.css";
@@ -6,9 +7,20 @@ import "../styles/login-signup.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
+
+const createDefaultHuntForm = () => ({
+  name: "",
+  description: "",
+  question: "",
+  answer: "",
+  timeLimit: "",
+  collectibleId: "",
+  pointsAchievable: "",
+});
 
 export default function ManageHunts() {
   const navigate = useNavigate();
@@ -16,15 +28,8 @@ export default function ManageHunts() {
   const [editingHunt, setEditingHunt] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [collectibles, setCollectibles] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    question: "",
-    answer: "",
-    timeLimit: "",
-    collectibleId: "",
-    pointsAchievable: "",
-  });
+  const [formData, setFormData] = useState(createDefaultHuntForm);
+  const [initialFormData, setInitialFormData] = useState(createDefaultHuntForm);
 
   const loadHunts = async () => {
     const t = toast.loading("Loading hunts...");
@@ -54,7 +59,6 @@ export default function ManageHunts() {
     }
   };
 
-
   useEffect(() => {
     loadHunts();
     loadCollectibles();
@@ -63,7 +67,7 @@ export default function ManageHunts() {
   const handleEditClick = (hunt) => {
     if (!hunt?.id) return toast.error("Invalid hunt selected");
     setEditingHunt({ ...hunt });
-    setFormData({
+    const preparedForm = {
       name: hunt.name || "",
       description: hunt.description || "",
       question: hunt.question || "",
@@ -71,8 +75,19 @@ export default function ManageHunts() {
       timeLimit: hunt.timeLimit || "",
       collectibleId: hunt.collectibleId || "",
       pointsAchievable: hunt.pointsAchievable || "",
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
+
+  useEffect(() => {
+    if (!editingHunt) {
+      setFormData(createDefaultHuntForm());
+      setInitialFormData(createDefaultHuntForm());
+    }
+  }, [editingHunt]);
 
   const handleSave = async () => {
     if (!editingHunt?.id) return toast.error("Invalid hunt selected");
@@ -135,7 +150,7 @@ export default function ManageHunts() {
   };
 
   return (
-    <div className="quests-container">
+    <div className="quests-container" style={{ marginLeft: "150px" }}>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -176,11 +191,7 @@ export default function ManageHunts() {
           <IconButton
             icon="add"
             label="New Hunt"
-            onClick={() =>
-              navigate("/adminDashboard", {
-                state: { selectedTask: "Hunt Creation" },
-              })
-            }
+            onClick={() => navigate("/addHunt")}
           />
         </div>
       </div>
@@ -210,6 +221,7 @@ export default function ManageHunts() {
                     id="name"
                     name="name"
                     placeholder="Hunt Name"
+                    icon="badge"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -224,7 +236,9 @@ export default function ManageHunts() {
                     type="text"
                     id="description"
                     name="description"
+                    icon="description"
                     placeholder="Hunt Description"
+                    icon="description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
@@ -238,6 +252,7 @@ export default function ManageHunts() {
                     id="question"
                     name="question"
                     placeholder="Question"
+                    icon="help"
                     value={formData.question}
                     onChange={(e) =>
                       setFormData({ ...formData, question: e.target.value })
@@ -252,6 +267,7 @@ export default function ManageHunts() {
                     id="answer"
                     name="answer"
                     placeholder="Answer"
+                    icon="check_circle"
                     value={formData.answer}
                     onChange={(e) =>
                       setFormData({ ...formData, answer: e.target.value })
@@ -261,23 +277,25 @@ export default function ManageHunts() {
 
                 <div className="form-row">
                   <label htmlFor="collectibleId">Collectible</label>
-                  <select
+                  <ComboBox
                     id="collectibleId"
                     name="collectibleId"
                     value={formData.collectibleId}
+                    icon="redeem"
                     onChange={(e) =>
-                      setFormData({ ...formData, collectibleId: e.target.value })
+                      setFormData({
+                        ...formData,
+                        collectibleId: e.target.value,
+                      })
                     }
-                  >
-                    <option value="">Select a collectible</option>
-                    {collectibles.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select a collectible"
+                    ariaLabel="Collectible"
+                    options={collectibles.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    }))}
+                  />
                 </div>
-
 
                 <div className="form-row">
                   <label htmlFor="timeLimit">Time Limit (seconds)</label>
@@ -286,6 +304,7 @@ export default function ManageHunts() {
                     id="timeLimit"
                     name="timeLimit"
                     placeholder="Time Limit (seconds)"
+                    icon="timer"
                     value={formData.timeLimit}
                     onChange={(e) =>
                       setFormData({ ...formData, timeLimit: e.target.value })
@@ -296,24 +315,29 @@ export default function ManageHunts() {
                 <div className="form-row">
                   <label htmlFor="pointsAchievable">Points Achievable</label>
                   <InputField
+                    icon="star"
                     type="number"
                     id="pointsAchievable"
                     name="pointsAchievable"
                     placeholder="Points Achievable"
+                    icon="star"
                     value={formData.pointsAchievable}
                     onChange={(e) =>
-                      setFormData({ ...formData, pointsAchievable: e.target.value })
+                      setFormData({
+                        ...formData,
+                        pointsAchievable: e.target.value,
+                      })
                     }
                   />
                 </div>
 
-                <div className="btn">
+                <div className="modal-form-actions">
                   <IconButton type="submit" icon="save" label="Save Hunt" />
                   <IconButton
                     type="button"
-                    icon="arrow_back"
-                    label="Cancel"
-                    onClick={() => setEditingHunt(null)}
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
                   />
                 </div>
               </form>
@@ -330,16 +354,28 @@ export default function ManageHunts() {
           aria-labelledby="delete-hunt-title"
           onClick={cancelDeletePrompt}
         >
-          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal login-required"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-body">
               <h2 id="delete-hunt-title">Delete Hunt?</h2>
               <p>
                 Are you sure you want to delete "
-                <strong>{pendingDelete.name}</strong>"? This action cannot be undone.
+                <strong>{pendingDelete.name}</strong>"? This action cannot be
+                undone.
               </p>
               <div className="modal-actions">
-                <IconButton icon="delete" label="Delete Hunt" onClick={confirmDelete} />
-                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+                <IconButton
+                  icon="delete"
+                  label="Delete Hunt"
+                  onClick={confirmDelete}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={cancelDeletePrompt}
+                />
               </div>
             </div>
           </div>
@@ -348,22 +384,19 @@ export default function ManageHunts() {
 
       <div className="quest-list">
         {hunts.map((h) => (
-          <div
-            key={h.id}
-            className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
-          >
+          <div key={h.id} className="quest-card ">
             <div className="quest-profile">
               <img
                 src={
-                  collectibles.find((c) => c.id === h.collectibleId)?.imageUrl ||
-                  "https://via.placeholder.com/100"
+                  collectibles.find((c) => c.id === h.collectibleId)
+                    ?.imageUrl || "https://via.placeholder.com/100"
                 }
                 alt={h.name}
                 className="w-16 h-16 object-cover rounded"
               />
             </div>
 
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{h.name}</h2>
               <p>{h.description || "-"}</p>
               <p>
@@ -375,12 +408,13 @@ export default function ManageHunts() {
               <p>
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
               </p>
-              <p>
+              <p className="points-display">
                 <strong>Points:</strong> {h.pointsAchievable ?? "-"}
               </p>
               <p>
                 <strong>Collectible:</strong>{" "}
-                {collectibles.find((c) => c.id === h.collectibleId)?.name || "-"}
+                {collectibles.find((c) => c.id === h.collectibleId)?.name ||
+                  "-"}
               </p>
             </div>
             <div className="quest-action flex gap-2">

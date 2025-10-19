@@ -18,20 +18,28 @@ const TOAST_OPTIONS = {
   loading: { style: { background: "#002d73", color: "#ffb819" } },
 };
 
+const createDefaultBadgeForm = () => ({
+  name: "",
+  description: "",
+  imageUrl: "",
+});
+
 export default function ManageBadges() {
   const navigate = useNavigate();
   const [badges, setBadges] = useState([]);
   const [editingBadge, setEditingBadge] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    imageUrl: "",
-  });
+  const [pendingDeleteBadge, setPendingDeleteBadge] = useState(null);
+  const [formData, setFormData] = useState(createDefaultBadgeForm);
+  const [initialFormData, setInitialFormData] = useState(
+    createDefaultBadgeForm
+  );
   const [uploading, setUploading] = useState(false);
 
   const getToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     return session?.access_token || null;
   };
 
@@ -46,7 +54,8 @@ export default function ManageBadges() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error(await res.text() || "Failed to fetch badges");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to fetch badges");
 
       const payload = await res.json();
       setBadges(Array.isArray(payload) ? payload : []);
@@ -61,20 +70,25 @@ export default function ManageBadges() {
     loadBadges();
   }, []);
 
-  const resetForm = () => {
+  const handleCloseModal = () => {
     setEditingBadge(null);
     setShowEditModal(false);
-    setFormData({ name: "", description: "", imageUrl: "" });
+    setFormData(createDefaultBadgeForm());
+    setInitialFormData(createDefaultBadgeForm());
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
 
   const handleEditClick = (badge) => {
     if (!badge?.id) return toast.error("Invalid badge selected");
     setEditingBadge(badge);
-    setFormData({
+    const preparedForm = {
       name: badge.name || "",
       description: badge.description || "",
       imageUrl: badge.imageUrl || "",
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
     setShowEditModal(true);
   };
 
@@ -148,7 +162,7 @@ export default function ManageBadges() {
       setBadges((prev) =>
         prev.map((b) => (b.id === editingBadge.id ? body : b))
       );
-      resetForm();
+      handleCloseModal();
     } catch (err) {
       toast.error(err.message || "Failed to update badge", { id: toastId });
     }
@@ -156,7 +170,6 @@ export default function ManageBadges() {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (!confirm("Delete this badge?")) return;
 
     const toastId = toast.loading("Deleting badge...");
     try {
@@ -169,21 +182,25 @@ export default function ManageBadges() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error(await res.text() || "Failed to delete badge");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to delete badge");
 
       toast.success("Badge deleted", { id: toastId });
       setBadges((prev) => prev.filter((b) => b.id !== id));
-      if (editingBadge?.id === id) resetForm();
+      if (editingBadge?.id === id) handleCloseModal();
+      setPendingDeleteBadge(null);
     } catch (err) {
       toast.error(err.message || "Failed to delete badge", { id: toastId });
     }
   };
 
+
+
   return (
     <div className="quests-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
-        <h1>Manage Badges</h1>
+        <h1>Manage Collectibles</h1>
         <div className="quest-buttons">
           <IconButton
             type="button"
@@ -195,7 +212,7 @@ export default function ManageBadges() {
           <IconButton
             icon="add"
             label="New Badge"
-            onClick={() => navigate("/addBadge")}
+            onClick={() => navigate("/addCollectible")}
           />
         </div>
       </div>
@@ -205,83 +222,138 @@ export default function ManageBadges() {
           <div className="modal">
             <button
               className="modal-close"
-              onClick={resetForm}
+              onClick={handleCloseModal}
               aria-label="Close modal"
             >
               ✖
             </button>
 
-            <form
-              className="login-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleSave();
-              }}
-            >
-              <InputField
-                type="text"
-                name="name"
-                placeholder="Badge Name"
-                value={formData.name}
-                onChange={(event) =>
-                  handleFieldChange("name", event.target.value)
-                }
-                icon="badge"
-                required
-              />
-
-              <InputField
-                type="text"
-                name="description"
-                placeholder="Description (optional)"
-                value={formData.description}
-                onChange={(event) =>
-                  handleFieldChange("description", event.target.value)
-                }
-                icon="description"
-              />
-
-              <label className="text-sm mt-2">Upload New Image:</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                style={{ marginBottom: "10px" }}
-              />
-
-              {formData.imageUrl && (
-                <div className="image-preview">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Badge preview"
-                    style={{ maxWidth: "200px", maxHeight: "200px" }}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      toast.error("Invalid image URL");
-                    }}
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSave();
+                }}
+              >
+                <div className="form-row">
+                  <label htmlFor="badge-name">Badge Name</label>
+                  <InputField
+                    id="badge-name"
+                    type="text"
+                    name="name"
+                    placeholder="Badge Name"
+                    value={formData.name}
+                    onChange={(event) =>
+                      handleFieldChange("name", event.target.value)
+                    }
+                    icon="badge"
+                    required
                   />
                 </div>
-              )}
 
-              <div className="btn flex gap-2">
-                <IconButton
-                  type="submit"
-                  icon="save"
-                  label={uploading ? "Uploading..." : "Save Badge"}
-                  disabled={uploading}
-                />
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Cancel"
-                  onClick={resetForm}
-                />
-              </div>
-            </form>
+                <div className="form-row">
+                  <label htmlFor="badge-description">Description</label>
+                  <InputField
+                    id="badge-description"
+                    type="text"
+                    name="description"
+                    placeholder="Description (optional)"
+                    value={formData.description}
+                    onChange={(event) =>
+                      handleFieldChange("description", event.target.value)
+                    }
+                    icon="description"
+                    required={false}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="badge-image-upload">Upload New Image</label>
+                  <div className="form-row-column">
+                    <input
+                      id="badge-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      style={{ marginBottom: "10px" }}
+                    />
+                  </div>
+                </div>
+
+                {formData.imageUrl && (
+                  <div className="form-row">
+                    <label>Preview</label>
+                    <div className="form-row-column">
+                      <div className="image-preview">
+                        <img
+                          src={formData.imageUrl}
+                          alt="Badge preview"
+                          style={{ maxWidth: "200px", maxHeight: "200px" }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            toast.error("Invalid image URL");
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="modal-form-actions">
+                  <IconButton
+                    type="submit"
+                    icon="save"
+                    label={uploading ? "Uploading..." : "Save Badge"}
+                    disabled={uploading}
+                  />
+                  <IconButton
+                    type="button"
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
+                    disabled={uploading}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
+
+      {pendingDeleteBadge && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-badge-title"
+          onClick={() => setPendingDeleteBadge(null)}
+        >
+          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-badge-title">Delete Badge?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDeleteBadge.name}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton
+                  icon="delete"
+                  label="Delete Badge"
+                  onClick={() => handleDelete(pendingDeleteBadge.id)}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Cancel"
+                  onClick={() => setPendingDeleteBadge(null)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="quest-list">
         {badges.map((badge) => (
@@ -299,7 +371,7 @@ export default function ManageBadges() {
                 }}
               />
             )}
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{badge.name}</h2>
               {badge.description && <p>{badge.description}</p>}
               <p className="text-sm text-gray-500">
@@ -315,7 +387,7 @@ export default function ManageBadges() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(badge.id)}
+                onClick={() => setPendingDeleteBadge(badge)}
               />
             </div>
           </div>

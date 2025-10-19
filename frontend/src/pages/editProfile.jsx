@@ -19,6 +19,7 @@ const Profile = () => {
   const [joinedDate, setJoinedDate] = useState("");
   const [uploading, setUploading] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -49,11 +50,14 @@ const Profile = () => {
         }
 
         // Determine which avatar to use
-        let avatar = profileData?.profileUrl; // user-uploaded avatar first
-        if (!avatar) {
+        let avatar = profileData?.profileUrl;
+        if (!avatar || avatar.trim() === "") {
+          // Fallback to generated avatar with display name
           avatar =
             user.user_metadata?.avatar_url ||
-            `https://ui-avatars.com/api/?name=${user.user_metadata?.displayName || "User"}`;
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              user.user_metadata?.displayName || user.email || "User"
+            )}&background=random`;
         }
 
         setForm({
@@ -69,6 +73,7 @@ const Profile = () => {
         });
 
         setJoinedDate(new Date(user.created_at).toLocaleDateString());
+        setAvatarError(false);
       } catch (err) {
         console.error("Unexpected error fetching user:", err);
         toast.error("Failed to fetch user");
@@ -89,6 +94,18 @@ const Profile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
     setUploading(true);
     const fileExt = file.name.split(".").pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
@@ -106,6 +123,7 @@ const Profile = () => {
 
       // Update form state
       setForm((prev) => ({ ...prev, avatarUrl: publicUrl }));
+      setAvatarError(false);
 
       // Save uploaded image URL to userData immediately
       const { error: upsertError } = await supabase
@@ -120,6 +138,16 @@ const Profile = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleAvatarError = () => {
+    setAvatarError(true);
+    const displayName = form.displayName || form.email || "User";
+    const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      displayName
+    )}&background=%23ffb819`;
+
+    setForm((prev) => ({ ...prev, avatarUrl: fallbackUrl }));
   };
 
   const handleSave = async (e) => {
@@ -145,14 +173,17 @@ const Profile = () => {
       }
 
       const updatePayload = {};
-      if (form.email && form.email !== user.email) updatePayload.email = form.email;
+      if (form.email && form.email !== user.email)
+        updatePayload.email = form.email;
       if (form.displayName !== (user.user_metadata?.displayName || "")) {
         updatePayload.data = { displayName: form.displayName };
       }
       if (form.password) updatePayload.password = form.password;
 
       if (Object.keys(updatePayload).length > 0) {
-        const { error: updateError } = await supabase.auth.updateUser(updatePayload);
+        const { error: updateError } = await supabase.auth.updateUser(
+          updatePayload
+        );
         if (updateError) throw updateError;
       }
 
@@ -185,7 +216,12 @@ const Profile = () => {
       {!isEditing && (
         <div className="profile-info">
           <div className="profile-avatar-wrapper">
-            <img src={form.avatarUrl} alt="avatar" className="profile-avatar" />
+            <img
+              src={form.avatarUrl}
+              alt="avatar"
+              className="profile-avatar"
+              onError={handleAvatarError}
+            />
           </div>
           <div className="profile-details">
             <h2>{form.displayName || "User"}</h2>
@@ -203,9 +239,17 @@ const Profile = () => {
                 <img
                   src={form.avatarUrl}
                   alt="avatar"
-                  style={{ height: "150px", width: "150px", objectFit: "cover", borderRadius: "50%" }}
+                  style={{
+                    height: "150px",
+                    width: "150px",
+                    objectFit: "cover",
+                    borderRadius: "50%",
+                  }}
+                  onError={handleAvatarError}
                 />
-                {uploading && <div className="uploading-overlay">Uploading...</div>}
+                {uploading && (
+                  <div className="uploading-overlay">Uploading...</div>
+                )}
               </div>
               <span className="avatar-upload-text">Change Profile Image</span>
               <input

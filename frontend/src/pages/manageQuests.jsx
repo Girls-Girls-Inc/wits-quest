@@ -7,6 +7,7 @@ import "../styles/login-signup.css";
 import "../styles/button.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
@@ -35,6 +36,17 @@ const TOAST_OPTIONS = {
   },
 };
 
+const createDefaultQuestForm = () => ({
+  name: "",
+  description: "",
+  locationId: "",
+  pointsAchievable: "",
+  collectibleId: "",
+  huntId: "",
+  quizId: "",
+  isActive: true,
+});
+
 const getToken = async () => {
   const {
     data: { session },
@@ -51,16 +63,10 @@ export default function ManageQuests() {
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuest, setEditingQuest] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    locationId: "",
-    pointsAchievable: "",
-    collectibleId: "",
-    huntId: "",
-    quizId: "",
-    isActive: true,
-  });
+  const [formData, setFormData] = useState(createDefaultQuestForm);
+  const [initialFormData, setInitialFormData] = useState(
+    createDefaultQuestForm
+  );
 
   // Load quests with images
   const loadQuests = async () => {
@@ -188,7 +194,7 @@ export default function ManageQuests() {
   const handleEditClick = (quest) => {
     if (!quest?.id) return toast.error("Invalid quest selected");
     setEditingQuest({ ...quest });
-    setFormData({
+    const preparedForm = {
       name: quest.name || "",
       description: quest.description || "",
       locationId: quest.locationId || "",
@@ -197,8 +203,19 @@ export default function ManageQuests() {
       huntId: quest.huntId || "",
       quizId: quest.quizId != null ? String(quest.quizId) : "",
       isActive: quest.isActive ?? true,
-    });
+    };
+    setInitialFormData(preparedForm);
+    setFormData(preparedForm);
   };
+
+  const handleResetForm = () => setFormData({ ...initialFormData });
+
+  useEffect(() => {
+    if (!editingQuest) {
+      setFormData(createDefaultQuestForm());
+      setInitialFormData(createDefaultQuestForm());
+    }
+  }, [editingQuest]);
 
   const handleSave = async () => {
     const token = await getToken();
@@ -323,11 +340,7 @@ export default function ManageQuests() {
           <IconButton
             icon="add"
             label="New Quest"
-            onClick={() =>
-              navigate("/adminDashboard", {
-                state: { selectedTask: "Quest Creation" },
-              })
-            }
+            onClick={() => navigate("/addQuest")}
           />
         </div>
       </div>
@@ -345,157 +358,190 @@ export default function ManageQuests() {
               ✖
             </button>
 
-            <form
-              className="login-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSave();
-              }}
-            >
-              <div className="input-box">
-                <InputField
-                  type="text"
-                  name="name"
-                  placeholder="Quest Name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <InputField
-                  type="text"
-                  name="description"
-                  placeholder="Quest Description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <label>Location</label>
-                <select
-                  name="locationId"
-                  value={formData.locationId}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      locationId: e.target.value || "",
-                    })
-                  }
-                  required
-                >
-                  <option value="">Select a location</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Collectible</label>
-                <select
-                  name="collectibleId"
-                  value={formData.collectibleId}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      collectibleId: e.target.value || "",
-                    })
-                  }
-                >
-                  <option value="">Select a collectible</option>
-                  {collectibles.map((col) => (
-                    <option key={col.id} value={col.id}>
-                      {col.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Hunt</label>
-                <select
-                  name="huntId"
-                  value={formData.huntId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, huntId: e.target.value || "" })
-                  }
-                >
-                  <option value="">Select a hunt</option>
-                  {hunts.map((hunt) => (
-                    <option key={hunt.id} value={hunt.id}>
-                      {hunt.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Quiz</label>
-                <select
-                  name="quizId"
-                  value={formData.quizId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quizId: e.target.value || "" })
-                  }
-                >
-                  <option value="">None (no quiz)</option>
-                  {quizzes.map((quiz) => (
-                    <option key={quiz.id} value={quiz.id}>
-                      {quiz.questionText}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-box">
-                <InputField
-                  type="number"
-                  name="pointsAchievable"
-                  placeholder="Points Achievable"
-                  value={formData.pointsAchievable}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      pointsAchievable: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="input-box">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="isActive"
-                    checked={formData.isActive}
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSave();
+                }}
+              >
+                <div className="form-row">
+                  <label htmlFor="quest-name">Quest Name</label>
+                  <InputField
+                    id="quest-name"
+                    type="text"
+                    name="name"
+                    placeholder="Quest Name"
+                    icon="badge"
+                    value={formData.name}
                     onChange={(e) =>
-                      setFormData({ ...formData, isActive: e.target.checked })
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-description">Quest Description</label>
+                  <InputField
+                    id="quest-description"
+                    type="text"
+                    name="description"
+                    placeholder="Quest Description"
+                    icon="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-location">Location</label>
+                  <ComboBox
+                    id="quest-location"
+                    name="locationId"
+                    value={formData.locationId}
+                    icon="location_on"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        locationId: e.target.value || "",
+                      })
+                    }
+                    placeholder="Select a location"
+                    ariaLabel="Location"
+                    options={locations.map((loc) => ({
+                      value: loc.id,
+                      label: loc.name,
+                    }))}
+                    required
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-collectible">Collectible</label>
+                  <ComboBox
+                    id="quest-collectible"
+                    name="collectibleId"
+                    value={formData.collectibleId}
+                    icon="redeem"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        collectibleId: e.target.value || "",
+                      })
+                    }
+                    placeholder="Select a collectible"
+                    ariaLabel="Collectible"
+                    options={collectibles.map((col) => ({
+                      value: col.id,
+                      label: col.name,
+                    }))}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-hunt">Hunt</label>
+                  <ComboBox
+                    id="quest-hunt"
+                    name="huntId"
+                    value={formData.huntId}
+                    icon="map"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        huntId: e.target.value || "",
+                      })
+                    }
+                    placeholder="Select a hunt"
+                    ariaLabel="Hunt"
+                    options={hunts.map((hunt) => ({
+                      value: hunt.id,
+                      label: hunt.name,
+                    }))}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-quiz">Quiz</label>
+                  <ComboBox
+                    id="quest-quiz"
+                    name="quizId"
+                    value={formData.quizId}
+                    icon="quiz"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        quizId: e.target.value || "",
+                      })
+                    }
+                    placeholder="None (no quiz)"
+                    ariaLabel="Quiz"
+                    options={quizzes.map((quiz) => ({
+                      value: quiz.id,
+                      label: quiz.questionText,
+                    }))}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quest-points">Points Achievable</label>
+                  <InputField
+                    id="quest-points"
+                    icon="emoji_events"
+                    type="number"
+                    name="pointsAchievable"
+                    placeholder="Points Achievable"
+                    value={formData.pointsAchievable}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pointsAchievable: e.target.value,
+                      })
                     }
                   />
-                  Active
-                </label>
-              </div>
+                </div>
 
-              <div className="btn">
-                <IconButton type="submit" icon="save" label="Save Quest" />
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Cancel"
-                  onClick={() => setEditingQuest(null)}
-                />
-              </div>
-            </form>
+                <div className="form-row">
+                  <label htmlFor="manageQuestIsActive">Active</label>
+                  <div className="input-box checkbox">
+                    <label
+                      htmlFor="manageQuestIsActive"
+                      className={`checkbox-label${
+                        formData.isActive ? " checkbox-label--checked" : ""
+                      }`}
+                    >
+                      <span>Active</span>
+                      <input
+                        id="manageQuestIsActive"
+                        type="checkbox"
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            isActive: e.target.checked,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-form-actions">
+                  <IconButton type="submit" icon="save" label="Save Quest" />
+                  <IconButton
+                    type="button"
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -526,8 +572,8 @@ export default function ManageQuests() {
                   onClick={confirmDelete}
                 />
                 <IconButton
-                  icon="close"
-                  label="Cancel"
+                  icon="restart_alt"
+                  label="Reset"
                   onClick={cancelDeletePrompt}
                 />
               </div>
@@ -538,10 +584,7 @@ export default function ManageQuests() {
 
       <div className="quest-list">
         {quests.map((q) => (
-          <div
-            key={q.id}
-            className="quest-card flex items-center gap-4 p-4 border rounded mb-2"
-          >
+          <div key={q.id} className="quest-card">
             <div className="quest-profile">
               <img
                 src={q.imageUrl || "https://via.placeholder.com/100"}
@@ -549,9 +592,9 @@ export default function ManageQuests() {
                 className="w-16 h-16 object-cover rounded"
               />
             </div>
-            <div className="quest-info flex-1">
+            <div className="quest-info ">
               <h2 className="font-bold">{q.name}</h2>
-              <p>
+              <p className="points-display">
                 <strong>Points:</strong> {q.pointsAchievable}
               </p>
               <p>

@@ -8,6 +8,7 @@ import "../styles/button.css";
 import "../styles/profile.css";
 import InputField from "../components/InputField";
 import IconButton from "../components/IconButton";
+import ComboBox from "../components/ComboBox";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
@@ -52,18 +53,21 @@ const syncCorrectAnswer = (options, questionType, currentAnswer) => {
   return trimmed.includes((currentAnswer || "").trim()) ? currentAnswer : "";
 };
 
+const createEmptyQuizForm = () => ({
+  questionText: "",
+  questionType: "text",
+  options: cloneDefaultOptions(),
+  correctAnswer: "",
+});
+
 export default function ManageQuizzes() {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [formData, setFormData] = useState({
-    questionText: "",
-    questionType: "text",
-    options: cloneDefaultOptions(),
-    correctAnswer: "",
-  });
+  const [formData, setFormData] = useState(createEmptyQuizForm);
+  const [initialFormData, setInitialFormData] = useState(createEmptyQuizForm);
 
   const availableAnswers = useMemo(() => {
     if (formData.questionType !== "mcq") return [];
@@ -113,15 +117,19 @@ export default function ManageQuizzes() {
     loadQuizzes();
   }, []);
 
-  const resetForm = () => {
+  const closeModal = () => {
     setEditingQuiz(null);
     setShowEditModal(false);
-    setFormData({
-      questionText: "",
-      questionType: "text",
-      options: cloneDefaultOptions(),
-      correctAnswer: "",
-    });
+    const emptyForm = createEmptyQuizForm();
+    setFormData(emptyForm);
+    setInitialFormData(emptyForm);
+  };
+
+  const handleResetForm = () => {
+    setFormData(() => ({
+      ...initialFormData,
+      options: [...(initialFormData.options || [])],
+    }));
   };
 
   const handleEditClick = (quiz) => {
@@ -129,7 +137,7 @@ export default function ManageQuizzes() {
     const questionType = (quiz.questionType || "text").toLowerCase();
     const options = ensureOptionCount(quiz.options, questionType);
     setEditingQuiz({ ...quiz, questionType });
-    setFormData({
+    const nextForm = {
       questionText: quiz.questionText || "",
       questionType,
       options,
@@ -137,6 +145,11 @@ export default function ManageQuizzes() {
         questionType === "mcq"
           ? syncCorrectAnswer(options, questionType, quiz.correctAnswer || "")
           : quiz.correctAnswer || "",
+    };
+    setFormData(nextForm);
+    setInitialFormData({
+      ...nextForm,
+      options: [...(nextForm.options || [])],
     });
     setShowEditModal(true);
   };
@@ -274,7 +287,7 @@ export default function ManageQuizzes() {
       setQuizzes((prev) =>
         prev.map((q) => (q.id === editingQuiz.id ? updated : q))
       );
-      resetForm();
+      closeModal();
     } catch (err) {
       toast.error(err.message || "Failed to update quiz", { id: toastId });
     }
@@ -299,7 +312,7 @@ export default function ManageQuizzes() {
       toast.success("Quiz deleted", { id: toastId });
       setQuizzes((prev) => prev.filter((q) => q.id !== id));
       if (editingQuiz?.id === id) {
-        resetForm();
+        closeModal();
       }
     } catch (err) {
       toast.error(err.message || "Failed to delete quiz", { id: toastId });
@@ -314,7 +327,7 @@ export default function ManageQuizzes() {
   };
 
   return (
-    <div className="quests-container">
+    <div className="quests-container" style={{ marginLeft: "150px" }}>
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Quizzes</h1>
@@ -340,128 +353,147 @@ export default function ManageQuizzes() {
           <div className="modal">
             <button
               className="modal-close"
-              onClick={resetForm}
+              onClick={closeModal}
               aria-label="Close modal"
             >
               ✖
             </button>
 
-            <form
-              className="login-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleSave();
-              }}
-            >
-              <InputField
-                type="text"
-                name="questionText"
-                placeholder="Question Text"
-                value={formData.questionText}
-                onChange={(event) =>
-                  handleFieldChange("questionText", event.target.value)
-                }
-                icon="help"
-                required
-              />
-
-              <div className="input-box">
-                <label htmlFor="questionType">Question Type</label>
-                <select
-                  id="questionType"
-                  name="questionType"
-                  value={formData.questionType}
-                  onChange={(event) =>
-                    handleQuestionTypeChange(event.target.value)
-                  }
-                >
-                  <option value="text">Text / Short Answer</option>
-                  <option value="mcq">Multiple Choice</option>
-                </select>
-              </div>
-
-              {formData.questionType === "mcq" && (
-                <div className="input-box">
-                  <label>Options</label>
-                  {(formData.options || []).map((option, index) => (
-                    <div key={index} className="flex gap-2 mb-2 items-center">
-                      <InputField
-                        type="text"
-                        name={`option-${index}`}
-                        placeholder={`Option ${index + 1}`}
-                        value={option}
-                        onChange={(event) =>
-                          handleOptionChange(index, event.target.value)
-                        }
-                        icon="list"
-                        required
-                      />
-                      {(formData.options || []).length > 2 && (
-                        <button
-                          type="button"
-                          className="icon-button btn-red"
-                          onClick={() => handleRemoveOption(index)}
-                        >
-                          <i className="material-symbols-outlined">delete</i>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <IconButton
-                    type="button"
-                    icon="add"
-                    label="Add Option"
-                    onClick={handleAddOption}
+            <div className="modal-body">
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSave();
+                }}
+              >
+                <div className="form-row">
+                  <label htmlFor="quiz-question-text">Question Text</label>
+                  <InputField
+                    id="quiz-question-text"
+                    type="text"
+                    name="questionText"
+                    placeholder="Question Text"
+                    value={formData.questionText}
+                    onChange={(event) =>
+                      handleFieldChange("questionText", event.target.value)
+                    }
+                    icon="help"
+                    required
                   />
                 </div>
-              )}
 
-              {formData.questionType === "mcq" ? (
-                <div className="input-box">
-                  <label htmlFor="correctAnswer">Correct Answer</label>
-                  <select
-                    id="correctAnswer"
-                    name="correctAnswer"
-                    value={formData.correctAnswer}
+                <div className="form-row">
+                  <label htmlFor="quiz-question-type">Question Type</label>
+                  <ComboBox
+                    id="quiz-question-type"
+                    name="questionType"
+                    value={formData.questionType}
+                    icon="quiz"
                     onChange={(event) =>
-                      handleFieldChange("correctAnswer", event.target.value)
+                      handleQuestionTypeChange(event.target.value)
                     }
-                  >
-                    <option value="">Select correct option</option>
-                    {availableAnswers.map((answer) => (
-                      <option key={answer} value={answer}>
-                        {answer}
-                      </option>
-                    ))}
-                  </select>
-                  <small>
-                    Tip: Correct answer must match one of the options above.
-                  </small>
+                    options={[
+                      { value: "text", label: "Text / Short Answer" },
+                      { value: "mcq", label: "Multiple Choice" },
+                    ]}
+                    ariaLabel="Question Type"
+                  />
                 </div>
-              ) : (
-                <InputField
-                  type="text"
-                  name="correctAnswer"
-                  placeholder="Correct Answer"
-                  value={formData.correctAnswer}
-                  onChange={(event) =>
-                    handleFieldChange("correctAnswer", event.target.value)
-                  }
-                  icon="check"
-                  required
-                />
-              )}
 
-              <div className="btn flex gap-2">
-                <IconButton type="submit" icon="save" label="Save Quiz" />
-                <IconButton
-                  type="button"
-                  icon="arrow_back"
-                  label="Cancel"
-                  onClick={resetForm}
-                />
-              </div>
-            </form>
+                {formData.questionType === "mcq" && (
+                  <div className="form-row">
+                    <label>Options</label>
+                    <div className="form-row-column">
+                      {(formData.options || []).map((option, index) => (
+                        <div
+                          key={index}
+                          className="flex gap-2 mb-2 items-center"
+                        >
+                          <InputField
+                            type="text"
+                            name={`option-${index}`}
+                            placeholder={`Option ${index + 1}`}
+                            value={option}
+                            onChange={(event) =>
+                              handleOptionChange(index, event.target.value)
+                            }
+                            icon="list"
+                            required
+                          />
+                          {(formData.options || []).length > 2 && (
+                            <button
+                              type="button"
+                              className="icon-button btn-red"
+                              onClick={() => handleRemoveOption(index)}
+                            >
+                              <i className="material-symbols-outlined">
+                                delete
+                              </i>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <IconButton
+                        type="button"
+                        icon="add"
+                        label="Add Option"
+                        onClick={handleAddOption}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-row">
+                  <label htmlFor="quiz-correct-answer">Correct Answer</label>
+                  {formData.questionType === "mcq" ? (
+                    <div className="form-row-column">
+                      <ComboBox
+                        id="quiz-correct-answer"
+                        name="correctAnswer"
+                        value={formData.correctAnswer}
+                        icon="check_circle"
+                        onChange={(event) =>
+                          handleFieldChange("correctAnswer", event.target.value)
+                        }
+                        placeholder="Select correct option"
+                        options={availableAnswers.map((answer) => ({
+                          value: answer,
+                          label: answer,
+                        }))}
+                        ariaLabel="Correct Answer"
+                      />
+                      <small>
+                        Tip: Correct answer must match one of the options above.
+                      </small>
+                    </div>
+                  ) : (
+                    <InputField
+                      id="quiz-correct-answer"
+                      type="text"
+                      name="correctAnswer"
+                      placeholder="Correct Answer"
+                      value={formData.correctAnswer}
+                      onChange={(event) =>
+                        handleFieldChange("correctAnswer", event.target.value)
+                      }
+                      icon="check"
+                      required
+                    />
+                  )}
+                </div>
+
+                <div className="modal-form-actions">
+                  <IconButton type="submit" icon="save" label="Save Quiz" />
+                  <IconButton
+                    type="button"
+                    icon="restart_alt"
+                    label="Reset"
+                    onClick={handleResetForm}
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -474,16 +506,28 @@ export default function ManageQuizzes() {
           aria-labelledby="delete-quiz-title"
           onClick={cancelDeletePrompt}
         >
-          <div className="modal login-required" onClick={(event) => event.stopPropagation()}>
+          <div
+            className="modal login-required"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="modal-body">
               <h2 id="delete-quiz-title">Delete Quiz?</h2>
               <p>
                 Are you sure you want to delete "
-                <strong>{pendingDelete.questionText}</strong>"? This action cannot be undone.
+                <strong>{pendingDelete.questionText}</strong>"? This action
+                cannot be undone.
               </p>
               <div className="modal-actions">
-                <IconButton icon="delete" label="Delete Quiz" onClick={confirmDelete} />
-                <IconButton icon="close" label="Cancel" onClick={cancelDeletePrompt} />
+                <IconButton
+                  icon="delete"
+                  label="Delete Quiz"
+                  onClick={confirmDelete}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Reset"
+                  onClick={cancelDeletePrompt}
+                />
               </div>
             </div>
           </div>
@@ -493,11 +537,8 @@ export default function ManageQuizzes() {
       {/* Quiz List */}
       <div className="quest-list">
         {quizzes.map((quiz) => (
-          <div
-            key={quiz.id}
-            className="quest-card flex items-start gap-4 p-4 border rounded mb-2"
-          >
-            <div className="quest-info flex-1">
+          <div key={quiz.id} className="quest-card">
+            <div className="quest-info ">
               <h2 className="font-bold">{quiz.questionText}</h2>
               <p>
                 <strong>Type:</strong>{" "}

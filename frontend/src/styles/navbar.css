@@ -28,17 +28,21 @@
   text-transform: uppercase;
 }
 .main-content {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-  transition: margin 0.3s ease;
+  margin-left: 150px !important;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    margin-bottom: 60px;
+  }
 }
 
 .navbar-bottom {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .navbar-bottom .icon-button {
     font-size: 0.8rem;
     padding: 6px;

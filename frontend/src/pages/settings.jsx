@@ -73,7 +73,28 @@ const Settings = () => {
             >
               ✕
             </button>
+
             <h2>How to Complete a Quest</h2>
+
+            <p className="help-summary">
+              This is a summary of the main functions. For a more detailed
+              guide, click the button below:
+            </p>
+
+            <div className="help-actions" style={{ marginBottom: "1rem" }}>
+              <IconButton
+                type="button"
+                icon="book"
+                label="Open Full User Guide"
+                onClick={() =>
+                  window.open(
+                    "https://pattern-zircon-799.notion.site/WitsQuest-User-Guide-290fdf0881da803b8754c702078ae9e4?source=copy_link",
+                    "_blank"
+                  )
+                }
+              />
+            </div>
+
             <ol className="help-list">
               <li>
                 Go to the <strong>Quests</strong> page.
@@ -99,6 +120,7 @@ const Settings = () => {
               </li>
               <li>Your points will be automatically added to your profile.</li>
             </ol>
+
             <div className="help-actions">
               <IconButton
                 type="button"

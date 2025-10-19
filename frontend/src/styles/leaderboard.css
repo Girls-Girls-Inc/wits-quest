@@ -410,12 +410,6 @@ td code {
   padding: 0 10px;
 }
 
-.quest-info h2 {
-  margin: 0;
-  font-size: 25px;
-  color: var(--wits-yellow);
-}
-
 @media (max-width: 768px) {
   .quest-card {
     flex-direction: column;
@@ -450,19 +444,5 @@ td code {
 
   .quest-action button {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .quest-profile img {
-    max-width: 20px;
-    height: auto;
-  }
-  .quests-container {
-    padding: 10px;
-  }
-
-  .quest-info h2 {
-    font-size: 16px;
   }
 }

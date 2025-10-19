@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import "@testing-library/jest-dom";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // Polyfills
@@ -48,6 +48,12 @@ jest.mock("../../supabase/supabaseClient", () => ({
   default: {
     auth: {
       getSession: mockGetSession,
+    },
+    storage: {
+      from: jest.fn(() => ({
+        upload: jest.fn(),
+        getPublicUrl: jest.fn(),
+      })),
     },
   },
 }));
@@ -729,7 +735,7 @@ describe("ManageBadges page", () => {
 
     await userEvent.clear(imageInput);
     await userEvent.type(imageInput, "http://example.com/new.png");
-    expect(nameInput).toHaveValue("http://example.com/new.png");
+    expect(imageInput).toHaveValue("http://example.com/new.png");
   });
 
   it("submits form with Enter key", async () => {
@@ -994,6 +1000,340 @@ describe("ManageBadges page", () => {
           }),
         })
       );
+    });
+  });
+
+  // ========== NEW TESTS FOR INCREASED COVERAGE ==========
+
+  it("handles file upload successfully", async () => {
+    const toast = (await import("react-hot-toast")).default;
+    
+    const mockUpload = jest.fn().mockResolvedValue({ error: null });
+    const mockGetPublicUrl = jest.fn().mockReturnValue({
+      data: { publicUrl: "http://example.com/uploaded-badge.png" },
+    });
+
+    const supabase = (await import("../../supabase/supabaseClient")).default;
+    supabase.storage.from.mockReturnValue({
+      upload: mockUpload,
+      getPublicUrl: mockGetPublicUrl,
+    });
+
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const fileInput = await screen.findByLabelText(/upload badge image/i);
+    const file = new File(["dummy content"], "badge.png", { type: "image/png" });
+
+    await userEvent.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith("Image uploaded successfully", expect.any(Object));
+    });
+
+    const imageUrlInput = screen.getByPlaceholderText(/image url/i);
+    expect(imageUrlInput).toHaveValue("http://example.com/uploaded-badge.png");
+  });
+
+  it("handles file upload error", async () => {
+    const toast = (await import("react-hot-toast")).default;
+    
+    const mockUpload = jest.fn().mockResolvedValue({ 
+      error: { message: "Upload failed" } 
+    });
+
+    const supabase = (await import("../../supabase/supabaseClient")).default;
+    supabase.storage.from.mockReturnValue({
+      upload: mockUpload,
+    });
+
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const fileInput = await screen.findByLabelText(/upload badge image/i);
+    const file = new File(["dummy content"], "badge.png", { type: "image/png" });
+
+    await userEvent.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Upload failed", expect.any(Object));
+    });
+  });
+
+  it("handles file upload when no file is selected", async () => {
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const fileInput = await screen.findByLabelText(/upload badge image/i);
+    
+    fireEvent.change(fileInput, { target: { files: [] } });
+
+    const supabase = (await import("../../supabase/supabaseClient")).default;
+    expect(supabase.storage.from).not.toHaveBeenCalled();
+  });
+
+  it("handles file upload with missing publicUrl", async () => {
+    const toast = (await import("react-hot-toast")).default;
+    
+    const mockUpload = jest.fn().mockResolvedValue({ error: null });
+    const mockGetPublicUrl = jest.fn().mockReturnValue({
+      data: { publicUrl: null },
+    });
+
+    const supabase = (await import("../../supabase/supabaseClient")).default;
+    supabase.storage.from.mockReturnValue({
+      upload: mockUpload,
+      getPublicUrl: mockGetPublicUrl,
+    });
+
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const fileInput = await screen.findByLabelText(/upload badge image/i);
+    const file = new File(["dummy content"], "badge.png", { type: "image/png" });
+
+    await userEvent.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to retrieve image URL", expect.any(Object));
+    });
+  });
+
+  it("opens delete confirmation modal when delete button clicked", async () => {
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+    
+    await userEvent.click(deleteButtons[0]);
+
+    expect(await screen.findByText(/are you sure you want to delete/i)).toBeInTheDocument();
+    expect(screen.getByText(/this action cannot be undone/i)).toBeInTheDocument();
+  });
+
+  it("closes delete confirmation modal when cancel is clicked", async () => {
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+    await userEvent.click(deleteButtons[0]);
+
+    expect(await screen.findByText(/are you sure you want to delete/i)).toBeInTheDocument();
+
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    await userEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/are you sure you want to delete/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("confirms delete from delete confirmation modal", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    addRoute("DELETE", "/collectibles/b1", jsonRes({}, { status: 200 }));
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+    await userEvent.click(deleteButtons[0]);
+
+    expect(await screen.findByText(/are you sure you want to delete/i)).toBeInTheDocument();
+
+    const confirmButton = screen.getByRole("button", { name: /confirm delete/i });
+    await userEvent.click(confirmButton);
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Badge deleted", expect.any(Object));
+    });
+
+    expect(screen.queryByText("Badge 1")).not.toBeInTheDocument();
+  });
+
+  it("resets form when reset button is clicked", async () => {
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const nameInput = await screen.findByPlaceholderText(/badge name/i);
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Modified Name");
+
+    expect(nameInput).toHaveValue("Modified Name");
+
+    const resetButton = screen.getByRole("button", { name: /reset/i });
+    await userEvent.click(resetButton);
+
+    expect(nameInput).toHaveValue("Badge 1");
+  });
+
+  it("handles save with network error during json parsing", async () => {
+    const toast = (await import("react-hot-toast")).default;
+
+    addRoute(
+      "GET",
+      "/collectibles",
+      jsonRes([
+        {
+          id: "b1",
+          name: "Badge 1",
+          description: "First badge",
+          imageUrl: "http://example.com/b1.png",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+
+    addRoute("PATCH", "/collectibles/b1", textRes("Invalid JSON response", { status: 200 }));
+
+    render(<ManageBadges />);
+
+    await screen.findByText("Badge 1", {}, { timeout: 3000 });
+
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await userEvent.click(editButtons[0]);
+
+    const saveButton = await screen.findByRole("button", { name: /save badge/i });
+    await userEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Badge updated", expect.any(Object));
     });
   });
 });

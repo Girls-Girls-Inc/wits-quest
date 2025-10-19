@@ -99,7 +99,6 @@ jobs:
             --collect.url="$BASE_URL/manageQuizzes" \
             --collect.url="$BASE_URL/addQuiz" \
             --collect.numberOfRuns=3 \
-            --collect.settings.preset=mobile \
             --collect.settings.chromePath="${{ steps.chrome.outputs.chrome-path }}" \
             --collect.settings.chromeFlags="--no-sandbox" \
             --upload.target=temporary-public-storage

@@ -236,6 +236,7 @@ export default function ManageHunts() {
                     type="text"
                     id="description"
                     name="description"
+                    icon="description"
                     placeholder="Hunt Description"
                     icon="description"
                     value={formData.description}
@@ -319,6 +320,7 @@ export default function ManageHunts() {
                     id="pointsAchievable"
                     name="pointsAchievable"
                     placeholder="Points Achievable"
+                    icon="star"
                     value={formData.pointsAchievable}
                     onChange={(e) =>
                       setFormData({

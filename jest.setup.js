@@ -34,7 +34,7 @@ try {
 // 4) Dynamically mock frontend page modules that may contain Vite-specific syntax
 //    IMPORTANT: do NOT include pages you will test directly (e.g. passwordResetRequest)
 const pagesToTry = [
-  "adminDashboard",
+  //"adminDashboard",
   "editProfile",
   "leaderboard",
   "map",

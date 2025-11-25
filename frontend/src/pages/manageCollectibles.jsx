@@ -29,6 +29,7 @@ export default function ManageBadges() {
   const [badges, setBadges] = useState([]);
   const [editingBadge, setEditingBadge] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingDeleteBadge, setPendingDeleteBadge] = useState(null);
   const [formData, setFormData] = useState(createDefaultBadgeForm);
   const [initialFormData, setInitialFormData] = useState(
     createDefaultBadgeForm
@@ -169,7 +170,6 @@ export default function ManageBadges() {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (!confirm("Delete this badge?")) return;
 
     const toastId = toast.loading("Deleting badge...");
     try {
@@ -188,10 +188,13 @@ export default function ManageBadges() {
       toast.success("Badge deleted", { id: toastId });
       setBadges((prev) => prev.filter((b) => b.id !== id));
       if (editingBadge?.id === id) handleCloseModal();
+      setPendingDeleteBadge(null);
     } catch (err) {
       toast.error(err.message || "Failed to delete badge", { id: toastId });
     }
   };
+
+
 
   return (
     <div className="quests-container">
@@ -319,6 +322,39 @@ export default function ManageBadges() {
         </div>
       )}
 
+      {pendingDeleteBadge && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-badge-title"
+          onClick={() => setPendingDeleteBadge(null)}
+        >
+          <div className="modal login-required" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <h2 id="delete-badge-title">Delete Badge?</h2>
+              <p>
+                Are you sure you want to delete "
+                <strong>{pendingDeleteBadge.name}</strong>"? This action cannot be undone.
+              </p>
+              <div className="modal-actions">
+                <IconButton
+                  icon="delete"
+                  label="Delete Badge"
+                  onClick={() => handleDelete(pendingDeleteBadge.id)}
+                />
+                <IconButton
+                  icon="restart_alt"
+                  label="Cancel"
+                  onClick={() => setPendingDeleteBadge(null)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       <div className="quest-list">
         {badges.map((badge) => (
           <div
@@ -351,7 +387,7 @@ export default function ManageBadges() {
               <IconButton
                 icon="delete"
                 label="Delete"
-                onClick={() => handleDelete(badge.id)}
+                onClick={() => setPendingDeleteBadge(badge)}
               />
             </div>
           </div>

@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import IconButton from "../components/IconButton";
 import "../styles/dashboard.css";
 import "../styles/leaderboard.css";
-import "../styles/profile.css";
 
 const API_BASE = import.meta.env.VITE_WEB_URL;
 
@@ -207,8 +206,6 @@ const Dashboard = () => {
       const completedRows = rows.filter(
         (q) => q.isComplete && q.userId === me?.id
       );
-
-      const totalPoints = completedQuests.reduce((sum, q) => sum + q.points, 0);
       const latestRow = completedRows.sort(
         (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
       )[0];
@@ -218,7 +215,6 @@ const Dashboard = () => {
         ...prev,
         questsCompleted: completedRows.length,
         locationsVisited: uniqueLocations.size,
-        points: totalPoints,
         latestLocation,
       }));
     } catch (e) {
@@ -243,8 +239,20 @@ const Dashboard = () => {
         rank: i + 1,
         name: r.username,
         points: r.points,
+        userId: r.userId,
       }));
       setLeaderboard(rows);
+
+      // --- Set dashboard points from leaderboard ---
+      if (me?.id) {
+        const myRow = rows.find((r) => r.userId === me.id);
+        if (myRow) {
+          setDashboardData((prev) => ({
+            ...prev,
+            points: myRow.points,
+          }));
+        }
+      }
     } catch (e) {
       console.error("Leaderboard fetch failed:", e.message);
       setLeaderboard([]);
@@ -375,7 +383,10 @@ const Dashboard = () => {
             className="modal-backdrop"
             onClick={() => setSelectedBadge(null)}
           >
-            <div className="modal badge-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="modal badge-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 className="modal-close"
                 onClick={() => setSelectedBadge(null)}
@@ -395,7 +406,9 @@ const Dashboard = () => {
                   <h2>{selectedBadge.name}</h2>
                   <div className="badge-detail">
                     <strong>Description:</strong>
-                    <p>{selectedBadge.description || "No description available"}</p>
+                    <p>
+                      {selectedBadge.description || "No description available"}
+                    </p>
                   </div>
                   <div className="badge-detail">
                     <strong>Date Earned:</strong>
@@ -612,7 +625,7 @@ const Dashboard = () => {
             <div className="stat-number">{dashboardData.questsCompleted}</div>
           </article>
 
-          <article className="dashboard-card small-card">
+          <article className="dashboard-card">
             <h3>Locations Visited</h3>
             <div className="stat-number">{dashboardData.locationsVisited}</div>
             <div className="latest-info">

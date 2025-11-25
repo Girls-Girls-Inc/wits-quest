@@ -595,9 +595,6 @@ export default function ManageQuests() {
             <div className="quest-info ">
               <h2 className="font-bold">{q.name}</h2>
               <p className="points-display">
-                <i aria-hidden="true" className="material-symbols-outlined">
-                  emoji_events
-                </i>
                 <strong>Points:</strong> {q.pointsAchievable}
               </p>
               <p>

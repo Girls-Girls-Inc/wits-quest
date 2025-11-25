@@ -56,7 +56,7 @@ function metersBetween(a, b) {
 }
 
 async function fetchThriftStores({ signal } = {}) {
-  const res = await fetch(`${THRIFT_API_BASE}/external/stores`, {
+  const res = await fetch(`${THRIFT_API_BASE}external/stores`, {
     headers: { Accept: 'application/json' },
     signal,
   });

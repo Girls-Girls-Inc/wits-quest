@@ -407,9 +407,6 @@ export default function ManageHunts() {
                 <strong>Time Limit:</strong> {h.timeLimit ?? "-"}
               </p>
               <p className="points-display">
-                <i aria-hidden="true" className="material-symbols-outlined">
-                  emoji_events
-                </i>
                 <strong>Points:</strong> {h.pointsAchievable ?? "-"}
               </p>
               <p>

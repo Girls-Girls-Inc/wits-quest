@@ -65,22 +65,9 @@ const AdminDashboard = () => {
   return (
     <div className="admin-container">
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
-      <div className="admin-header">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            width: "100%",
-          }}
-        >
-          <div>
-            <h1 className="heading">Admin Dashboard</h1>
-            <p className="admin-header__subtitle">
-              Choose an area to create new content or manage existing quests,
-              hunts, and resources.
-            </p>
-          </div>
+      <header className="admin-header">
+        <div className="admin-header__row">
+          <h1 className="heading">Admin Dashboard</h1>
           <button
             className="help-btn"
             aria-label="Help"
@@ -89,7 +76,7 @@ const AdminDashboard = () => {
             ?
           </button>
         </div>
-      </div>
+      </header>
 
       {showHelpModal && (
         <div className="modal-backdrop">

@@ -99,6 +99,7 @@ const Dashboard = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   // Fetch Supabase session
   useEffect(() => {
@@ -336,7 +337,7 @@ const Dashboard = () => {
                   complete.
                 </li>
                 <li>
-                  Travel to the quest’s location on the map (make sure you’re
+                  Travel to the quest's location on the map (make sure you're
                   within the marked radius).
                 </li>
                 <li>
@@ -364,6 +365,54 @@ const Dashboard = () => {
                     )
                   }
                 />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedBadge && (
+          <div
+            className="modal-backdrop"
+            onClick={() => setSelectedBadge(null)}
+          >
+            <div className="modal badge-modal" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="modal-close"
+                onClick={() => setSelectedBadge(null)}
+              >
+                ✕
+              </button>
+
+              <div className="modal-body badge-modal-body">
+                <div className="badge-modal-image">
+                  <img
+                    src={selectedBadge.imageUrl || placeholder}
+                    alt={selectedBadge.name || "badge"}
+                    onError={(e) => (e.currentTarget.src = placeholder)}
+                  />
+                </div>
+                <div className="badge-modal-info">
+                  <h2>{selectedBadge.name}</h2>
+                  <div className="badge-detail">
+                    <strong>Description:</strong>
+                    <p>{selectedBadge.description || "No description available"}</p>
+                  </div>
+                  <div className="badge-detail">
+                    <strong>Date Earned:</strong>
+                    <p>
+                      {selectedBadge.earnedAt
+                        ? new Date(selectedBadge.earnedAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )
+                        : "Unknown"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -529,7 +578,12 @@ const Dashboard = () => {
                 ) : (
                   <div className="carousel-track">
                     {getBadgesToShow().map((badge) => (
-                      <div key={badge.id} className="badge-item">
+                      <div
+                        key={badge.id}
+                        className="badge-item"
+                        onClick={() => setSelectedBadge(badge)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <img
                           src={badge.imageUrl || placeholder}
                           alt={badge.name || "badge"}

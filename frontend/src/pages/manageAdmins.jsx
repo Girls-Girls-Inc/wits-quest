@@ -106,9 +106,7 @@ const ManageAdmins = () => {
       if (!res.ok) {
         setUsers((prev) =>
           prev.map((user) =>
-            user.userId === userId
-              ? { ...user, isModerator: !newStatus }
-              : user
+            user.userId === userId ? { ...user, isModerator: !newStatus } : user
           )
         );
         throw new Error(await res.text());

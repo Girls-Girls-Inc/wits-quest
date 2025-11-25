@@ -2,6 +2,12 @@
   padding: 20px;
 }
 
+@media (min-width: 769px) {
+  .quests-container {
+    padding-left: 40px;
+  }
+}
+
 .location-block {
   padding-top: 1rem;
 }

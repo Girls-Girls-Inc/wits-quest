@@ -121,7 +121,9 @@ const AddQuest = () => {
           ? await safeJson(quizzesRes, "Failed to fetch quizzes")
           : [];
 
-        setCollectibles(Array.isArray(collectiblesData) ? collectiblesData : []);
+        setCollectibles(
+          Array.isArray(collectiblesData) ? collectiblesData : []
+        );
         setLocations(Array.isArray(locationsData) ? locationsData : []);
         setHunts(Array.isArray(huntsData) ? huntsData : []);
         setQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
@@ -305,7 +307,9 @@ const AddQuest = () => {
         <div className="input-box checkbox">
           <label
             htmlFor="isActive"
-            className={`checkbox-label${questData.isActive ? " checkbox-label--checked" : ""}`}
+            className={`checkbox-label${
+              questData.isActive ? " checkbox-label--checked" : ""
+            }`}
           >
             <span>Active</span>
             <input

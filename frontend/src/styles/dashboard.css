@@ -587,3 +587,83 @@
   border-color: green;
   color: green;
 }
+
+/* Badge Modal Styles */
+.badge-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.badge-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: center;
+  margin-top: 0;
+}
+
+.badge-modal-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.badge-modal-image img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 12px;
+  object-fit: contain;
+  border: 2px solid #333;
+}
+
+.badge-modal-info {
+  width: 100%;
+  text-align: left;
+}
+
+.badge-modal-info h2 {
+  margin: 0 0 1rem 0;
+  color: var(--wits-yellow);
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.badge-detail {
+  margin-bottom: 1rem;
+}
+
+.badge-detail strong {
+  display: block;
+  color: #aaa;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-detail p {
+  margin: 0;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .badge-modal {
+    width: 95%;
+  }
+
+  .badge-modal-body {
+    padding: 1rem;
+  }
+
+  .badge-modal-image img {
+    max-width: 150px;
+    max-height: 150px;
+  }
+
+  .badge-modal-info h2 {
+    font-size: 1.25rem;
+  }
+}

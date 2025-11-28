@@ -120,7 +120,8 @@ const AddLocation = () => {
         body: JSON.stringify(payload),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to create location");
+      if (!res.ok)
+        throw new Error(result.message || "Failed to create location");
 
       toast.success("Location created successfully!", { id: toastId });
       resetForm();

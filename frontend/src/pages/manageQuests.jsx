@@ -325,7 +325,7 @@ export default function ManageQuests() {
   };
 
   return (
-    <div className="quests-container">
+    <div className="quests-container" style={{ marginLeft: "150px" }}>
       <Toaster position="top-center" toastOptions={TOAST_OPTIONS} />
       <div className="quests-header">
         <h1>Manage Quests</h1>

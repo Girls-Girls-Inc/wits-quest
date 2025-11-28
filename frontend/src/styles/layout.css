@@ -9,6 +9,7 @@
   padding: 1rem;
   margin-left: 150px !important;
   overflow-y: auto;
+  box-sizing: border-box;
   /* overflow-x: hidden; */
 }
 
@@ -20,8 +21,9 @@
 
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     margin-bottom: 60px;
+    padding: 2rem !important;
     /* overflow-x: auto; */
   }
 }

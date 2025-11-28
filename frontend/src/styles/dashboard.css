@@ -325,6 +325,15 @@
   background-color: var(--wits-yellow);
 }
 
+.dashboard-card:has(.latest-info) {
+  text-align: center;
+}
+
+.dashboard-card:has(.latest-info) .stat-number {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .latest-box span {
   font-size: 0.75rem;
   color: white;
@@ -540,7 +549,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: center
+  text-align: center;
 }
 
 /* Skeleton loaders */
